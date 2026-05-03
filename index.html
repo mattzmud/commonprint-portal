@@ -717,7 +717,7 @@
         Invoices <span class="nav-badge hidden" id="badge-invoices"></span>
       </button>
       <button class="nav-tab" onclick="showPage('inprocess')" data-page="inprocess">
-        In Process <span class="nav-badge hidden" id="badge-inprocess"></span>
+        In Process Orders <span class="nav-badge hidden" id="badge-inprocess"></span>
       </button>
       <button class="nav-tab" onclick="showPage('orders')" data-page="orders">Past Orders</button>
     </div>
@@ -831,7 +831,7 @@
   <!-- IN PROCESS -->
   <div class="page" id="page-inprocess">
     <div class="page-header">
-      <div class="page-title">Orders in Process</div>
+      <div class="page-title">In Process Orders</div>
       <div class="page-sub">Jobs currently in production.</div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
@@ -964,6 +964,48 @@
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-reorder')">Cancel</button>
       <button class="btn btn-primary btn-sm" id="reorder-submit-btn" onclick="submitReorder()">Submit re-order request</button>
+    </div>
+  </div>
+</div>
+
+<!-- In Process Order Detail Modal -->
+<div class="modal-overlay" id="modal-inprocess">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="ip-title">Order in process</div>
+      <button class="modal-close" onclick="closeModal('modal-inprocess')">×</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Invoice #</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="ip-invoice"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Amount</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="ip-amount"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Payment status</div>
+        <div id="ip-payment"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Due date</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="ip-due"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">In process since</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="ip-since"></div>
+      </div>
+    </div>
+
+    <div id="ip-lines-section">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Order details</div>
+      <div class="line-items" id="ip-lines"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" onclick="closeModal('modal-inprocess')">Close</button>
     </div>
   </div>
 </div>
@@ -1598,6 +1640,8 @@ function renderInvoices() {
       <td>
         ${inv.status === 'unpaid' || inv.status === 'overdue'
           ? `<button class="btn btn-primary btn-sm" onclick="payInvoice('${inv.id}')">Pay now</button>`
+          : inv.status === 'cancelled'
+          ? `<span class="text-muted">Cancelled</span>`
           : `<span class="text-muted">Paid</span>`}
       </td>
     </tr>`).join('');
@@ -1640,14 +1684,54 @@ function renderInProcess() {
     return;
   }
   tbody.innerHTML = items.map(i => `
-    <tr>
+    <tr style="cursor:pointer" onclick="openInProcessModal('${i.id}')"
+      onmouseover="this.querySelectorAll('td').forEach(td=>td.style.background='var(--green-pale)')"
+      onmouseout="this.querySelectorAll('td').forEach(td=>td.style.background='')">
       <td style="font-weight:500">${esc(i.name||'—')}</td>
       <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
       <td class="amount">$${(i.amount||0).toFixed(2)}</td>
       <td>${badge(i.status === 'paid' ? 'paid' : 'unpaid')}</td>
       <td>${fmtDate(i.processingAt||i.createdAt)}</td>
+      <td style="color:var(--mid-gray);font-size:18px">›</td>
     </tr>`).join('');
 }
+
+// ── IN PROCESS MODAL (CLIENT) ────────────────
+window.openInProcessModal = (invoiceId) => {
+  const inv = (cache.invoices || []).find(x => x.id === invoiceId);
+  if (!inv) return;
+
+  // Find linked quote for line items
+  const linkedQuote = inv.sourceQuoteId
+    ? (cache.quotes || []).find(q => q.id === inv.sourceQuoteId)
+    : null;
+  const lineItems = linkedQuote?.lineItems || [];
+
+  document.getElementById('ip-title').textContent   = inv.name || 'Order in process';
+  document.getElementById('ip-invoice').textContent = inv.number || inv.id.slice(0,6).toUpperCase();
+  document.getElementById('ip-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
+  document.getElementById('ip-payment').innerHTML   = badge(inv.status === 'paid' ? 'paid' : 'unpaid');
+  document.getElementById('ip-since').textContent   = fmtDate(inv.processingAt || inv.createdAt);
+  document.getElementById('ip-due').textContent     = fmtDate(inv.dueDate);
+
+  const linesEl = document.getElementById('ip-lines');
+  if (lineItems.length > 0) {
+    linesEl.innerHTML = lineItems.map(li => `
+      <div class="line-item">
+        <div>
+          <div class="line-item-desc">${esc(li.description||li.desc||'')}</div>
+          <div class="line-item-qty">${li.qty||1} × $${(li.price||0).toFixed(2)} each</div>
+        </div>
+        <div class="line-item-price">$${((li.price||0)*(li.qty||1)).toFixed(2)}</div>
+      </div>`).join('') +
+      `<div class="line-total"><span>Total</span><span>$${(inv.amount||0).toFixed(2)}</span></div>`;
+    document.getElementById('ip-lines-section').classList.remove('hidden');
+  } else {
+    document.getElementById('ip-lines-section').classList.add('hidden');
+  }
+
+  openModal('modal-inprocess');
+};
 
 // ── ORDERS ───────────────────────────────────
 function renderOrders() {
@@ -1787,6 +1871,7 @@ function badge(status) {
     approved:  ['badge-approved', 'Approved'],
     changes:   ['badge-changes',  'Changes requested'],
     paid:      ['badge-paid',     'Paid'],
+    cancelled: ['badge-changes',  'Cancelled'],
     unpaid:    ['badge-unpaid',   'Unpaid'],
     overdue:   ['badge-overdue',  'Overdue'],
     completed: ['badge-approved', 'Completed'],

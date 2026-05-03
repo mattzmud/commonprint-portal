@@ -335,17 +335,17 @@
       </div>
 
       <div class="detail-tabs">
-        <button class="detail-tab active" onclick="showDetailTab('info')"     data-dtab="info">Info</button>
-        <button class="detail-tab"        onclick="showDetailTab('proofs')"   data-dtab="proofs">Proofs</button>
-        <button class="detail-tab"        onclick="showDetailTab('quotes')"   data-dtab="quotes">Quotes</button>
-        <button class="detail-tab"        onclick="showDetailTab('invoices')" data-dtab="invoices">Invoices</button>
-        <button class="detail-tab"        onclick="showDetailTab('orders')"    data-dtab="orders">Orders</button>
-        <button class="detail-tab"        onclick="showDetailTab('inprocess')" data-dtab="inprocess">
-          In Process <span class="nav-badge hidden" id="badge-client-inprocess"></span>
-        </button>
+        <button class="detail-tab active" onclick="showDetailTab('info')"      data-dtab="info">Info</button>
         <button class="detail-tab"        onclick="showDetailTab('requests')"  data-dtab="requests">
-          Requests <span class="nav-badge hidden" id="badge-requests"></span>
+          Order Requests <span class="nav-badge hidden" id="badge-requests"></span>
         </button>
+        <button class="detail-tab"        onclick="showDetailTab('proofs')"    data-dtab="proofs">Proofs</button>
+        <button class="detail-tab"        onclick="showDetailTab('quotes')"    data-dtab="quotes">Quotes</button>
+        <button class="detail-tab"        onclick="showDetailTab('invoices')"  data-dtab="invoices">Invoices</button>
+        <button class="detail-tab"        onclick="showDetailTab('inprocess')" data-dtab="inprocess">
+          In Process Orders <span class="nav-badge hidden" id="badge-client-inprocess"></span>
+        </button>
+        <button class="detail-tab"        onclick="showDetailTab('orders')"    data-dtab="orders">Completed Orders</button>
       </div>
 
       <div class="detail-panel active" id="dtab-info">
@@ -378,7 +378,7 @@
       <div class="detail-panel" id="dtab-orders">
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>Order name</th><th>Completed</th><th>Total</th><th>Items</th></tr></thead>
+            <thead><tr><th>Job name</th><th>Completed</th><th>Total</th><th>Items</th></tr></thead>
             <tbody id="detail-orders-tbody"><tr><td colspan="4"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
         </div>
@@ -386,7 +386,7 @@
       <div class="detail-panel" id="dtab-inprocess">
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th></tr></thead>
+            <thead><tr><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th><th></th></tr></thead>
             <tbody id="detail-inprocess-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
         </div>
@@ -1012,14 +1012,11 @@ async function loadClientDetail(uid) {
         <td>$${(i.amount||0).toFixed(2)}</td>
         <td>${badge(i.status||'unpaid')}</td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
-          ${!i.completedAsOrder && i.status !== 'processing' && i.status !== 'completed'
+          ${!i.completedAsOrder && i.status !== 'processing'
             ? `<button class="btn btn-ghost btn-sm" onclick="markInProcess('${i.id}')">Mark in process</button>`
             : ''}
-          ${i.status === 'processing'
-            ? `<button class="btn btn-primary btn-sm" onclick="markAsCompletedOrder('${i.id}')">Mark complete</button>`
-            : ''}
           ${i.completedAsOrder
-            ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Order created</span>`
+            ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Completed</span>`
             : ''}
           ${(i.status === 'unpaid' || i.status === 'overdue') && !i.completedAsOrder
             ? `<button class="btn btn-danger btn-sm" onclick="cancelInvoice('${i.id}','${esc(i.name||'this invoice')}')">Cancel</button>`
@@ -1062,12 +1059,15 @@ async function loadClientDetail(uid) {
   document.getElementById('detail-inprocess-tbody').innerHTML = inProcessInvoices.length === 0
     ? `<tr><td colspan="5"><div class="empty">No orders currently in process.</div></td></tr>`
     : inProcessInvoices.map(i => `
-      <tr style="cursor:pointer" onclick="openAdminInProcessModal('${i.id}')" onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td style="font-weight:500">${esc(i.name||'—')}</td>
+      <tr>
+        <td style="font-weight:500;cursor:pointer" onclick="openAdminInProcessModal('${i.id}')">${esc(i.name||'—')}</td>
         <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
         <td>$${(i.amount||0).toFixed(2)}</td>
         <td>${badge(i.status === 'paid' ? 'paid' : 'unpaid')}</td>
         <td>${fmtDate(i.processingAt||i.createdAt)}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="markAsCompletedOrder('${i.id}')">Mark complete</button>
+        </td>
       </tr>`).join('');
 
   // Orders tab
