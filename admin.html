@@ -192,6 +192,119 @@
   .toast.error { background:var(--red); }
   @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
 
+  /* ── PROOF THREAD ── */
+  .proof-modal-wrap {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    height: 70vh;
+    min-height: 400px;
+  }
+  .proof-preview-pane {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .proof-preview-img {
+    flex: 1;
+    object-fit: contain;
+    width: 100%;
+    background: var(--linen);
+    display: block;
+  }
+  .proof-preview-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--linen);
+    font-size: 64px;
+  }
+  .proof-preview-footer {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .proof-thread-pane {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .proof-thread-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .proof-thread-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .proof-msg {
+    max-width: 88%;
+    padding: 9px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .proof-msg-admin {
+    background: var(--green);
+    color: var(--white);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .proof-msg-client {
+    background: var(--linen-dark);
+    color: var(--charcoal);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .proof-msg-meta {
+    font-size: 11px;
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+  .proof-msg-admin .proof-msg-meta { color: rgba(255,255,255,0.7); text-align: right; }
+  .proof-msg-client .proof-msg-meta { color: var(--mid-gray); }
+  .proof-msg-img { max-width: 100%; border-radius: 6px; margin-top: 6px; display: block; cursor: pointer; }
+  .proof-thread-compose {
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .proof-thread-compose textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--charcoal);
+    background: var(--linen);
+    outline: none;
+    resize: none;
+    height: 60px;
+    transition: border-color .15s;
+  }
+  .proof-thread-compose textarea:focus { border-color: var(--green); background: var(--white); }
+  .proof-thread-compose-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    align-items: center;
+  }
+
   /* ── MISC ── */
   .hidden { display:none!important; }
   .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
@@ -514,6 +627,63 @@
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-view-quote')">Close</button>
       <button class="btn btn-primary btn-sm" onclick="printQuote()">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Proof Review Modal -->
+<div class="modal-overlay" id="modal-admin-proof" style="padding:16px">
+  <div class="modal" style="max-width:900px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:90vh">
+    <!-- Header -->
+    <div class="modal-header" style="padding:16px 20px;flex-shrink:0;border-bottom:1px solid var(--border)">
+      <div>
+        <div class="modal-title" id="ap-title">Proof review</div>
+        <div style="font-size:12px;color:var(--mid-gray);margin-top:2px" id="ap-meta"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="ap-status-badge"></div>
+        <button class="modal-close" onclick="closeModal('modal-admin-proof')">×</button>
+      </div>
+    </div>
+    <!-- Body -->
+    <div class="proof-modal-wrap" style="flex:1;overflow:hidden">
+      <!-- Left: proof preview -->
+      <div class="proof-preview-pane">
+        <img class="proof-preview-img hidden" id="ap-img" src="" alt="Proof">
+        <div class="proof-preview-placeholder hidden" id="ap-placeholder">📄</div>
+        <div class="proof-preview-footer">
+          <a id="ap-file-link" href="#" target="_blank" class="btn btn-ghost btn-sm">View full size</a>
+          <div style="display:flex;gap:6px">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+              Upload revision
+              <input type="file" id="ap-revision-file" accept="image/*,.pdf" style="display:none" onchange="handleRevisionSelect(this)">
+            </label>
+          </div>
+        </div>
+        <!-- Revision history -->
+        <div id="ap-revisions" style="border-top:1px solid var(--border);padding:10px 14px;max-height:120px;overflow-y:auto;flex-shrink:0">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Revision history</div>
+          <div id="ap-revisions-list"></div>
+        </div>
+      </div>
+      <!-- Right: thread -->
+      <div class="proof-thread-pane">
+        <div class="proof-thread-header">
+          <span style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase">Messages</span>
+          <div id="ap-thread-status"></div>
+        </div>
+        <div class="proof-thread-messages" id="ap-messages"></div>
+        <div class="proof-thread-compose">
+          <textarea id="ap-reply-text" placeholder="Reply to client…"></textarea>
+          <div class="proof-thread-compose-actions">
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="sendAdminProofReply()">Send reply</button>
+          </div>
+          <div id="ap-revision-preview" class="hidden" style="margin-top:6px;font-size:12px;color:var(--green);background:var(--green-pale);padding:6px 10px;border-radius:6px;display:flex;align-items:center;gap:6px">
+            <span id="ap-revision-name"></span>
+            <button onclick="clearRevision()" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:14px;padding:0;margin-left:auto">×</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -972,14 +1142,21 @@ async function loadClientDetail(uid) {
   // Proofs tab
   document.getElementById('detail-proofs-tbody').innerHTML = proofs.length === 0
     ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
-    : proofs.map(p => `
-      <tr>
-        <td>${esc(p.name||'Untitled')}</td>
+    : proofs.map(p => {
+        const msgs = p.messages || [];
+        const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
+        return `
+      <tr style="cursor:pointer" onclick="openAdminProofModal('${p.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(p.name||'Untitled')}
+          ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
+        </td>
         <td>${fmtDate(p.createdAt)}</td>
         <td>${badge(p.status||'pending')}</td>
-        <td class="text-muted">${esc(p.comment||'—')}</td>
-        <td>${p.fileUrl ? `<a href="${esc(p.fileUrl)}" target="_blank" class="btn btn-ghost btn-sm">View</a>` : ''}</td>
-      </tr>`).join('');
+        <td style="font-size:12px;color:var(--mid-gray)">${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : '—'}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`;
+      }).join('');
 
   // Quotes tab
   document.getElementById('detail-quotes-tbody').innerHTML = quotes.length === 0
@@ -1696,6 +1873,257 @@ window.openAdminInProcessModal = (invoiceId) => {
 
   openModal('modal-admin-inprocess');
 };
+
+// ── ADMIN PROOF REVIEW MODAL ──────────────────
+let activeAdminProof = null;
+let pendingRevisionFile = null;
+
+window.openAdminProofModal = async (proofId) => {
+  const p = selectedClientData.proofs?.find(x => x.id === proofId);
+  if (!p) return;
+  activeAdminProof = p;
+  pendingRevisionFile = null;
+
+  document.getElementById('ap-title').textContent   = p.name || 'Proof review';
+  document.getElementById('ap-meta').textContent    = `${selectedClient.name||selectedClient.email} · Uploaded ${fmtDate(p.createdAt)}`;
+  document.getElementById('ap-status-badge').innerHTML = badge(p.status || 'pending');
+  document.getElementById('ap-reply-text').value    = '';
+  document.getElementById('ap-revision-preview').classList.add('hidden');
+  document.getElementById('ap-revision-file').value = '';
+
+  // Show current proof file
+  const img = document.getElementById('ap-img');
+  const placeholder = document.getElementById('ap-placeholder');
+  const fileLink = document.getElementById('ap-file-link');
+  const revisions = p.revisions || [];
+  const currentFile = revisions.length > 0
+    ? revisions[revisions.length - 1]
+    : { url: p.fileUrl, fileType: p.fileType, name: p.name, uploadedAt: p.createdAt };
+
+  if (currentFile.url) {
+    fileLink.href = currentFile.url;
+    if (currentFile.fileType === 'pdf') {
+      img.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    } else {
+      img.src = currentFile.url;
+      img.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+    }
+  }
+
+  // Revision history
+  const allRevisions = [
+    { url: p.fileUrl, fileType: p.fileType, name: p.name + ' (original)', uploadedAt: p.createdAt },
+    ...(p.revisions || [])
+  ];
+  document.getElementById('ap-revisions-list').innerHTML = allRevisions.map((r, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:var(--charcoal)">
+      <span style="color:var(--mid-gray)">${fmtDate(r.uploadedAt)}</span>
+      <a href="${esc(r.url||'#')}" target="_blank" style="color:var(--green);text-decoration:none">
+        v${i+1} — ${esc(r.name||'Revision')}
+      </a>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--mid-gray)">No revisions yet.</div>';
+
+  // Mark client messages as read
+  const msgs = p.messages || [];
+  const hasUnread = msgs.some(m => m.sender === 'client' && !m.readByAdmin);
+  if (hasUnread) {
+    const updatedMsgs = msgs.map(m => m.sender === 'client' ? { ...m, readByAdmin: true } : m);
+    await fbUpdate(`clients/${selectedClient.uid}/proofs/${proofId}`, { messages: updatedMsgs });
+    activeAdminProof.messages = updatedMsgs;
+    const idx = selectedClientData.proofs.findIndex(x => x.id === proofId);
+    if (idx >= 0) selectedClientData.proofs[idx].messages = updatedMsgs;
+  }
+
+  renderAdminProofThread();
+  openModal('modal-admin-proof');
+};
+
+function renderAdminProofThread() {
+  const p = activeAdminProof;
+  const msgs = p.messages || [];
+
+  // Add initial client comment as first message if exists and no messages yet
+  let allMsgs = [...msgs];
+  if (allMsgs.length === 0 && p.comment) {
+    allMsgs = [{ sender: 'client', text: p.comment, timestamp: p.respondedAt || p.createdAt }];
+  }
+
+  const el = document.getElementById('ap-messages');
+  if (allMsgs.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:24px;font-size:13px;color:var(--mid-gray)">No messages yet. ${p.status === 'pending' ? 'Waiting for client review.' : ''}</div>`;
+  } else {
+    el.innerHTML = allMsgs.map(m => {
+      const isAdmin = m.sender === 'admin';
+      return `
+        <div style="display:flex;flex-direction:column;align-items:${isAdmin ? 'flex-end' : 'flex-start'}">
+          <div class="proof-msg ${isAdmin ? 'proof-msg-admin' : 'proof-msg-client'}">
+            <div class="proof-msg-meta">${esc(isAdmin ? 'Common Print Co.' : (selectedClient.name||selectedClient.email))} · ${fmtDate(m.timestamp)}</div>
+            ${esc(m.text||'')}
+            ${m.revisionUrl ? `<img class="proof-msg-img" src="${esc(m.revisionUrl)}" onclick="window.open('${esc(m.revisionUrl)}','_blank')">` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    // Scroll to bottom
+    setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+  }
+
+  // Show approve button if status is changes
+  const statusEl = document.getElementById('ap-thread-status');
+  statusEl.innerHTML = p.status === 'approved'
+    ? badge('approved')
+    : p.status === 'changes'
+    ? `<span style="font-size:12px;color:var(--amber)">Changes requested</span>`
+    : '';
+}
+
+window.handleRevisionSelect = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  pendingRevisionFile = file;
+  document.getElementById('ap-revision-name').textContent = '📎 ' + file.name;
+  document.getElementById('ap-revision-preview').classList.remove('hidden');
+};
+
+window.clearRevision = () => {
+  pendingRevisionFile = null;
+  document.getElementById('ap-revision-preview').classList.add('hidden');
+  document.getElementById('ap-revision-file').value = '';
+};
+
+window.sendAdminProofReply = async () => {
+  const text = document.getElementById('ap-reply-text').value.trim();
+  if (!text && !pendingRevisionFile) { toast('Please enter a message or upload a revision.', 'error'); return; }
+
+  const uid = selectedClient.uid;
+  const proofId = activeAdminProof.id;
+  const btn = document.querySelector('#modal-admin-proof .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+  try {
+    let revisionUrl = null;
+    let revisionData = null;
+
+    // Upload revision file if present
+    if (pendingRevisionFile) {
+      const token = await getToken();
+      const ext = pendingRevisionFile.name.split('.').pop().toLowerCase();
+      const isImage = ['png','jpg','jpeg','webp'].includes(ext);
+      const revId = genId();
+      const storagePath = `clients/${uid}/proofs/${proofId}_rev${revId}.${ext}`;
+      const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(storagePath)}`;
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': pendingRevisionFile.type || 'application/octet-stream' },
+        body: pendingRevisionFile
+      });
+      if (!uploadRes.ok) throw new Error('Upload failed');
+      revisionUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`;
+      revisionData = {
+        url: revisionUrl,
+        fileType: isImage ? 'image' : 'pdf',
+        name: pendingRevisionFile.name,
+        uploadedAt: new Date().toISOString(),
+      };
+    }
+
+    // Build new message
+    const newMsg = {
+      sender: 'admin',
+      text: text || '',
+      timestamp: new Date().toISOString(),
+      ...(revisionUrl ? { revisionUrl } : {}),
+    };
+
+    const existingMsgs = activeAdminProof.messages || [];
+    // Include initial comment as first message if not yet in messages array
+    let baseMsgs = existingMsgs;
+    if (baseMsgs.length === 0 && activeAdminProof.comment) {
+      baseMsgs = [{ sender: 'client', text: activeAdminProof.comment, timestamp: activeAdminProof.respondedAt || activeAdminProof.createdAt, readByAdmin: true }];
+    }
+    const updatedMsgs = [...baseMsgs, newMsg];
+
+    // Update proof — messages, status back to pending so client can re-review, optionally add revision
+    const updateData = {
+      messages: updatedMsgs,
+      status: 'pending', // reset to pending so client sees new revision
+      adminRepliedAt: new Date().toISOString(),
+    };
+    if (revisionData) {
+      const existingRevisions = activeAdminProof.revisions || [];
+      updateData.revisions = [...existingRevisions, revisionData];
+      // Update preview
+      const img = document.getElementById('ap-img');
+      if (revisionData.fileType === 'image') { img.src = revisionUrl; img.classList.remove('hidden'); }
+    }
+
+    await fbUpdate(`clients/${uid}/proofs/${proofId}`, updateData);
+    activeAdminProof = { ...activeAdminProof, ...updateData };
+
+    // Update local cache
+    const idx = selectedClientData.proofs.findIndex(x => x.id === proofId);
+    if (idx >= 0) selectedClientData.proofs[idx] = { ...selectedClientData.proofs[idx], ...updateData };
+
+    // Notify client
+    await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'notify_client',
+        clientEmail: selectedClient.email,
+        clientName: selectedClient.name,
+        type: 'proof_reply',
+        itemName: activeAdminProof.name,
+      })
+    }).catch(() => {});
+
+    clearRevision();
+    document.getElementById('ap-reply-text').value = '';
+    document.getElementById('ap-status-badge').innerHTML = badge('pending');
+    renderAdminProofThread();
+
+    // Re-render revisions list
+    const allRevisions = [
+      { url: activeAdminProof.fileUrl, fileType: activeAdminProof.fileType, name: activeAdminProof.name + ' (original)', uploadedAt: activeAdminProof.createdAt },
+      ...(activeAdminProof.revisions || [])
+    ];
+    document.getElementById('ap-revisions-list').innerHTML = allRevisions.map((r, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px">
+        <span style="color:var(--mid-gray)">${fmtDate(r.uploadedAt)}</span>
+        <a href="${esc(r.url||'#')}" target="_blank" style="color:var(--green);text-decoration:none">v${i+1} — ${esc(r.name||'Revision')}</a>
+      </div>`).join('');
+
+    renderProofsInDetail();
+    toast('Reply sent!', 'success');
+  } catch(e) {
+    toast('Failed to send: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Send reply'; }
+  }
+};
+
+function renderProofsInDetail() {
+  // Re-render just the proofs tbody without reloading everything
+  const proofs = selectedClientData.proofs || [];
+  document.getElementById('detail-proofs-tbody').innerHTML = proofs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
+    : proofs.map(p => {
+        const msgs = p.messages || [];
+        const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
+        return `
+      <tr style="cursor:pointer" onclick="openAdminProofModal('${p.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(p.name||'Untitled')}
+          ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
+        </td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td>${badge(p.status||'pending')}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : '—'}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`;
+      }).join('');
+}
 
 // ── CANCEL INVOICE ────────────────────────────
 window.cancelInvoice = async (invoiceId, invoiceName) => {

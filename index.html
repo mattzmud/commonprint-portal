@@ -601,6 +601,114 @@
   .order-date { font-size: 12px; color: var(--mid-gray); }
   .order-amount { font-family: var(--font-display); font-size: 18px; color: var(--near-black); margin-right: 16px; }
 
+  /* ── PROOF THREAD ── */
+  .proof-modal-wrap {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 0;
+    height: 68vh;
+    min-height: 380px;
+  }
+  .proof-preview-pane {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .proof-preview-img-full {
+    flex: 1;
+    object-fit: contain;
+    width: 100%;
+    background: var(--linen);
+    display: block;
+  }
+  .proof-preview-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--linen);
+    font-size: 64px;
+  }
+  .proof-preview-footer {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .proof-thread-pane {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .proof-thread-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mid-gray);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .proof-thread-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .proof-msg {
+    max-width: 90%;
+    padding: 9px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .proof-msg-admin {
+    background: var(--green-soft);
+    color: var(--charcoal);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .proof-msg-client {
+    background: var(--green);
+    color: var(--white);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .proof-msg-meta {
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+  .proof-msg-admin .proof-msg-meta { color: var(--mid-gray); }
+  .proof-msg-client .proof-msg-meta { color: rgba(255,255,255,0.7); text-align:right; }
+  .proof-msg-img { max-width:100%; border-radius:6px; margin-top:6px; display:block; cursor:pointer; }
+  .proof-thread-compose {
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .proof-thread-compose textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--charcoal);
+    background: var(--linen);
+    outline: none;
+    resize: none;
+    height: 56px;
+    transition: border-color .15s;
+  }
+  .proof-thread-compose textarea:focus { border-color: var(--green); background: var(--white); }
+
   /* ── PROOF VIEWER ── */
   .proof-viewer-img {
     width: 100%;
@@ -872,28 +980,52 @@
 ══════════════════════════════════════════ -->
 
 <!-- Proof Viewer -->
-<div class="modal-overlay" id="modal-proof">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-proof-title">Proof</div>
-      <button class="modal-close" onclick="closeModal('modal-proof')">×</button>
-    </div>
-    <img class="proof-viewer-img hidden" id="modal-proof-img" src="" alt="Proof">
-    <div id="modal-proof-pdf-link" class="hidden">
-      <a id="modal-proof-pdf-a" href="#" target="_blank" class="btn btn-ghost" style="margin-bottom:16px">
-        📄 Open PDF proof
-      </a>
-    </div>
-    <div id="modal-proof-status-row" style="margin-bottom:16px"></div>
-
-    <div id="modal-proof-actions">
-      <div class="field">
-        <label>Leave a comment (optional)</label>
-        <textarea class="comment-field" id="proof-comment" placeholder="Any notes for the team..."></textarea>
+<div class="modal-overlay" id="modal-proof" style="padding:16px">
+  <div class="modal" style="max-width:860px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:90vh">
+    <!-- Header -->
+    <div class="modal-header" style="padding:16px 20px;flex-shrink:0;border-bottom:1px solid var(--border)">
+      <div>
+        <div class="modal-title" id="modal-proof-title">Proof</div>
+        <div style="font-size:12px;color:var(--mid-gray);margin-top:2px" id="modal-proof-sub"></div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-danger btn-sm" onclick="respondToProof('changes')">Request changes</button>
-        <button class="btn btn-primary btn-sm" onclick="respondToProof('approved')">Approve proof ✓</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="modal-proof-status-row"></div>
+        <button class="modal-close" onclick="closeModal('modal-proof')">×</button>
+      </div>
+    </div>
+    <!-- Body -->
+    <div class="proof-modal-wrap" style="flex:1;overflow:hidden">
+      <!-- Left: proof image -->
+      <div class="proof-preview-pane">
+        <img class="proof-preview-img-full hidden" id="modal-proof-img" src="" alt="Proof">
+        <div class="proof-preview-placeholder hidden" id="modal-proof-placeholder">📄</div>
+        <div class="proof-preview-footer">
+          <a id="modal-proof-pdf-a" href="#" target="_blank" class="btn btn-ghost btn-sm">View full size</a>
+          <div id="modal-proof-revision-nav" style="font-size:12px;color:var(--mid-gray)"></div>
+        </div>
+      </div>
+      <!-- Right: thread + actions -->
+      <div class="proof-thread-pane">
+        <div class="proof-thread-header">Conversation</div>
+        <div class="proof-thread-messages" id="modal-proof-messages"></div>
+        <div id="modal-proof-actions">
+          <div class="proof-thread-compose">
+            <textarea id="proof-comment" placeholder="Add a message or request changes…"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button class="btn btn-ghost btn-sm" style="flex:1" onclick="respondToProof('changes')">Request changes</button>
+              <button class="btn btn-primary btn-sm" style="flex:1" onclick="respondToProof('approved')">Approve ✓</button>
+            </div>
+          </div>
+        </div>
+        <div id="modal-proof-thread-reply" class="hidden">
+          <div class="proof-thread-compose">
+            <textarea id="proof-thread-msg" placeholder="Reply…"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button class="btn btn-ghost btn-sm" style="flex:1" onclick="sendClientProofMessage()">Send message</button>
+              <button class="btn btn-primary btn-sm" style="flex:1" onclick="respondToProof('approved')">Approve ✓</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1389,54 +1521,123 @@ window.openProof = (id) => {
   if (!p) return;
   activeProof = p;
   document.getElementById('modal-proof-title').textContent = p.name || 'Proof';
-
-  // image or pdf
-  const img = document.getElementById('modal-proof-img');
-  const pdfLink = document.getElementById('modal-proof-pdf-link');
-  const pdfA    = document.getElementById('modal-proof-pdf-a');
-  if (p.fileType === 'pdf' && p.fileUrl) {
-    img.classList.add('hidden');
-    pdfA.href = p.fileUrl;
-    pdfLink.classList.remove('hidden');
-  } else if (p.fileUrl) {
-    img.src = p.fileUrl;
-    img.classList.remove('hidden');
-    pdfLink.classList.add('hidden');
-  }
-
+  document.getElementById('modal-proof-sub').textContent   = `Uploaded ${fmtDate(p.createdAt)}`;
   document.getElementById('modal-proof-status-row').innerHTML = badge(p.status || 'pending');
-  document.getElementById('proof-comment').value = p.comment || '';
 
-  const actionsDiv = document.getElementById('modal-proof-actions');
-  if (p.status === 'approved' || p.status === 'changes') {
-    actionsDiv.classList.add('hidden');
-  } else {
-    actionsDiv.classList.remove('hidden');
+  // Show latest revision or original
+  const revisions = p.revisions || [];
+  const currentFile = revisions.length > 0
+    ? revisions[revisions.length - 1]
+    : { url: p.fileUrl, fileType: p.fileType };
+
+  const img = document.getElementById('modal-proof-img');
+  const placeholder = document.getElementById('modal-proof-placeholder');
+  const pdfA = document.getElementById('modal-proof-pdf-a');
+  if (currentFile.url) {
+    pdfA.href = currentFile.url;
+    if (currentFile.fileType === 'pdf') {
+      img.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    } else {
+      img.src = currentFile.url;
+      img.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+    }
   }
+
+  // Revision nav label
+  const navEl = document.getElementById('modal-proof-revision-nav');
+  navEl.textContent = revisions.length > 0
+    ? `v${revisions.length + 1} of ${revisions.length + 1} (latest)`
+    : '';
+
+  // Show/hide action areas based on status
+  const actionsDiv = document.getElementById('modal-proof-actions');
+  const threadReply = document.getElementById('modal-proof-thread-reply');
+
+  if (p.status === 'approved') {
+    actionsDiv.classList.add('hidden');
+    threadReply.classList.add('hidden');
+  } else if (p.status === 'changes') {
+    // Thread reply mode — show send message + approve
+    actionsDiv.classList.add('hidden');
+    threadReply.classList.remove('hidden');
+    document.getElementById('proof-thread-msg').value = '';
+  } else {
+    // Pending — show normal approve/request changes
+    actionsDiv.classList.remove('hidden');
+    threadReply.classList.add('hidden');
+    document.getElementById('proof-comment').value = '';
+  }
+
+  renderClientProofThread(p);
   openModal('modal-proof');
 };
 
+function renderClientProofThread(p) {
+  const msgs = p.messages || [];
+  let allMsgs = [...msgs];
+  // Include original comment as first message if no messages yet
+  if (allMsgs.length === 0 && p.comment) {
+    allMsgs = [{ sender: 'client', text: p.comment, timestamp: p.respondedAt || p.createdAt }];
+  }
+
+  const el = document.getElementById('modal-proof-messages');
+  if (allMsgs.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:24px;font-size:13px;color:var(--mid-gray)">
+      ${p.status === 'pending' ? 'Approve this proof or request changes below.' : ''}
+    </div>`;
+  } else {
+    const clientName = currentUser.displayName || currentUser.email;
+    el.innerHTML = allMsgs.map(m => {
+      const isClient = m.sender === 'client';
+      return `
+        <div style="display:flex;flex-direction:column;align-items:${isClient ? 'flex-end' : 'flex-start'}">
+          <div class="proof-msg ${isClient ? 'proof-msg-client' : 'proof-msg-admin'}">
+            <div class="proof-msg-meta">${esc(isClient ? clientName : 'Common Print Co.')} · ${fmtDate(m.timestamp)}</div>
+            ${esc(m.text||'')}
+            ${m.revisionUrl ? `<img class="proof-msg-img" src="${esc(m.revisionUrl)}" onclick="window.open('${esc(m.revisionUrl)}','_blank')">` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+  }
+}
+
 window.respondToProof = async (action) => {
   if (!activeProof) return;
-  const comment = document.getElementById('proof-comment').value.trim();
+  const commentEl = document.getElementById('proof-comment');
+  const comment = commentEl ? commentEl.value.trim() : '';
   const uid = currentUser.uid;
+
+  // Build new message for thread
+  const newMsg = {
+    sender: 'client',
+    text: comment || (action === 'approved' ? 'Approved.' : 'Requesting changes.'),
+    timestamp: new Date().toISOString(),
+  };
+  const existingMsgs = activeProof.messages || [];
+  const updatedMsgs = [...existingMsgs, newMsg];
+
   await fbUpdate(`clients/${uid}/proofs/${activeProof.id}`, {
     status: action,
     comment,
     respondedAt: new Date().toISOString(),
+    messages: updatedMsgs,
   });
-  activeProof.status  = action;
-  activeProof.comment = comment;
-  // update cache
+
+  activeProof.status   = action;
+  activeProof.comment  = comment;
+  activeProof.messages = updatedMsgs;
   const idx = cache.proofs.findIndex(p => p.id === activeProof.id);
-  if (idx >= 0) cache.proofs[idx] = { ...cache.proofs[idx], status: action, comment };
+  if (idx >= 0) cache.proofs[idx] = { ...cache.proofs[idx], status: action, comment, messages: updatedMsgs };
+
   updateBadges();
   renderProofs();
   renderDashboard();
   closeModal('modal-proof');
   toast(action === 'approved' ? 'Proof approved!' : 'Change request submitted.', 'success');
 
-  // Notify admin
   fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1446,6 +1647,42 @@ window.respondToProof = async (action) => {
       clientEmail: currentUser.email,
       itemName: activeProof.name || 'Untitled proof',
       comment,
+    })
+  }).catch(() => {});
+};
+
+// Client sends a thread message without changing status
+window.sendClientProofMessage = async () => {
+  if (!activeProof) return;
+  const text = document.getElementById('proof-thread-msg').value.trim();
+  if (!text) return;
+  const uid = currentUser.uid;
+
+  const newMsg = {
+    sender: 'client',
+    text,
+    timestamp: new Date().toISOString(),
+  };
+  const updatedMsgs = [...(activeProof.messages || []), newMsg];
+
+  await fbUpdate(`clients/${uid}/proofs/${activeProof.id}`, { messages: updatedMsgs });
+  activeProof.messages = updatedMsgs;
+  const idx = cache.proofs.findIndex(p => p.id === activeProof.id);
+  if (idx >= 0) cache.proofs[idx] = { ...cache.proofs[idx], messages: updatedMsgs };
+
+  document.getElementById('proof-thread-msg').value = '';
+  renderClientProofThread(activeProof);
+
+  // Notify admin
+  fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'notify_admin',
+      type: 'proof_changes',
+      clientEmail: currentUser.email,
+      itemName: activeProof.name || 'Untitled proof',
+      comment: text,
     })
   }).catch(() => {});
 };
