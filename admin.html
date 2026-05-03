@@ -760,6 +760,55 @@
   </div>
 </div>
 
+<!-- Admin Order Request Detail Modal -->
+<div class="modal-overlay" id="modal-admin-request">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="areq-title">Order request</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:3px" id="areq-meta"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="areq-status"></div>
+        <button class="modal-close" onclick="closeModal('modal-admin-request')">×</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Client</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="areq-client"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Submitted</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="areq-date"></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Items requested</div>
+      <div id="areq-lines"></div>
+    </div>
+
+    <div id="areq-note-section" class="hidden" style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Client note</div>
+      <div style="background:var(--green-pale);border-left:3px solid var(--green);border-radius:4px;padding:10px 14px;font-size:14px;color:var(--charcoal)" id="areq-note"></div>
+    </div>
+
+    <div id="areq-actions" class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-request')">Close</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="areq-quote-btn">New quote</button>
+        <button class="btn btn-primary btn-sm" id="areq-invoice-btn">Convert to invoice</button>
+      </div>
+    </div>
+    <div id="areq-actioned" class="modal-footer hidden">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-request')">Close</button>
+      <span class="text-muted" id="areq-actioned-label"></span>
+    </div>
+  </div>
+</div>
+
 <!-- Invite Client -->
 <div class="modal-overlay" id="modal-new-client">
   <div class="modal">
@@ -1284,13 +1333,14 @@ async function loadClientDetail(uid) {
   document.getElementById('detail-requests-tbody').innerHTML = requestsList.length === 0
     ? `<tr><td colspan="6"><div class="empty">No re-order requests yet.</div></td></tr>`
     : requestsList.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(r => `
-      <tr>
+      <tr style="cursor:pointer" onclick="openAdminRequestModal('${r.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
         <td style="font-weight:500">${esc(r.orderName||'—')}</td>
         <td>${fmtDate(r.createdAt)}</td>
         <td style="font-size:12px;color:var(--mid-gray)">${(r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
         <td style="font-size:13px;color:var(--mid-gray);max-width:160px">${esc(r.note||'—')}</td>
         <td>${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <td style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
           ${r.requestStatus === 'pending' ? `
             <button class="btn btn-ghost btn-sm" onclick="quoteFromRequest('${r.id}')">New quote</button>
             <button class="btn btn-primary btn-sm" onclick="invoiceFromRequest('${r.id}')">Convert to invoice</button>
@@ -1847,6 +1897,56 @@ window.markAsCompletedOrder = async (invoiceId) => {
   } catch(e) {
     toast('Failed to create order: ' + e.message, 'error');
   }
+};
+
+// ── ORDER REQUEST DETAIL MODAL ────────────────
+window.openAdminRequestModal = (requestId) => {
+  const r = selectedClientData.requests?.find(x => x.id === requestId);
+  if (!r) return;
+
+  document.getElementById('areq-title').textContent  = r.orderName || 'Order request';
+  document.getElementById('areq-client').textContent = selectedClient?.name || selectedClient?.email || '';
+  document.getElementById('areq-date').textContent   = fmtDate(r.createdAt);
+  document.getElementById('areq-status').innerHTML   = r.requestStatus === 'pending'
+    ? badge('pending')
+    : r.requestStatus === 'quoted' ? badge('approved') : badge('paid');
+  document.getElementById('areq-meta').textContent   = `From order: ${r.orderName||'—'}`;
+
+  // Line items
+  const lineItems = r.lineItems || [];
+  document.getElementById('areq-lines').innerHTML = lineItems.length > 0
+    ? lineItems.map(li => `
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
+          <div style="font-weight:500;color:var(--near-black)">${esc(li.description||li.desc||'')}</div>
+          <div style="color:var(--mid-gray)">Qty: ${li.qty||1}</div>
+        </div>`).join('')
+    : '<div style="font-size:13px;color:var(--mid-gray)">No items listed.</div>';
+
+  // Note
+  const noteSection = document.getElementById('areq-note-section');
+  if (r.note) {
+    document.getElementById('areq-note').textContent = r.note;
+    noteSection.classList.remove('hidden');
+  } else {
+    noteSection.classList.add('hidden');
+  }
+
+  // Actions vs actioned state
+  const actionsEl  = document.getElementById('areq-actions');
+  const actionedEl = document.getElementById('areq-actioned');
+  if (r.requestStatus === 'pending') {
+    actionsEl.classList.remove('hidden');
+    actionedEl.classList.add('hidden');
+    document.getElementById('areq-quote-btn').onclick   = () => { closeModal('modal-admin-request'); quoteFromRequest(requestId); };
+    document.getElementById('areq-invoice-btn').onclick = () => { closeModal('modal-admin-request'); invoiceFromRequest(requestId); };
+  } else {
+    actionsEl.classList.add('hidden');
+    actionedEl.classList.remove('hidden');
+    document.getElementById('areq-actioned-label').textContent =
+      r.requestStatus === 'quoted' ? 'Quote has been sent to client.' : 'Invoice has been sent to client.';
+  }
+
+  openModal('modal-admin-request');
 };
 
 // ── REQUEST → QUOTE / INVOICE ─────────────────
