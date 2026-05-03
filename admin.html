@@ -415,6 +415,34 @@
 
 <!-- ══════════════════ MODALS ══════════════════ -->
 
+<!-- View Approved Quote -->
+<div class="modal-overlay" id="modal-view-quote">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="vq-title">Quote</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:4px" id="vq-meta"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-view-quote')">×</button>
+    </div>
+
+    <div style="font-size:14px;color:var(--mid-gray);margin-bottom:16px" id="vq-desc"></div>
+
+    <div id="vq-lines"></div>
+
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--linen-dark)">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Client signature</div>
+      <img id="vq-sig" src="" alt="Client signature" style="max-height:80px;border:1px solid var(--border);border-radius:8px;background:var(--linen);padding:4px 8px;">
+      <div style="font-size:12px;color:var(--mid-gray);margin-top:8px" id="vq-signed-by"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-view-quote')">Close</button>
+      <button class="btn btn-primary btn-sm" onclick="printQuote()">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- Invite Client -->
 <div class="modal-overlay" id="modal-new-client">
   <div class="modal">
@@ -862,7 +890,10 @@ async function loadClientDetail(uid) {
         <td>$${(q.total||0).toFixed(2)}</td>
         <td>${badge(q.status||'pending')}</td>
         <td>${q.signatureUrl ? `<img class="sig-thumb" src="${esc(q.signatureUrl)}" alt="Signature">` : '—'}</td>
-        <td><button class="btn btn-ghost btn-sm" onclick="openEditQuoteModal('${q.id}')">Edit</button></td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditQuoteModal('${q.id}')">Edit</button>
+          ${q.status === 'approved' ? `<button class="btn btn-ghost btn-sm" onclick="openViewQuoteModal('${q.id}')">View</button>` : ''}
+        </td>
       </tr>`).join('');
 
   // Invoices tab
@@ -1239,6 +1270,91 @@ window.createInvoice = async () => {
   closeModal('modal-new-invoice');
   toast('Invoice saved and client notified!', 'success');
   await loadClientDetail(uid);
+};
+
+// ── VIEW APPROVED QUOTE ───────────────────────
+window.openViewQuoteModal = (quoteId) => {
+  const q = selectedClientData.quotes?.find(x => x.id === quoteId);
+  if (!q) return;
+
+  document.getElementById('vq-title').textContent = `Quote ${q.number || '#' + quoteId.slice(0,6).toUpperCase()}`;
+  document.getElementById('vq-meta').textContent  = `Approved ${fmtDate(q.approvedAt)} · ${esc(q.approvedBy || '')}`;
+  document.getElementById('vq-desc').textContent  = q.name || '';
+
+  // Line items
+  const lines = q.lineItems || [];
+  const total = q.total || lines.reduce((s, li) => s + (li.price || 0) * (li.qty || 1), 0);
+  document.getElementById('vq-lines').innerHTML = lines.map(li => `
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
+      <div>
+        <div style="font-weight:500;color:var(--near-black)">${esc(li.description || li.desc || '')}</div>
+        <div style="font-size:12px;color:var(--mid-gray)">Qty: ${li.qty || 1}</div>
+      </div>
+      <div style="font-weight:500">$${((li.price || 0) * (li.qty || 1)).toFixed(2)}</div>
+    </div>`).join('') +
+    `<div style="display:flex;justify-content:space-between;padding:14px 0 0;font-size:16px;font-weight:600;color:var(--near-black);border-top:2px solid var(--border);margin-top:4px">
+      <span>Total</span><span>$${total.toFixed(2)}</span>
+    </div>`;
+
+  // Signature
+  const sigImg = document.getElementById('vq-sig');
+  if (q.signatureUrl) {
+    sigImg.src = q.signatureUrl;
+    sigImg.style.display = 'block';
+  } else {
+    sigImg.style.display = 'none';
+  }
+  document.getElementById('vq-signed-by').textContent = q.approvedBy
+    ? `Signed by ${q.approvedBy} on ${fmtDate(q.approvedAt)}`
+    : '';
+
+  openModal('modal-view-quote');
+};
+
+window.printQuote = () => {
+  const modal = document.getElementById('modal-view-quote');
+  const title = document.getElementById('vq-title').textContent;
+  const desc  = document.getElementById('vq-desc').textContent;
+  const lines = document.getElementById('vq-lines').innerHTML;
+  const sigSrc = document.getElementById('vq-sig').src;
+  const meta   = document.getElementById('vq-meta').textContent;
+  const signedBy = document.getElementById('vq-signed-by').textContent;
+  const client = selectedClient?.name || selectedClient?.email || '';
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      body { font-family:'Outfit',sans-serif; color:#2E2B28; max-width:600px; margin:40px auto; padding:0 24px; }
+      .logo { font-family:'DM Serif Display',serif; font-size:22px; margin-bottom:32px; }
+      .logo .wc { color:#2D5A3D; }
+      .logo .wp { color:#2E2B28; font-style:italic; opacity:.45; }
+      h1 { font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; margin-bottom:4px; }
+      .meta { font-size:13px; color:#888780; margin-bottom:8px; }
+      .desc { font-size:14px; color:#888780; margin-bottom:24px; }
+      .line { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #E8E4DF; font-size:14px; }
+      .line-name { font-weight:500; }
+      .line-qty { font-size:12px; color:#888780; }
+      .total { display:flex; justify-content:space-between; padding:14px 0 0; font-size:16px; font-weight:600; border-top:2px solid #D3D1C7; margin-top:4px; }
+      .sig-section { margin-top:32px; padding-top:24px; border-top:1px solid #E8E4DF; }
+      .sig-label { font-size:11px; font-weight:600; color:#888780; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+      .sig-img { max-height:80px; border:1px solid #D3D1C7; border-radius:8px; background:#F7F6F3; padding:4px 8px; }
+      .signed-by { font-size:12px; color:#888780; margin-top:8px; }
+      @media print { body { margin:20px auto; } }
+    </style></head><body>
+    <div class="logo"><span class="wc">common</span> <span class="wp">print co.</span></div>
+    <h1>${title}</h1>
+    <div class="meta">Client: ${client} · ${meta}</div>
+    <div class="desc">${desc}</div>
+    ${lines}
+    <div class="sig-section">
+      <div class="sig-label">Client signature</div>
+      ${sigSrc ? `<img class="sig-img" src="${sigSrc}" alt="Signature">` : ''}
+      <div class="signed-by">${signedBy}</div>
+    </div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
 };
 
 // ── RESEND INVITE ─────────────────────────────
