@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — common print co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green:      #2D5A3D;
+    --green-mid:  #4A8C63;
+    --green-soft: #D6E8DC;
+    --green-pale: #EAF3EE;
+    --charcoal:   #2E2B28;
+    --linen:      #F7F6F3;
+    --linen-dark: #E8E4DF;
+    --mid-gray:   #888780;
+    --border:     #D3D1C7;
+    --near-black: #1E1C1A;
+    --white:      #FFFFFF;
+    --red:        #C0392B;
+    --amber:      #B7860B;
+    --amber-bg:   #FFF8E7;
+    --font-display: 'DM Serif Display', serif;
+    --font-body:    'Outfit', sans-serif;
+    --radius:       10px;
+    --radius-lg:    16px;
+    --shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    --sidebar-w:    260px;
+  }
+  body { font-family: var(--font-body); background: var(--linen); color: var(--charcoal); min-height: 100vh; font-size: 15px; }
+
+  /* ── LOGIN ── */
+  #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .login-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:44px; width:100%; max-width:400px; box-shadow:var(--shadow); }
+  .login-logo-wordmark { font-family:var(--font-display); font-size:22px; display:flex; flex-direction:column; line-height:1.1; margin-bottom:28px; }
+  .login-logo-wordmark .wc { color:var(--green); }
+  .login-logo-wordmark .wp { color:var(--charcoal); font-style:italic; opacity:.45; }
+  .login-sub { font-size:12px; color:var(--mid-gray); margin-top:4px; }
+  .login-card h2 { font-family:var(--font-display); font-size:20px; font-weight:400; margin-bottom:22px; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:11px; font-weight:500; color:var(--mid-gray); letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px; }
+  .field input, .field select, .field textarea {
+    width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius);
+    font-family:var(--font-body); font-size:14px; color:var(--charcoal); background:var(--linen); outline:none; transition:border-color .15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--green); background:var(--white); }
+  .field textarea { resize:vertical; min-height:80px; }
+  .field select { cursor:pointer; }
+  .form-error { font-size:13px; color:var(--red); margin-top:8px; display:none; }
+  .form-error.show { display:block; }
+
+  /* ── BUTTONS ── */
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 18px; border-radius:var(--radius); font-family:var(--font-body); font-size:14px; font-weight:500; cursor:pointer; border:none; transition:all .15s; }
+  .btn-primary { background:var(--green); color:var(--white); }
+  .btn-primary:hover { background:#245033; }
+  .btn-ghost { background:transparent; color:var(--green); border:1px solid var(--green-soft); }
+  .btn-ghost:hover { background:var(--green-pale); }
+  .btn-danger { background:var(--red); color:var(--white); }
+  .btn-danger:hover { background:#a93226; }
+  .btn-sm { padding:7px 14px; font-size:13px; }
+  .btn-block { width:100%; }
+
+  /* ── APP SHELL ── */
+  #app { display:none; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
+    background: var(--near-black); display:flex; flex-direction:column;
+    z-index: 50; padding: 0;
+  }
+  .sidebar-logo {
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-logo-wm { font-family:var(--font-display); font-size:18px; line-height:1.1; }
+  .sidebar-logo-wm .wc { color: #8bc4a0; }
+  .sidebar-logo-wm .wp { color: rgba(255,255,255,0.3); font-style:italic; }
+  .sidebar-admin-badge {
+    display:inline-block; margin-top:6px; font-size:10px; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,0.3);
+  }
+  .sidebar-nav { padding: 16px 12px; flex:1; overflow-y:auto; }
+  .sidebar-section-label {
+    font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+    color:rgba(255,255,255,0.25); padding:8px 12px 4px;
+  }
+  .sidebar-item {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius:8px; cursor:pointer;
+    color:rgba(255,255,255,0.55); font-size:14px; font-weight:400;
+    transition:all .15s; margin-bottom:2px; border:none; background:transparent;
+    font-family:var(--font-body); width:100%; text-align:left;
+  }
+  .sidebar-item:hover { color:rgba(255,255,255,0.9); background:rgba(255,255,255,0.06); }
+  .sidebar-item.active { color:var(--white); background:rgba(255,255,255,0.1); font-weight:500; }
+  .sidebar-item-icon { font-size:16px; width:20px; text-align:center; flex-shrink:0; }
+  .sidebar-badge {
+    margin-left:auto; background:var(--green); color:var(--white);
+    border-radius:10px; padding:1px 7px; font-size:11px; font-weight:600;
+  }
+  .sidebar-footer {
+    padding:16px 12px; border-top:1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-user { font-size:12px; color:rgba(255,255,255,0.35); margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ── MAIN CONTENT ── */
+  .main { margin-left:var(--sidebar-w); min-height:100vh; padding:36px 36px; }
+  .page { display:none; max-width:1100px; }
+  .page.active { display:block; }
+
+  .page-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+  .page-title { font-family:var(--font-display); font-size:28px; font-weight:400; color:var(--near-black); }
+  .page-sub { font-size:14px; color:var(--mid-gray); margin-top:4px; }
+
+  /* ── CARDS ── */
+  .card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-bottom:20px; }
+  .card-title { font-size:12px; font-weight:600; color:var(--mid-gray); letter-spacing:.06em; text-transform:uppercase; margin-bottom:16px; }
+
+  /* ── CLIENT LIST ── */
+  .client-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:16px; }
+  .client-card {
+    background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px;
+    cursor:pointer; transition:all .15s;
+  }
+  .client-card:hover { box-shadow:var(--shadow); border-color:var(--green-soft); }
+  .client-card.selected { border-color:var(--green); box-shadow:0 0 0 2px var(--green-soft); }
+  .client-name { font-size:16px; font-weight:500; color:var(--near-black); margin-bottom:4px; }
+  .client-email { font-size:13px; color:var(--mid-gray); margin-bottom:10px; }
+  .client-meta { display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* ── TABLES ── */
+  .data-table { width:100%; border-collapse:collapse; }
+  .data-table th { text-align:left; font-size:11px; font-weight:600; color:var(--mid-gray); letter-spacing:.06em; text-transform:uppercase; padding:0 16px 12px; border-bottom:1px solid var(--border); }
+  .data-table td { padding:13px 16px; font-size:14px; color:var(--charcoal); border-bottom:1px solid var(--linen-dark); vertical-align:middle; }
+  .data-table tr:last-child td { border-bottom:none; }
+  .data-table tr:hover td { background:var(--linen); }
+
+  /* ── BADGES ── */
+  .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+  .badge-pending  { background:var(--amber-bg); color:var(--amber); }
+  .badge-approved { background:var(--green-pale); color:var(--green); }
+  .badge-changes  { background:#FDECEA; color:var(--red); }
+  .badge-paid     { background:var(--green-pale); color:var(--green); }
+  .badge-unpaid   { background:var(--amber-bg); color:var(--amber); }
+  .badge-overdue  { background:#FDECEA; color:var(--red); }
+
+  /* ── MODAL ── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(30,28,26,0.55); z-index:200; align-items:center; justify-content:center; padding:24px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white); border-radius:var(--radius-lg); padding:32px; width:100%; max-width:580px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+  .modal-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+  .modal-title { font-family:var(--font-display); font-size:22px; font-weight:400; color:var(--near-black); }
+  .modal-close { width:32px; height:32px; border-radius:8px; border:1px solid var(--border); background:var(--linen); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--mid-gray); flex-shrink:0; }
+  .modal-close:hover { background:var(--linen-dark); }
+  .modal-footer { display:flex; gap:10px; margin-top:24px; justify-content:flex-end; }
+
+  /* ── LINE ITEM BUILDER ── */
+  .line-item-row { display:grid; grid-template-columns:1fr 80px 100px 36px; gap:8px; align-items:center; margin-bottom:8px; }
+  .line-item-row input { padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-body); font-size:13px; color:var(--charcoal); background:var(--linen); outline:none; }
+  .line-item-row input:focus { border-color:var(--green); background:var(--white); }
+  .remove-line { width:32px; height:32px; border:1px solid var(--border); background:var(--linen); border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--mid-gray); font-size:18px; flex-shrink:0; }
+  .remove-line:hover { background:#FDECEA; color:var(--red); border-color:#e8b4b0; }
+  .line-total-row { display:flex; justify-content:flex-end; font-size:15px; font-weight:600; color:var(--near-black); margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+
+  /* ── STAT CARDS ── */
+  .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+  .stat-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; }
+  .stat-label { font-size:12px; color:var(--mid-gray); font-weight:500; letter-spacing:.04em; text-transform:uppercase; margin-bottom:8px; }
+  .stat-num { font-family:var(--font-display); font-size:30px; color:var(--near-black); }
+  .stat-num.green { color:var(--green); }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone {
+    border:2px dashed var(--border); border-radius:var(--radius); background:var(--linen);
+    text-align:center; padding:28px; cursor:pointer; transition:all .15s;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color:var(--green); background:var(--green-pale); }
+  .upload-zone input[type=file] { display:none; }
+  .upload-icon { font-size:32px; margin-bottom:8px; }
+  .upload-label { font-size:14px; color:var(--mid-gray); }
+  .upload-label strong { color:var(--green); }
+  .upload-preview { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--green-pale); border:1px solid var(--green-soft); border-radius:var(--radius); margin-top:10px; font-size:13px; color:var(--green); }
+
+  /* ── TOAST ── */
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--near-black); color:var(--white); padding:12px 20px; border-radius:var(--radius); font-size:14px; font-weight:500; z-index:999; animation:slideUp .25s ease; max-width:320px; box-shadow:var(--shadow); }
+  .toast.success { background:var(--green); }
+  .toast.error { background:var(--red); }
+  @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+  /* ── MISC ── */
+  .hidden { display:none!important; }
+  .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-center { text-align:center; padding:48px; color:var(--mid-gray); }
+  .empty { text-align:center; padding:48px; color:var(--mid-gray); }
+  .empty-icon { font-size:36px; margin-bottom:10px; }
+  .divider { height:1px; background:var(--linen-dark); margin:16px 0; }
+  .text-muted { color:var(--mid-gray); font-size:13px; }
+
+  /* ── CLIENT DETAIL ── */
+  .detail-tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .detail-tab { padding:8px 16px 10px; font-size:13px; font-weight:500; color:var(--mid-gray); cursor:pointer; border:none; background:transparent; font-family:var(--font-body); border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+  .detail-tab:hover { color:var(--charcoal); }
+  .detail-tab.active { color:var(--green); border-bottom-color:var(--green); }
+  .detail-panel { display:none; }
+  .detail-panel.active { display:block; }
+
+  /* Client info row */
+  .info-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--linen-dark); font-size:14px; }
+  .info-row:last-child { border:none; }
+  .info-label { color:var(--mid-gray); font-size:13px; }
+  .info-val { font-weight:500; }
+
+  /* Signature image preview in quote table */
+  .sig-thumb { max-height:32px; border:1px solid var(--border); border-radius:4px; vertical-align:middle; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo-wordmark">
+      <span class="wc">common</span>
+      <span class="wp">print co.</span>
+      <span class="login-sub">Admin Panel</span>
+    </div>
+    <h2>Admin sign in</h2>
+    <div class="field"><label>Email</label><input type="email" id="login-email" autocomplete="email"></div>
+    <div class="field"><label>Password</label><input type="password" id="login-password"></div>
+    <div class="form-error" id="login-error"></div>
+    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-wm"><span class="wc">common</span> <span class="wp">print co.</span></div>
+      <div class="sidebar-admin-badge">Admin</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <button class="sidebar-item active" onclick="showPage('overview')" data-page="overview">
+        <span class="sidebar-item-icon">📊</span> Overview
+      </button>
+
+      <div class="sidebar-section-label" style="margin-top:12px">Clients</div>
+      <button class="sidebar-item" onclick="showPage('clients')" data-page="clients">
+        <span class="sidebar-item-icon">👤</span> All Clients
+      </button>
+      <button class="sidebar-item" onclick="openNewClientModal()" data-page="">
+        <span class="sidebar-item-icon">➕</span> Invite Client
+      </button>
+
+      <div class="sidebar-section-label" style="margin-top:12px">Work</div>
+      <button class="sidebar-item" onclick="showPage('proofs')" data-page="proofs">
+        <span class="sidebar-item-icon">🖼</span> Proofs
+        <span class="sidebar-badge hidden" id="sb-proofs"></span>
+      </button>
+      <button class="sidebar-item" onclick="showPage('quotes')" data-page="quotes">
+        <span class="sidebar-item-icon">📋</span> Quotes
+        <span class="sidebar-badge hidden" id="sb-quotes"></span>
+      </button>
+      <button class="sidebar-item" onclick="showPage('invoices')" data-page="invoices">
+        <span class="sidebar-item-icon">💳</span> Invoices
+        <span class="sidebar-badge hidden" id="sb-invoices"></span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-email"></div>
+      <button class="btn btn-ghost btn-sm" onclick="doSignOut()" style="width:100%;justify-content:center;border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5)">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div><div class="page-title">Overview</div><div class="page-sub">Everything at a glance.</div></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Clients</div><div class="stat-num green" id="ov-clients">—</div></div>
+        <div class="stat-card"><div class="stat-label">Proofs pending</div><div class="stat-num green" id="ov-proofs">—</div></div>
+        <div class="stat-card"><div class="stat-label">Quotes pending</div><div class="stat-num green" id="ov-quotes">—</div></div>
+        <div class="stat-card"><div class="stat-label">Invoices unpaid</div><div class="stat-num green" id="ov-invoices">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent activity (all clients)</div>
+        <div id="ov-activity"><div class="loading-center"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div class="page" id="page-clients">
+      <div class="page-header">
+        <div><div class="page-title">Clients</div><div class="page-sub">Click a client to manage their work.</div></div>
+        <button class="btn btn-primary" onclick="openNewClientModal()">+ Invite client</button>
+      </div>
+      <div class="client-grid" id="clients-grid">
+        <div class="loading-center" style="grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- CLIENT DETAIL (slides in as sub-page) -->
+    <div class="page" id="page-client-detail">
+      <div class="page-header">
+        <div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('clients')" style="margin-bottom:10px">← All clients</button>
+          <div class="page-title" id="detail-name">Client</div>
+          <div class="page-sub" id="detail-email-sub"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost btn-sm" onclick="openUploadProofModal()">Upload proof</button>
+          <button class="btn btn-ghost btn-sm" onclick="openNewQuoteModal()">Create quote</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewInvoiceModal()">Add invoice</button>
+        </div>
+      </div>
+
+      <div class="detail-tabs">
+        <button class="detail-tab active" onclick="showDetailTab('info')"    data-dtab="info">Info</button>
+        <button class="detail-tab"        onclick="showDetailTab('proofs')"  data-dtab="proofs">Proofs</button>
+        <button class="detail-tab"        onclick="showDetailTab('quotes')"  data-dtab="quotes">Quotes</button>
+        <button class="detail-tab"        onclick="showDetailTab('invoices')"data-dtab="invoices">Invoices</button>
+        <button class="detail-tab"        onclick="showDetailTab('orders')"  data-dtab="orders">Orders</button>
+      </div>
+
+      <div class="detail-panel active" id="dtab-info">
+        <div class="card"><div id="detail-info-body"><div class="loading-center"><div class="spinner"></div></div></div></div>
+      </div>
+      <div class="detail-panel" id="dtab-proofs">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table" id="detail-proofs-table">
+            <thead><tr><th>Name</th><th>Uploaded</th><th>Status</th><th>Comment</th><th></th></tr></thead>
+            <tbody id="detail-proofs-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="detail-panel" id="dtab-quotes">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table" id="detail-quotes-table">
+            <thead><tr><th>Quote #</th><th>Name</th><th>Date</th><th>Total</th><th>Status</th><th>Signature</th></tr></thead>
+            <tbody id="detail-quotes-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="detail-panel" id="dtab-invoices">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Invoice #</th><th>Name</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody id="detail-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="detail-panel" id="dtab-orders">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Order name</th><th>Completed</th><th>Total</th></tr></thead>
+            <tbody id="detail-orders-tbody"><tr><td colspan="3"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROOFS (all clients) -->
+    <div class="page" id="page-proofs">
+      <div class="page-header">
+        <div><div class="page-title">Proofs</div><div class="page-sub">All proofs across all clients.</div></div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Proof name</th><th>Uploaded</th><th>Status</th><th>Comment</th></tr></thead>
+          <tbody id="all-proofs-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QUOTES (all clients) -->
+    <div class="page" id="page-quotes">
+      <div class="page-header">
+        <div><div class="page-title">Quotes</div><div class="page-sub">All quotes across all clients.</div></div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Quote</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody id="all-quotes-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- INVOICES (all clients) -->
+    <div class="page" id="page-invoices">
+      <div class="page-header">
+        <div><div class="page-title">Invoices</div><div class="page-sub">All invoices across all clients.</div></div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Invoice</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="all-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /app -->
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- Invite Client -->
+<div class="modal-overlay" id="modal-new-client">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Invite a client</div>
+      <button class="modal-close" onclick="closeModal('modal-new-client')">×</button>
+    </div>
+    <p class="text-muted" style="margin-bottom:20px">Enter the client's details. They'll receive an email with a link to set their password and access the portal.</p>
+    <div class="field"><label>Client name / company</label><input type="text" id="nc-name" placeholder="Acme Corp"></div>
+    <div class="field"><label>Email address</label><input type="email" id="nc-email" placeholder="client@example.com"></div>
+    <div class="field"><label>Phone (optional)</label><input type="tel" id="nc-phone" placeholder="(734) 555-0100"></div>
+    <div class="form-error" id="nc-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-client')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="inviteClient()">Send invite</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Proof -->
+<div class="modal-overlay" id="modal-upload-proof">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Upload proof</div>
+      <button class="modal-close" onclick="closeModal('modal-upload-proof')">×</button>
+    </div>
+    <p class="text-muted" style="margin-bottom:20px">Client: <strong id="up-client-label"></strong></p>
+    <div class="field"><label>Proof name / label</label><input type="text" id="up-name" placeholder="e.g. Business Card Front — v2"></div>
+    <div class="upload-zone" id="up-zone" onclick="document.getElementById('up-file').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+      <input type="file" id="up-file" accept="image/*,.pdf" onchange="handleFileSelect(this)">
+      <div class="upload-icon">📎</div>
+      <div class="upload-label"><strong>Click to choose</strong> or drag and drop</div>
+      <div class="text-muted" style="font-size:12px;margin-top:4px">PNG, JPG, PDF — max 20MB</div>
+    </div>
+    <div id="up-preview" class="hidden"></div>
+    <div class="form-error" id="up-error" style="margin-top:8px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-upload-proof')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="uploadProof()">Upload &amp; notify client</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Quote -->
+<div class="modal-overlay" id="modal-new-quote">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Create quote</div>
+      <button class="modal-close" onclick="closeModal('modal-new-quote')">×</button>
+    </div>
+    <p class="text-muted" style="margin-bottom:20px">Client: <strong id="nq-client-label"></strong></p>
+    <div class="field"><label>Quote name / description</label><input type="text" id="nq-name" placeholder="e.g. 500 Business Cards — Matte"></div>
+    <div class="divider"></div>
+    <div class="card-title">Line items</div>
+    <div id="nq-lines"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addLineItem()" style="margin-top:8px">+ Add item</button>
+    <div class="line-total-row">Total: <span id="nq-total">$0.00</span></div>
+    <div class="form-error" id="nq-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-quote')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="createQuote()">Send quote to client</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Invoice -->
+<div class="modal-overlay" id="modal-new-invoice">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add invoice</div>
+      <button class="modal-close" onclick="closeModal('modal-new-invoice')">×</button>
+    </div>
+    <p class="text-muted" style="margin-bottom:20px">Client: <strong id="ni-client-label"></strong></p>
+    <div class="field"><label>Invoice name / description</label><input type="text" id="ni-name" placeholder="e.g. Business Cards — 500 units"></div>
+    <div class="field"><label>Invoice # (from Square)</label><input type="text" id="ni-number" placeholder="INV-001"></div>
+    <div class="field"><label>Amount ($)</label><input type="number" id="ni-amount" placeholder="0.00" step="0.01" min="0"></div>
+    <div class="field"><label>Due date</label><input type="date" id="ni-due"></div>
+    <div class="field"><label>Square invoice ID (optional)</label><input type="text" id="ni-square-id" placeholder="Square invoice ID for payment link"></div>
+    <div class="field"><label>Direct payment URL (optional)</label><input type="url" id="ni-pay-url" placeholder="https://squareup.com/pay/..."></div>
+    <div class="form-error" id="ni-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-invoice')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="createInvoice()">Save &amp; notify client</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SCRIPT ══════════════════ -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBaWzMQhge7idTeuFK5873thetQ30I6lTI",
+  authDomain: "common-print-portal.firebaseapp.com",
+  projectId: "common-print-portal",
+  storageBucket: "common-print-portal.firebasestorage.app",
+  messagingSenderId: "631291732179",
+  appId: "1:631291732179:web:a389c5763c08b22ff43426"
+};
+
+const WORKER_URL = 'https://print-portal-api.YOUR_SUBDOMAIN.workers.dev'; // ← update after deploy
+const ADMIN_EMAIL = 'matt@commonprintco.com'; // ← your admin email
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+window._auth = auth;
+
+const FS_BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
+
+// ── FIRESTORE HELPERS ────────────────────────
+async function getToken() { return auth.currentUser ? auth.currentUser.getIdToken() : null; }
+
+async function fbGet(path) {
+  const token = await getToken();
+  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  if (!res.ok) return null;
+  return res.json();
+}
+async function fbSet(path, data) {
+  const token = await getToken();
+  await fetch(`${FS_BASE}/${path}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: toFS(data) })
+  });
+}
+async function fbCreate(path, data) {
+  const token = await getToken();
+  const res = await fetch(`${FS_BASE}/${path}`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: toFS(data) })
+  });
+  return res.json();
+}
+async function fbList(path) {
+  const token = await getToken();
+  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  const d = await res.json();
+  return d.documents || [];
+}
+function toFS(obj) {
+  if (obj === null)             return { nullValue: null };
+  if (typeof obj === 'boolean') return { booleanValue: obj };
+  if (typeof obj === 'number')  return Number.isInteger(obj) ? { integerValue: obj } : { doubleValue: obj };
+  if (typeof obj === 'string')  return { stringValue: obj };
+  if (Array.isArray(obj))       return { arrayValue: { values: obj.map(toFS) } };
+  if (typeof obj === 'object')  return { mapValue: { fields: Object.fromEntries(Object.entries(obj).map(([k,v]) => [k,toFS(v)])) } };
+}
+function ff(fields) {
+  if (!fields) return {};
+  return Object.fromEntries(Object.entries(fields).map(([k,v]) => {
+    if (v.stringValue  !== undefined) return [k, v.stringValue];
+    if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+    if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+    if (v.booleanValue !== undefined) return [k, v.booleanValue];
+    if (v.nullValue    !== undefined) return [k, null];
+    if (v.arrayValue)  return [k, (v.arrayValue.values||[]).map(i=>ff({_:i})._)];
+    if (v.mapValue)    return [k, ff(v.mapValue.fields||{})];
+    return [k, null];
+  }));
+}
+function docId(doc) { return doc.name?.split('/').pop(); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ── STATE ─────────────────────────────────────
+let currentUser = null;
+let allClients = [];
+let selectedClient = null;
+let selectedClientData = {};
+let lineItems = [];
+let uploadFile = null;
+
+// ── AUTH ──────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    // Check admin
+    const adminDoc = await fbGet(`admins/${user.uid}`);
+    if (!adminDoc) {
+      await signOut(auth);
+      document.getElementById('login-error').textContent = 'Access denied. Admin accounts only.';
+      document.getElementById('login-error').classList.add('show');
+      return;
+    }
+    currentUser = user;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('sidebar-email').textContent = user.email;
+    await loadAllClients();
+    renderOverview();
+  } else {
+    currentUser = null;
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+window.doLogin = async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const pwd   = document.getElementById('login-password').value;
+  const err   = document.getElementById('login-error');
+  err.classList.remove('show');
+  try { await signInWithEmailAndPassword(auth, email, pwd); }
+  catch(e) {
+    const map = { 'auth/invalid-credential':'Incorrect email or password.', 'auth/too-many-requests':'Too many attempts.' };
+    err.textContent = map[e.code] || 'Sign in failed.';
+    err.classList.add('show');
+  }
+};
+window.doSignOut = async () => { await signOut(auth); };
+
+// ── LOAD DATA ─────────────────────────────────
+async function loadAllClients() {
+  const docs = await fbList('clients');
+  allClients = docs.map(d => ({ uid: docId(d), ...ff(d.fields) }));
+  renderClientsGrid();
+  await loadAllWorkItems();
+}
+
+async function loadAllWorkItems() {
+  const allProofs=[], allQuotes=[], allInvoices=[];
+  for (const c of allClients) {
+    const [ps, qs, is_] = await Promise.all([
+      fbList(`clients/${c.uid}/proofs`),
+      fbList(`clients/${c.uid}/quotes`),
+      fbList(`clients/${c.uid}/invoices`),
+    ]);
+    ps.forEach(d  => allProofs.push({ ...ff(d.fields),   id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    qs.forEach(d  => allQuotes.push({ ...ff(d.fields),   id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    is_.forEach(d => allInvoices.push({ ...ff(d.fields), id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+  }
+  window._allProofs   = allProofs;
+  window._allQuotes   = allQuotes;
+  window._allInvoices = allInvoices;
+  updateSidebarBadges();
+  renderOverviewActivity();
+  renderAllProofs();
+  renderAllQuotes();
+  renderAllInvoices();
+}
+
+function updateSidebarBadges() {
+  const pendingP  = (window._allProofs   ||[]).filter(p=>p.status==='pending').length;
+  const pendingQ  = (window._allQuotes   ||[]).filter(q=>q.status==='pending').length;
+  const unpaidI   = (window._allInvoices ||[]).filter(i=>i.status==='unpaid'||i.status==='overdue').length;
+  setSBadge('sb-proofs',   pendingP);
+  setSBadge('sb-quotes',   pendingQ);
+  setSBadge('sb-invoices', unpaidI);
+  document.getElementById('ov-clients').textContent  = allClients.length;
+  document.getElementById('ov-proofs').textContent   = pendingP;
+  document.getElementById('ov-quotes').textContent   = pendingQ;
+  document.getElementById('ov-invoices').textContent = unpaidI;
+}
+function setSBadge(id, n) {
+  const el = document.getElementById(id);
+  if (n > 0) { el.textContent = n; el.classList.remove('hidden'); }
+  else        { el.classList.add('hidden'); }
+}
+
+// ── NAVIGATION ────────────────────────────────
+window.showPage = (id) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const btn = document.querySelector(`[data-page="${id}"]`);
+  if (btn) btn.classList.add('active');
+};
+
+window.showDetailTab = (tab) => {
+  document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[data-dtab="${tab}"]`).classList.add('active');
+  document.getElementById('dtab-' + tab).classList.add('active');
+};
+
+// ── CLIENTS ───────────────────────────────────
+function renderClientsGrid() {
+  const grid = document.getElementById('clients-grid');
+  if (allClients.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">👤</div><div>No clients yet. Invite one above.</div></div>`;
+    return;
+  }
+  grid.innerHTML = allClients.map(c => `
+    <div class="client-card" onclick="openClientDetail('${c.uid}')">
+      <div class="client-name">${esc(c.name || c.email)}</div>
+      <div class="client-email">${esc(c.email || '')}</div>
+      <div class="client-meta">
+        ${badge(c.status || 'active')}
+        <span class="text-muted">${esc(c.phone || '')}</span>
+      </div>
+    </div>`).join('');
+}
+
+window.openClientDetail = async (uid) => {
+  selectedClient = allClients.find(c => c.uid === uid);
+  if (!selectedClient) return;
+  document.getElementById('detail-name').textContent   = selectedClient.name || selectedClient.email;
+  document.getElementById('detail-email-sub').textContent = selectedClient.email || '';
+  showPage('client-detail');
+  showDetailTab('info');
+  await loadClientDetail(uid);
+};
+
+async function loadClientDetail(uid) {
+  const [proofDocs, quoteDocs, invoiceDocs, orderDocs] = await Promise.all([
+    fbList(`clients/${uid}/proofs`),
+    fbList(`clients/${uid}/quotes`),
+    fbList(`clients/${uid}/invoices`),
+    fbList(`clients/${uid}/orders`),
+  ]);
+  const proofs   = proofDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
+  const quotes   = quoteDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
+  const invoices = invoiceDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
+  const orders   = orderDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
+  selectedClientData = { proofs, quotes, invoices, orders };
+
+  // Info tab
+  document.getElementById('detail-info-body').innerHTML = `
+    <div class="info-row"><span class="info-label">Name</span><span class="info-val">${esc(selectedClient.name||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Email</span><span class="info-val">${esc(selectedClient.email||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Phone</span><span class="info-val">${esc(selectedClient.phone||'—')}</span></div>
+    <div class="info-row"><span class="info-label">Added</span><span class="info-val">${fmtDate(selectedClient.createdAt)}</span></div>
+    <div class="info-row"><span class="info-label">Proofs</span><span class="info-val">${proofs.length}</span></div>
+    <div class="info-row"><span class="info-label">Quotes</span><span class="info-val">${quotes.length}</span></div>
+    <div class="info-row"><span class="info-label">Invoices</span><span class="info-val">${invoices.length}</span></div>
+  `;
+
+  // Proofs tab
+  document.getElementById('detail-proofs-tbody').innerHTML = proofs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
+    : proofs.map(p => `
+      <tr>
+        <td>${esc(p.name||'Untitled')}</td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td>${badge(p.status||'pending')}</td>
+        <td class="text-muted">${esc(p.comment||'—')}</td>
+        <td>${p.fileUrl ? `<a href="${esc(p.fileUrl)}" target="_blank" class="btn btn-ghost btn-sm">View</a>` : ''}</td>
+      </tr>`).join('');
+
+  // Quotes tab
+  document.getElementById('detail-quotes-tbody').innerHTML = quotes.length === 0
+    ? `<tr><td colspan="6"><div class="empty">No quotes yet.</div></td></tr>`
+    : quotes.map(q => `
+      <tr>
+        <td>${esc(q.number||q.id.slice(0,6).toUpperCase())}</td>
+        <td>${esc(q.name||'—')}</td>
+        <td>${fmtDate(q.createdAt)}</td>
+        <td>$${(q.total||0).toFixed(2)}</td>
+        <td>${badge(q.status||'pending')}</td>
+        <td>${q.signatureUrl ? `<img class="sig-thumb" src="${esc(q.signatureUrl)}" alt="Signature">` : '—'}</td>
+      </tr>`).join('');
+
+  // Invoices tab
+  document.getElementById('detail-invoices-tbody').innerHTML = invoices.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No invoices yet.</div></td></tr>`
+    : invoices.map(i => `
+      <tr>
+        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+        <td>${esc(i.name||'—')}</td>
+        <td>${fmtDate(i.dueDate)}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.status||'unpaid')}</td>
+      </tr>`).join('');
+
+  // Orders tab
+  document.getElementById('detail-orders-tbody').innerHTML = orders.length === 0
+    ? `<tr><td colspan="3"><div class="empty">No orders yet.</div></td></tr>`
+    : orders.map(o => `
+      <tr>
+        <td>${esc(o.name||'Order')}</td>
+        <td>${fmtDate(o.completedAt||o.createdAt)}</td>
+        <td>$${(o.total||0).toFixed(2)}</td>
+      </tr>`).join('');
+}
+
+// ── ALL WORK ITEMS ────────────────────────────
+function renderAllProofs() {
+  const proofs = window._allProofs || [];
+  document.getElementById('all-proofs-tbody').innerHTML = proofs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
+    : proofs.map(p => `
+      <tr>
+        <td><strong>${esc(p.clientName)}</strong></td>
+        <td>${esc(p.name||'Untitled')}</td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td>${badge(p.status||'pending')}</td>
+        <td class="text-muted">${esc(p.comment||'—')}</td>
+      </tr>`).join('');
+}
+function renderAllQuotes() {
+  const qs = window._allQuotes || [];
+  document.getElementById('all-quotes-tbody').innerHTML = qs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No quotes yet.</div></td></tr>`
+    : qs.map(q => `
+      <tr>
+        <td><strong>${esc(q.clientName)}</strong></td>
+        <td>${esc(q.name||q.id.slice(0,6).toUpperCase())}</td>
+        <td>${fmtDate(q.createdAt)}</td>
+        <td>$${(q.total||0).toFixed(2)}</td>
+        <td>${badge(q.status||'pending')}</td>
+      </tr>`).join('');
+}
+function renderAllInvoices() {
+  const is_ = window._allInvoices || [];
+  document.getElementById('all-invoices-tbody').innerHTML = is_.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No invoices yet.</div></td></tr>`
+    : is_.map(i => `
+      <tr>
+        <td><strong>${esc(i.clientName)}</strong></td>
+        <td>${esc(i.name||i.id.slice(0,6).toUpperCase())}</td>
+        <td>${fmtDate(i.dueDate)}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.status||'unpaid')}</td>
+      </tr>`).join('');
+}
+
+// ── OVERVIEW ACTIVITY ─────────────────────────
+function renderOverview() { updateSidebarBadges(); }
+function renderOverviewActivity() {
+  const all = [
+    ...(window._allProofs   ||[]).map(p => ({ date:p.createdAt||'', text:`Proof uploaded for ${p.clientName}: ${p.name||'Untitled'}`, status:p.status })),
+    ...(window._allQuotes   ||[]).map(q => ({ date:q.createdAt||'', text:`Quote sent to ${q.clientName}: ${q.name||'Untitled'}`,      status:q.status })),
+    ...(window._allInvoices ||[]).map(i => ({ date:i.createdAt||'', text:`Invoice for ${i.clientName}: ${i.name||'Untitled'}`,        status:i.status })),
+  ].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 12);
+
+  const el = document.getElementById('ov-activity');
+  el.innerHTML = all.length === 0
+    ? `<div class="empty">No activity yet.</div>`
+    : all.map(a => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--linen-dark)">
+        <div style="font-size:14px">${esc(a.text)}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;margin-left:16px">
+          ${badge(a.status)}
+          <span class="text-muted">${fmtDate(a.date)}</span>
+        </div>
+      </div>`).join('');
+}
+
+// ── INVITE CLIENT ─────────────────────────────
+window.openNewClientModal = () => {
+  document.getElementById('nc-name').value=''; document.getElementById('nc-email').value=''; document.getElementById('nc-phone').value='';
+  document.getElementById('nc-error').classList.remove('show');
+  openModal('modal-new-client');
+};
+
+window.inviteClient = async () => {
+  const name  = document.getElementById('nc-name').value.trim();
+  const email = document.getElementById('nc-email').value.trim();
+  const phone = document.getElementById('nc-phone').value.trim();
+  const err   = document.getElementById('nc-error');
+  if (!email) { err.textContent='Email is required.'; err.classList.add('show'); return; }
+
+  try {
+    // Call worker to create Firebase Auth user + send invite email
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'invite_client', email, name, phone, adminEmail: ADMIN_EMAIL })
+    });
+    const data = await res.json();
+    if (!data.uid) throw new Error(data.error || 'Failed');
+
+    // Save client profile in Firestore
+    await fbSet(`clients/${data.uid}`, { name, email, phone, createdAt: new Date().toISOString(), status:'active' });
+
+    allClients.push({ uid: data.uid, name, email, phone, status:'active' });
+    renderClientsGrid();
+    closeModal('modal-new-client');
+    toast(`Invite sent to ${email}`, 'success');
+  } catch(e) {
+    err.textContent = e.message || 'Failed to invite client.';
+    err.classList.add('show');
+  }
+};
+
+// ── UPLOAD PROOF ──────────────────────────────
+window.openUploadProofModal = () => {
+  if (!selectedClient) return;
+  document.getElementById('up-client-label').textContent = selectedClient.name || selectedClient.email;
+  document.getElementById('up-name').value = '';
+  document.getElementById('up-preview').innerHTML = '';
+  document.getElementById('up-preview').classList.add('hidden');
+  document.getElementById('up-error').classList.remove('show');
+  uploadFile = null;
+  openModal('modal-upload-proof');
+};
+
+window.handleFileSelect = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  uploadFile = file;
+  document.getElementById('up-preview').innerHTML = `<div class="upload-preview">📎 ${esc(file.name)} (${(file.size/1024/1024).toFixed(1)} MB)</div>`;
+  document.getElementById('up-preview').classList.remove('hidden');
+};
+window.handleDrop = (e) => {
+  e.preventDefault(); document.getElementById('up-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) { uploadFile = file; document.getElementById('up-file').files = e.dataTransfer.files; handleFileSelect({files:[file]}); }
+};
+window.handleDragOver  = (e) => { e.preventDefault(); document.getElementById('up-zone').classList.add('drag-over'); };
+window.handleDragLeave = ()  => { document.getElementById('up-zone').classList.remove('drag-over'); };
+
+window.uploadProof = async () => {
+  const name = document.getElementById('up-name').value.trim();
+  const err  = document.getElementById('up-error');
+  if (!name)        { err.textContent='Please enter a proof name.'; err.classList.add('show'); return; }
+  if (!uploadFile)  { err.textContent='Please choose a file.'; err.classList.add('show'); return; }
+
+  try {
+    const uid   = selectedClient.uid;
+    const token = await getToken();
+    const proofId   = genId();
+    const ext       = uploadFile.name.split('.').pop().toLowerCase();
+    const isImage   = ['png','jpg','jpeg','webp','gif'].includes(ext);
+    const storagePath = `clients/${uid}/proofs/${proofId}.${ext}`;
+    const uploadUrl   = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(storagePath)}`;
+
+    const uploadRes = await fetch(uploadUrl, {
+      method:'POST',
+      headers:{ Authorization:'Bearer '+token, 'Content-Type': uploadFile.type || 'application/octet-stream' },
+      body: uploadFile
+    });
+    if (!uploadRes.ok) throw new Error('Upload failed');
+    const fileUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`;
+
+    await fbSet(`clients/${uid}/proofs/${proofId}`, {
+      name, fileUrl, fileType: isImage ? 'image' : 'pdf',
+      status:'pending', createdAt: new Date().toISOString()
+    });
+
+    // Notify client via worker
+    await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'proof', itemName: name })
+    }).catch(()=>{});
+
+    closeModal('modal-upload-proof');
+    toast('Proof uploaded and client notified!', 'success');
+    await loadClientDetail(uid);
+  } catch(e) {
+    err.textContent = 'Upload failed. Please try again.';
+    err.classList.add('show');
+  }
+};
+
+// ── QUOTE BUILDER ─────────────────────────────
+window.openNewQuoteModal = () => {
+  if (!selectedClient) return;
+  document.getElementById('nq-client-label').textContent = selectedClient.name || selectedClient.email;
+  document.getElementById('nq-name').value = '';
+  document.getElementById('nq-error').classList.remove('show');
+  lineItems = [];
+  addLineItem();
+  openModal('modal-new-quote');
+};
+
+window.addLineItem = () => {
+  const id = lineItems.length;
+  lineItems.push({ desc:'', qty:1, price:0 });
+  renderLineItems();
+};
+window.removeLineItem = (i) => {
+  lineItems.splice(i, 1);
+  renderLineItems();
+};
+window.updateLineItem = (i, field, val) => {
+  lineItems[i][field] = field === 'desc' ? val : parseFloat(val)||0;
+  document.getElementById('nq-total').textContent = '$' + lineItems.reduce((s,li)=>s+(li.price||0)*(li.qty||1),0).toFixed(2);
+};
+
+function renderLineItems() {
+  const lineHeader = `<div class="line-item-row" style="margin-bottom:4px"><span class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Description</span><span class="text-muted" style="font-size:11px">Qty</span><span class="text-muted" style="font-size:11px">Unit price</span><span></span></div>`;
+  document.getElementById('nq-lines').innerHTML = lineHeader + lineItems.map((li, i) => `
+    <div class="line-item-row">
+      <input type="text" placeholder="Item description" value="${esc(li.desc)}" oninput="updateLineItem(${i},'desc',this.value)">
+      <input type="number" placeholder="1" min="1" value="${li.qty}" oninput="updateLineItem(${i},'qty',this.value)">
+      <input type="number" placeholder="0.00" step="0.01" min="0" value="${li.price||''}" oninput="updateLineItem(${i},'price',this.value)">
+      <button class="remove-line" onclick="removeLineItem(${i})">×</button>
+    </div>`).join('');
+  document.getElementById('nq-total').textContent = '$' + lineItems.reduce((s,li)=>s+(li.price||0)*(li.qty||1),0).toFixed(2);
+}
+
+window.createQuote = async () => {
+  const name = document.getElementById('nq-name').value.trim();
+  const err  = document.getElementById('nq-error');
+  if (!name) { err.textContent='Please enter a quote name.'; err.classList.add('show'); return; }
+  if (lineItems.length === 0 || !lineItems.some(li=>li.desc)) { err.textContent='Add at least one line item.'; err.classList.add('show'); return; }
+
+  const uid    = selectedClient.uid;
+  const quoteId = genId();
+  const total  = lineItems.reduce((s,li)=>s+(li.price||0)*(li.qty||1), 0);
+  const number = 'Q-' + Date.now().toString().slice(-5);
+
+  await fbSet(`clients/${uid}/quotes/${quoteId}`, {
+    name, number, total, lineItems, status:'pending', createdAt: new Date().toISOString()
+  });
+
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'quote', itemName: name, amount: total })
+  }).catch(()=>{});
+
+  closeModal('modal-new-quote');
+  toast('Quote sent to client!', 'success');
+  await loadClientDetail(uid);
+};
+
+// ── INVOICE ───────────────────────────────────
+window.openNewInvoiceModal = () => {
+  if (!selectedClient) return;
+  document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
+  ['ni-name','ni-number','ni-amount','ni-due','ni-square-id','ni-pay-url'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('ni-error').classList.remove('show');
+  openModal('modal-new-invoice');
+};
+
+window.createInvoice = async () => {
+  const name     = document.getElementById('ni-name').value.trim();
+  const number   = document.getElementById('ni-number').value.trim();
+  const amount   = parseFloat(document.getElementById('ni-amount').value)||0;
+  const dueDate  = document.getElementById('ni-due').value;
+  const sqId     = document.getElementById('ni-square-id').value.trim();
+  const payUrl   = document.getElementById('ni-pay-url').value.trim();
+  const err      = document.getElementById('ni-error');
+  if (!name || !amount) { err.textContent='Name and amount are required.'; err.classList.add('show'); return; }
+
+  const uid = selectedClient.uid;
+  const invId = genId();
+  await fbSet(`clients/${uid}/invoices/${invId}`, {
+    name, number, amount, dueDate, squareInvoiceId: sqId, paymentUrl: payUrl,
+    status:'unpaid', createdAt: new Date().toISOString()
+  });
+
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'invoice', itemName: name, amount })
+  }).catch(()=>{});
+
+  closeModal('modal-new-invoice');
+  toast('Invoice saved and client notified!', 'success');
+  await loadClientDetail(uid);
+};
+
+// ── MODALS ────────────────────────────────────
+window.openModal  = (id) => document.getElementById(id).classList.add('open');
+window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+
+// ── UTILS ─────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(iso) { if(!iso) return '—'; try { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch{return iso;} }
+function badge(status) {
+  const map = { pending:['badge-pending','Pending'], approved:['badge-approved','Approved'], changes:['badge-changes','Changes'], paid:['badge-paid','Paid'], unpaid:['badge-unpaid','Unpaid'], overdue:['badge-overdue','Overdue'], active:['badge-approved','Active'] };
+  const [cls, label] = map[status] || ['badge-pending', status||'—'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+window.toast = (msg, type='') => {
+  const t = document.createElement('div'); t.className='toast '+type; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),3500);
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+  if (e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') window.doLogin();
+});
+</script>
+</body>
+</html>

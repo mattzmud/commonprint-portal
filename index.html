@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Portal — common print co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:       #2D5A3D;
+    --green-mid:   #4A8C63;
+    --green-soft:  #D6E8DC;
+    --green-pale:  #EAF3EE;
+    --charcoal:    #2E2B28;
+    --linen:       #F7F6F3;
+    --linen-dark:  #E8E4DF;
+    --mid-gray:    #888780;
+    --border:      #D3D1C7;
+    --near-black:  #1E1C1A;
+    --white:       #FFFFFF;
+    --red:         #C0392B;
+    --amber:       #B7860B;
+    --amber-bg:    #FFF8E7;
+    --font-display: 'DM Serif Display', serif;
+    --font-body:    'Outfit', sans-serif;
+    --radius:       10px;
+    --radius-lg:    16px;
+    --shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--linen);
+    color: var(--charcoal);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--linen);
+  }
+  .login-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 48px 44px 44px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow);
+  }
+  .login-logo {
+    margin-bottom: 32px;
+  }
+  .login-logo-wordmark {
+    font-family: var(--font-display);
+    font-size: 24px;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+  .login-logo-wordmark .word-common {
+    color: var(--green);
+    font-style: normal;
+  }
+  .login-logo-wordmark .word-printco {
+    color: var(--charcoal);
+    font-style: italic;
+    opacity: 0.45;
+  }
+  .login-subtitle {
+    font-size: 13px;
+    color: var(--mid-gray);
+    margin-top: 6px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  .login-card h2 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--near-black);
+    font-weight: 400;
+    margin-bottom: 24px;
+  }
+
+  /* ── FORMS ── */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--mid-gray);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--charcoal);
+    background: var(--linen);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--green); background: var(--white); }
+  .field input::placeholder { color: var(--border); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: var(--white);
+    width: 100%;
+  }
+  .btn-primary:hover { background: #245033; }
+  .btn-primary:active { transform: scale(0.99); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--green);
+    border: 1px solid var(--green-soft);
+  }
+  .btn-ghost:hover { background: var(--green-pale); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
+  .btn-danger { background: var(--red); color: var(--white); }
+  .btn-danger:hover { background: #a93226; }
+
+  .forgot-link {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--mid-gray);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: color 0.15s, text-decoration-color 0.15s;
+  }
+  .forgot-link:hover { color: var(--green); text-decoration-color: var(--green); }
+
+  .form-error {
+    font-size: 13px;
+    color: var(--red);
+    margin-top: 10px;
+    display: none;
+  }
+  .form-error.show { display: block; }
+  .form-success {
+    font-size: 13px;
+    color: var(--green);
+    margin-top: 10px;
+    display: none;
+  }
+  .form-success.show { display: block; }
+
+  /* ── APP SHELL ── */
+  #app { display: none; min-height: 100vh; }
+
+  /* ── NAV ── */
+  .nav {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    cursor: default;
+  }
+  .nav-logo .word-common { color: var(--green); }
+  .nav-logo .word-printco { color: var(--charcoal); font-style: italic; opacity: 0.4; margin-left: 2px; }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .nav-tab {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mid-gray);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+  }
+  .nav-tab:hover { color: var(--charcoal); background: var(--linen); }
+  .nav-tab.active { color: var(--green); background: var(--green-pale); }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-user {
+    font-size: 13px;
+    color: var(--mid-gray);
+  }
+  .nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: var(--green);
+    color: var(--white);
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  /* ── PAGE CONTENT ── */
+  .page { display: none; padding: 36px 32px; max-width: 960px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  .page-header {
+    margin-bottom: 28px;
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--near-black);
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    font-size: 14px;
+    color: var(--mid-gray);
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mid-gray);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* ── DASHBOARD ── */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .dash-stat {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+  }
+  .dash-stat-label {
+    font-size: 12px;
+    color: var(--mid-gray);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .dash-stat-num {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--near-black);
+    line-height: 1;
+  }
+  .dash-stat-num.highlight { color: var(--green); }
+
+  .action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .action-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--linen);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .action-item:hover { background: var(--green-pale); border-color: var(--green-soft); }
+  .action-item-left { display: flex; align-items: center; gap: 12px; }
+  .action-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--green-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .action-label { font-size: 14px; font-weight: 500; color: var(--near-black); }
+  .action-sub { font-size: 12px; color: var(--mid-gray); margin-top: 1px; }
+  .action-arrow { color: var(--mid-gray); font-size: 18px; }
+
+  /* ── PROOFS ── */
+  .proofs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .proof-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+  }
+  .proof-card:hover { box-shadow: var(--shadow); }
+  .proof-thumb {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--linen-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+  }
+  .proof-thumb img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.2s;
+  }
+  .proof-thumb:hover img { transform: scale(1.03); }
+  .proof-info { padding: 14px 16px; }
+  .proof-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: var(--near-black); }
+  .proof-date { font-size: 12px; color: var(--mid-gray); margin-bottom: 10px; }
+  .proof-actions { display: flex; gap: 8px; }
+
+  /* ── STATUS BADGES ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .badge-pending { background: var(--amber-bg); color: var(--amber); }
+  .badge-approved { background: var(--green-pale); color: var(--green); }
+  .badge-changes { background: #FDECEA; color: var(--red); }
+  .badge-paid { background: var(--green-pale); color: var(--green); }
+  .badge-unpaid { background: var(--amber-bg); color: var(--amber); }
+  .badge-overdue { background: #FDECEA; color: var(--red); }
+
+  /* ── QUOTES / INVOICES TABLE ── */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--mid-gray);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--charcoal);
+    border-bottom: 1px solid var(--linen-dark);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--linen); }
+  .data-table .amount { font-family: var(--font-display); font-size: 16px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(30,28,26,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--near-black);
+  }
+  .modal-close {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--linen);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: var(--mid-gray);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .modal-close:hover { background: var(--linen-dark); }
+
+  /* ── ESIGN CANVAS ── */
+  .sig-area {
+    margin-top: 20px;
+  }
+  .sig-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--mid-gray);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .sig-canvas-wrap {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--linen);
+    position: relative;
+  }
+  #sig-canvas {
+    display: block;
+    width: 100%;
+    height: 120px;
+    cursor: crosshair;
+    border-radius: var(--radius);
+  }
+  .sig-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    color: var(--border);
+    pointer-events: none;
+    font-style: italic;
+  }
+  .sig-hint.hidden { display: none; }
+  .sig-tools {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--near-black);
+    color: var(--white);
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 999;
+    animation: slideUp 0.25s ease;
+    max-width: 320px;
+    box-shadow: var(--shadow);
+  }
+  .toast.success { background: var(--green); }
+  .toast.error { background: var(--red); }
+  @keyframes slideUp {
+    from { transform: translateY(16px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--mid-gray);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-title { font-size: 16px; font-weight: 500; color: var(--charcoal); margin-bottom: 6px; }
+  .empty-sub { font-size: 14px; }
+
+  /* ── LOADING ── */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-center {
+    text-align: center;
+    padding: 64px;
+    color: var(--mid-gray);
+  }
+
+  /* ── QUOTE LINE ITEMS ── */
+  .line-items { width: 100%; }
+  .line-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--linen-dark);
+    font-size: 14px;
+  }
+  .line-item:last-child { border-bottom: none; }
+  .line-item-desc { color: var(--charcoal); }
+  .line-item-qty { color: var(--mid-gray); font-size: 13px; margin-top: 2px; }
+  .line-item-price { font-weight: 500; text-align: right; }
+  .line-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0 0;
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--near-black);
+    border-top: 2px solid var(--border);
+  }
+
+  /* ── ORDERS ── */
+  .order-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--linen-dark);
+  }
+  .order-row:last-child { border-bottom: none; }
+  .order-meta { flex: 1; }
+  .order-name { font-size: 14px; font-weight: 500; color: var(--near-black); margin-bottom: 3px; }
+  .order-date { font-size: 12px; color: var(--mid-gray); }
+  .order-amount { font-family: var(--font-display); font-size: 18px; color: var(--near-black); margin-right: 16px; }
+
+  /* ── PROOF VIEWER ── */
+  .proof-viewer-img {
+    width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    border-radius: var(--radius);
+    background: var(--linen);
+    display: block;
+    margin-bottom: 20px;
+  }
+  .comment-field {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--charcoal);
+    background: var(--linen);
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.15s;
+  }
+  .comment-field:focus { border-color: var(--green); background: var(--white); }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    justify-content: flex-end;
+  }
+
+  /* ── UTILITY ── */
+  .hidden { display: none !important; }
+  .divider { height: 1px; background: var(--linen-dark); margin: 20px 0; }
+  .text-muted { color: var(--mid-gray); font-size: 13px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+
+  @media (max-width: 700px) {
+    .nav { padding: 0 16px; }
+    .nav-tabs { display: none; }
+    .page { padding: 24px 16px; }
+    .dash-grid { grid-template-columns: 1fr 1fr; }
+    .modal { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-wordmark">
+        <span class="word-common">common</span>
+        <span class="word-printco">print co.</span>
+      </div>
+      <div class="login-subtitle">Client Portal</div>
+    </div>
+
+    <div id="login-view">
+      <h2>Welcome back.</h2>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="form-error" id="login-error"></div>
+      <button class="btn btn-primary mt-16" onclick="doLogin()">Sign in</button>
+      <span class="forgot-link" onclick="showForgot()">Forgot password?</span>
+    </div>
+
+    <div id="forgot-view" class="hidden">
+      <h2>Reset password.</h2>
+      <p class="text-muted" style="margin-bottom:20px">Enter your email and we'll send a reset link.</p>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="forgot-email" placeholder="you@example.com">
+      </div>
+      <div class="form-error" id="forgot-error"></div>
+      <div class="form-success" id="forgot-success"></div>
+      <button class="btn btn-primary mt-16" onclick="doReset()">Send reset link</button>
+      <span class="forgot-link" onclick="showLogin()">Back to sign in</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     APP
+══════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <span class="word-common">common</span><span class="word-printco">print co.</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('dashboard')" data-page="dashboard">Dashboard</button>
+      <button class="nav-tab" onclick="showPage('proofs')" data-page="proofs">
+        Proofs <span class="nav-badge hidden" id="badge-proofs"></span>
+      </button>
+      <button class="nav-tab" onclick="showPage('quotes')" data-page="quotes">
+        Quotes <span class="nav-badge hidden" id="badge-quotes"></span>
+      </button>
+      <button class="nav-tab" onclick="showPage('invoices')" data-page="invoices">
+        Invoices <span class="nav-badge hidden" id="badge-invoices"></span>
+      </button>
+      <button class="nav-tab" onclick="showPage('orders')" data-page="orders">Past Orders</button>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user-email"></span>
+      <button class="btn btn-ghost btn-sm" onclick="doSignOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div class="page-title" id="dash-greeting">Good morning.</div>
+      <div class="page-sub">Here's what needs your attention.</div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-stat">
+        <div class="dash-stat-label">Proofs to review</div>
+        <div class="dash-stat-num highlight" id="stat-proofs">—</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Quotes pending</div>
+        <div class="dash-stat-num highlight" id="stat-quotes">—</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-label">Invoices due</div>
+        <div class="dash-stat-num highlight" id="stat-invoices">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Action needed</div>
+      <div class="action-row" id="dash-actions">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent activity</div>
+      <div id="dash-recent">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROOFS -->
+  <div class="page" id="page-proofs">
+    <div class="page-header">
+      <div class="page-title">Proofs</div>
+      <div class="page-sub">Review and approve your print proofs before production.</div>
+    </div>
+    <div class="proofs-grid" id="proofs-grid">
+      <div class="loading-center" style="grid-column:1/-1"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- QUOTES -->
+  <div class="page" id="page-quotes">
+    <div class="page-header">
+      <div class="page-title">Quotes</div>
+      <div class="page-sub">Review and approve quotes with your e-signature.</div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="data-table" id="quotes-table">
+        <thead>
+          <tr>
+            <th>Quote</th>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="quotes-tbody">
+          <tr><td colspan="6" class="loading-center"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- INVOICES -->
+  <div class="page" id="page-invoices">
+    <div class="page-header">
+      <div class="page-title">Invoices</div>
+      <div class="page-sub">View and pay your invoices securely via Square.</div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="data-table" id="invoices-table">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Description</th>
+            <th>Due Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="invoices-tbody">
+          <tr><td colspan="6" class="loading-center"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="page" id="page-orders">
+    <div class="page-header">
+      <div class="page-title">Past Orders</div>
+      <div class="page-sub">Your completed print jobs. Re-order with one click.</div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="orders-list">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════ -->
+
+<!-- Proof Viewer -->
+<div class="modal-overlay" id="modal-proof">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-proof-title">Proof</div>
+      <button class="modal-close" onclick="closeModal('modal-proof')">×</button>
+    </div>
+    <img class="proof-viewer-img hidden" id="modal-proof-img" src="" alt="Proof">
+    <div id="modal-proof-pdf-link" class="hidden">
+      <a id="modal-proof-pdf-a" href="#" target="_blank" class="btn btn-ghost" style="margin-bottom:16px">
+        📄 Open PDF proof
+      </a>
+    </div>
+    <div id="modal-proof-status-row" style="margin-bottom:16px"></div>
+
+    <div id="modal-proof-actions">
+      <div class="field">
+        <label>Leave a comment (optional)</label>
+        <textarea class="comment-field" id="proof-comment" placeholder="Any notes for the team..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger btn-sm" onclick="respondToProof('changes')">Request changes</button>
+        <button class="btn btn-primary btn-sm" onclick="respondToProof('approved')">Approve proof ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quote Viewer / e-Sign -->
+<div class="modal-overlay" id="modal-quote">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-quote-title">Quote</div>
+      <button class="modal-close" onclick="closeModal('modal-quote')">×</button>
+    </div>
+
+    <div id="modal-quote-body">
+      <div class="text-muted" style="margin-bottom:16px" id="modal-quote-desc"></div>
+      <div class="line-items" id="modal-quote-lines"></div>
+      <div id="modal-quote-status-row" style="margin-top:16px"></div>
+    </div>
+
+    <div id="modal-quote-sign" class="hidden">
+      <div class="divider"></div>
+      <div class="sig-area">
+        <div class="sig-label">Your signature</div>
+        <div class="sig-canvas-wrap">
+          <canvas id="sig-canvas"></canvas>
+          <div class="sig-hint" id="sig-hint">Sign here</div>
+        </div>
+        <div class="sig-tools">
+          <button class="btn btn-ghost btn-sm" onclick="clearSig()">Clear</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-quote')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitQuoteApproval()">Approve &amp; Sign</button>
+      </div>
+    </div>
+
+    <div id="modal-quote-already-signed" class="hidden">
+      <div class="divider"></div>
+      <img id="modal-existing-sig" src="" alt="Your signature" style="max-height:80px;border-radius:8px;border:1px solid var(--border)">
+      <div class="text-muted mt-8">Signed and approved.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FIREBASE + APP LOGIC
+══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+         signOut, sendPasswordResetEmail }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+// ── CONFIG ──────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBaWzMQhge7idTeuFK5873thetQ30I6lTI",
+  authDomain: "common-print-portal.firebaseapp.com",
+  projectId: "common-print-portal",
+  storageBucket: "common-print-portal.firebasestorage.app",
+  messagingSenderId: "631291732179",
+  appId: "1:631291732179:web:a389c5763c08b22ff43426"
+};
+
+const WORKER_URL = 'https://print-portal-api.YOUR_SUBDOMAIN.workers.dev'; // ← update after worker deploy
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const FS_BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
+
+// ── FIRESTORE HELPERS ────────────────────────
+async function getToken() {
+  return auth.currentUser ? auth.currentUser.getIdToken() : null;
+}
+async function fbGet(path) {
+  const token = await getToken();
+  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  if (!res.ok) return null;
+  return res.json();
+}
+async function fbSet(path, data) {
+  const token = await getToken();
+  await fetch(`${FS_BASE}/${path}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: toFS(data) })
+  });
+}
+async function fbList(path) {
+  const token = await getToken();
+  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  const data = await res.json();
+  return data.documents || [];
+}
+function toFS(obj) {
+  if (obj === null)             return { nullValue: null };
+  if (typeof obj === 'boolean') return { booleanValue: obj };
+  if (typeof obj === 'number')  return Number.isInteger(obj) ? { integerValue: obj } : { doubleValue: obj };
+  if (typeof obj === 'string')  return { stringValue: obj };
+  if (Array.isArray(obj))       return { arrayValue: { values: obj.map(toFS) } };
+  if (typeof obj === 'object')  return { mapValue: { fields: Object.fromEntries(Object.entries(obj).map(([k,v]) => [k, toFS(v)])) } };
+}
+function ff(fields) {
+  if (!fields) return {};
+  return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
+    if (v.stringValue  !== undefined) return [k, v.stringValue];
+    if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+    if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+    if (v.booleanValue !== undefined) return [k, v.booleanValue];
+    if (v.nullValue    !== undefined) return [k, null];
+    if (v.arrayValue)  return [k, (v.arrayValue.values || []).map(i => ff({ _: i })._)];
+    if (v.mapValue)    return [k, ff(v.mapValue.fields || {})];
+    return [k, null];
+  }));
+}
+function docId(doc) { return doc.name?.split('/').pop(); }
+
+// ── STATE ────────────────────────────────────
+let currentUser = null;
+let cache = { proofs: null, quotes: null, invoices: null, orders: null };
+let activeProof = null;
+let activeQuote = null;
+
+// ── AUTH FLOW ────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('nav-user-email').textContent = user.email;
+    setGreeting();
+    await loadAll();
+  } else {
+    currentUser = null;
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+function setGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning.' : h < 17 ? 'Good afternoon.' : 'Good evening.';
+  document.getElementById('dash-greeting').textContent = greet;
+}
+
+// ── LOGIN / LOGOUT ───────────────────────────
+window.doLogin = async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const pwd   = document.getElementById('login-password').value;
+  const err   = document.getElementById('login-error');
+  err.classList.remove('show');
+  try {
+    await signInWithEmailAndPassword(auth, email, pwd);
+  } catch(e) {
+    err.textContent = friendlyAuthError(e.code);
+    err.classList.add('show');
+  }
+};
+
+window.doSignOut = async () => {
+  await signOut(auth);
+  cache = { proofs: null, quotes: null, invoices: null, orders: null };
+};
+
+window.showForgot = () => {
+  document.getElementById('login-view').classList.add('hidden');
+  document.getElementById('forgot-view').classList.remove('hidden');
+};
+window.showLogin = () => {
+  document.getElementById('forgot-view').classList.add('hidden');
+  document.getElementById('login-view').classList.remove('hidden');
+};
+
+window.doReset = async () => {
+  const email = document.getElementById('forgot-email').value.trim();
+  const err   = document.getElementById('forgot-error');
+  const ok    = document.getElementById('forgot-success');
+  err.classList.remove('show'); ok.classList.remove('show');
+  try {
+    await sendPasswordResetEmail(auth, email);
+    ok.textContent = 'Reset link sent! Check your inbox.';
+    ok.classList.add('show');
+  } catch(e) {
+    err.textContent = friendlyAuthError(e.code);
+    err.classList.add('show');
+  }
+};
+
+function friendlyAuthError(code) {
+  const map = {
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/user-not-found': 'No account found with that email.',
+    'auth/wrong-password': 'Incorrect password. Please try again.',
+    'auth/too-many-requests': 'Too many attempts. Please wait a moment.',
+    'auth/invalid-credential': 'Incorrect email or password.',
+  };
+  return map[code] || 'Something went wrong. Please try again.';
+}
+
+// ── NAVIGATION ───────────────────────────────
+window.showPage = (id) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`[data-page="${id}"]`).classList.add('active');
+  if (id === 'proofs'   && !cache.proofs)   renderProofs();
+  if (id === 'quotes'   && !cache.quotes)   renderQuotes();
+  if (id === 'invoices' && !cache.invoices) renderInvoices();
+  if (id === 'orders'   && !cache.orders)   renderOrders();
+};
+
+// ── LOAD ALL DATA ────────────────────────────
+async function loadAll() {
+  const uid = currentUser.uid;
+  const [proofDocs, quoteDocs, invoiceDocs, orderDocs] = await Promise.all([
+    fbList(`clients/${uid}/proofs`),
+    fbList(`clients/${uid}/quotes`),
+    fbList(`clients/${uid}/invoices`),
+    fbList(`clients/${uid}/orders`),
+  ]);
+
+  cache.proofs   = proofDocs.map(d  => ({ id: docId(d),  ...ff(d.fields) }));
+  cache.quotes   = quoteDocs.map(d  => ({ id: docId(d),  ...ff(d.fields) }));
+  cache.invoices = invoiceDocs.map(d => ({ id: docId(d), ...ff(d.fields) }));
+  cache.orders   = orderDocs.map(d  => ({ id: docId(d),  ...ff(d.fields) }));
+
+  updateBadges();
+  renderDashboard();
+  renderProofs();
+  renderQuotes();
+  renderInvoices();
+  renderOrders();
+}
+
+function updateBadges() {
+  const pendingProofs   = (cache.proofs   || []).filter(p => p.status === 'pending').length;
+  const pendingQuotes   = (cache.quotes   || []).filter(q => q.status === 'pending').length;
+  const unpaidInvoices  = (cache.invoices || []).filter(i => i.status === 'unpaid' || i.status === 'overdue').length;
+
+  setBadge('badge-proofs',   pendingProofs);
+  setBadge('badge-quotes',   pendingQuotes);
+  setBadge('badge-invoices', unpaidInvoices);
+
+  document.getElementById('stat-proofs').textContent   = pendingProofs;
+  document.getElementById('stat-quotes').textContent   = pendingQuotes;
+  document.getElementById('stat-invoices').textContent = unpaidInvoices;
+}
+
+function setBadge(id, count) {
+  const el = document.getElementById(id);
+  if (count > 0) { el.textContent = count; el.classList.remove('hidden'); }
+  else           { el.classList.add('hidden'); }
+}
+
+// ── DASHBOARD ────────────────────────────────
+function renderDashboard() {
+  const actionsEl = document.getElementById('dash-actions');
+  const recentEl  = document.getElementById('dash-recent');
+
+  const actions = [];
+  (cache.proofs  || []).filter(p => p.status === 'pending').forEach(p => {
+    actions.push({ icon: '🖼', label: p.name || 'Proof ready', sub: 'Tap to review and approve', page: 'proofs', id: p.id });
+  });
+  (cache.quotes  || []).filter(q => q.status === 'pending').forEach(q => {
+    actions.push({ icon: '📋', label: q.name || 'Quote ready', sub: `$${(q.total || 0).toFixed(2)} — tap to review and sign`, page: 'quotes', id: q.id });
+  });
+  (cache.invoices|| []).filter(i => i.status === 'unpaid' || i.status === 'overdue').forEach(inv => {
+    actions.push({ icon: '💳', label: inv.name || 'Invoice due', sub: `$${(inv.amount || 0).toFixed(2)} — tap to pay`, page: 'invoices', id: inv.id });
+  });
+
+  if (actions.length === 0) {
+    actionsEl.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">You're all caught up!</div><div class="empty-sub">No pending items right now.</div></div>`;
+  } else {
+    actionsEl.innerHTML = actions.map(a => `
+      <div class="action-item" onclick="showPage('${a.page}')">
+        <div class="action-item-left">
+          <div class="action-icon">${a.icon}</div>
+          <div>
+            <div class="action-label">${esc(a.label)}</div>
+            <div class="action-sub">${esc(a.sub)}</div>
+          </div>
+        </div>
+        <div class="action-arrow">›</div>
+      </div>`).join('');
+  }
+
+  // Recent activity feed
+  const allItems = [
+    ...(cache.proofs   || []).map(p => ({ date: p.createdAt || '', label: `Proof uploaded: ${p.name || 'Untitled'}`, status: p.status })),
+    ...(cache.quotes   || []).map(q => ({ date: q.createdAt || '', label: `Quote: ${q.name || 'Untitled'}`,         status: q.status })),
+    ...(cache.invoices || []).map(i => ({ date: i.createdAt || '', label: `Invoice: ${i.name || 'Untitled'}`,       status: i.status })),
+    ...(cache.orders   || []).map(o => ({ date: o.completedAt || o.createdAt || '', label: `Order completed: ${o.name || 'Untitled'}`, status: 'completed' })),
+  ].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 8);
+
+  if (allItems.length === 0) {
+    recentEl.innerHTML = `<div class="empty"><div class="empty-sub">No activity yet.</div></div>`;
+  } else {
+    recentEl.innerHTML = allItems.map(item => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--linen-dark)">
+        <div style="font-size:14px;color:var(--charcoal)">${esc(item.label)}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${badge(item.status)}
+          <div style="font-size:12px;color:var(--mid-gray)">${fmtDate(item.date)}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ── PROOFS ───────────────────────────────────
+function renderProofs() {
+  const grid = document.getElementById('proofs-grid');
+  if (!cache.proofs) return;
+  if (cache.proofs.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🖼</div><div class="empty-title">No proofs yet</div><div class="empty-sub">Proofs will appear here when uploaded.</div></div>`;
+    return;
+  }
+  grid.innerHTML = cache.proofs.map(p => `
+    <div class="proof-card">
+      <div class="proof-thumb" onclick="openProof('${p.id}')">
+        ${p.fileType === 'pdf'
+          ? `<div style="font-size:48px;color:var(--mid-gray)">📄</div>`
+          : (p.fileUrl ? `<img src="${esc(p.fileUrl)}" alt="${esc(p.name || '')}">` : `<div style="font-size:48px;color:var(--mid-gray)">🖼</div>`)}
+      </div>
+      <div class="proof-info">
+        <div class="proof-name">${esc(p.name || 'Untitled proof')}</div>
+        <div class="proof-date">${fmtDate(p.createdAt)}</div>
+        <div>${badge(p.status || 'pending')}</div>
+      </div>
+    </div>`).join('');
+}
+
+window.openProof = (id) => {
+  const p = cache.proofs.find(x => x.id === id);
+  if (!p) return;
+  activeProof = p;
+  document.getElementById('modal-proof-title').textContent = p.name || 'Proof';
+
+  // image or pdf
+  const img = document.getElementById('modal-proof-img');
+  const pdfLink = document.getElementById('modal-proof-pdf-link');
+  const pdfA    = document.getElementById('modal-proof-pdf-a');
+  if (p.fileType === 'pdf' && p.fileUrl) {
+    img.classList.add('hidden');
+    pdfA.href = p.fileUrl;
+    pdfLink.classList.remove('hidden');
+  } else if (p.fileUrl) {
+    img.src = p.fileUrl;
+    img.classList.remove('hidden');
+    pdfLink.classList.add('hidden');
+  }
+
+  document.getElementById('modal-proof-status-row').innerHTML = badge(p.status || 'pending');
+  document.getElementById('proof-comment').value = p.comment || '';
+
+  const actionsDiv = document.getElementById('modal-proof-actions');
+  if (p.status === 'approved' || p.status === 'changes') {
+    actionsDiv.classList.add('hidden');
+  } else {
+    actionsDiv.classList.remove('hidden');
+  }
+  openModal('modal-proof');
+};
+
+window.respondToProof = async (action) => {
+  if (!activeProof) return;
+  const comment = document.getElementById('proof-comment').value.trim();
+  const uid = currentUser.uid;
+  await fbSet(`clients/${uid}/proofs/${activeProof.id}`, {
+    status: action,
+    comment,
+    respondedAt: new Date().toISOString(),
+  });
+  activeProof.status  = action;
+  activeProof.comment = comment;
+  // update cache
+  const idx = cache.proofs.findIndex(p => p.id === activeProof.id);
+  if (idx >= 0) cache.proofs[idx] = { ...cache.proofs[idx], status: action, comment };
+  updateBadges();
+  renderProofs();
+  renderDashboard();
+  closeModal('modal-proof');
+  toast(action === 'approved' ? 'Proof approved!' : 'Change request submitted.', 'success');
+};
+
+// ── QUOTES ───────────────────────────────────
+function renderQuotes() {
+  const tbody = document.getElementById('quotes-tbody');
+  if (!cache.quotes) return;
+  if (cache.quotes.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No quotes yet</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = cache.quotes.map(q => `
+    <tr>
+      <td><strong>${esc(q.number || q.id.slice(0,6).toUpperCase())}</strong></td>
+      <td>${esc(q.name || '—')}</td>
+      <td>${fmtDate(q.createdAt)}</td>
+      <td class="amount">$${(q.total || 0).toFixed(2)}</td>
+      <td>${badge(q.status || 'pending')}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openQuote('${q.id}')">
+        ${q.status === 'pending' ? 'Review &amp; Sign' : 'View'}
+      </button></td>
+    </tr>`).join('');
+}
+
+window.openQuote = (id) => {
+  const q = cache.quotes.find(x => x.id === id);
+  if (!q) return;
+  activeQuote = q;
+  document.getElementById('modal-quote-title').textContent = `Quote ${q.number || '#' + q.id.slice(0,6).toUpperCase()}`;
+  document.getElementById('modal-quote-desc').textContent  = q.name || '';
+
+  // Line items
+  const lines = q.lineItems || [];
+  const linesHtml = lines.map(li => `
+    <div class="line-item">
+      <div><div class="line-item-desc">${esc(li.description || li.desc || '')}</div><div class="line-item-qty">Qty: ${li.qty || 1}</div></div>
+      <div class="line-item-price">$${((li.price || 0) * (li.qty || 1)).toFixed(2)}</div>
+    </div>`).join('');
+  const total = q.total || lines.reduce((s, li) => s + (li.price || 0) * (li.qty || 1), 0);
+  document.getElementById('modal-quote-lines').innerHTML = linesHtml +
+    `<div class="line-total"><span>Total</span><span>$${total.toFixed(2)}</span></div>`;
+
+  document.getElementById('modal-quote-status-row').innerHTML = badge(q.status || 'pending');
+
+  const signDiv   = document.getElementById('modal-quote-sign');
+  const signedDiv = document.getElementById('modal-quote-already-signed');
+
+  if (q.status === 'approved' && q.signatureUrl) {
+    signDiv.classList.add('hidden');
+    document.getElementById('modal-existing-sig').src = q.signatureUrl;
+    signedDiv.classList.remove('hidden');
+  } else if (q.status === 'pending') {
+    signedDiv.classList.add('hidden');
+    signDiv.classList.remove('hidden');
+    clearSig();
+  } else {
+    signDiv.classList.add('hidden');
+    signedDiv.classList.add('hidden');
+  }
+
+  openModal('modal-quote');
+};
+
+// ── E-SIGNATURE ──────────────────────────────
+let sigCanvas, sigCtx, sigDrawing = false, sigHasData = false;
+
+function initSigCanvas() {
+  sigCanvas = document.getElementById('sig-canvas');
+  sigCtx = sigCanvas.getContext('2d');
+  // Set actual pixel size
+  const rect = sigCanvas.getBoundingClientRect();
+  sigCanvas.width  = rect.width  || 496;
+  sigCanvas.height = 120;
+  sigCtx.strokeStyle = '#1E1C1A';
+  sigCtx.lineWidth   = 2;
+  sigCtx.lineCap     = 'round';
+  sigCtx.lineJoin    = 'round';
+
+  sigCanvas.addEventListener('mousedown', startSig);
+  sigCanvas.addEventListener('mousemove', drawSig);
+  sigCanvas.addEventListener('mouseup',   endSig);
+  sigCanvas.addEventListener('mouseleave',endSig);
+  sigCanvas.addEventListener('touchstart', e => { e.preventDefault(); startSig(e.touches[0]); }, { passive: false });
+  sigCanvas.addEventListener('touchmove',  e => { e.preventDefault(); drawSig(e.touches[0]);  }, { passive: false });
+  sigCanvas.addEventListener('touchend',   endSig);
+}
+
+function getSigPos(e) {
+  const r = sigCanvas.getBoundingClientRect();
+  const scaleX = sigCanvas.width  / r.width;
+  const scaleY = sigCanvas.height / r.height;
+  return { x: (e.clientX - r.left) * scaleX, y: (e.clientY - r.top) * scaleY };
+}
+function startSig(e) {
+  sigDrawing = true;
+  const { x, y } = getSigPos(e);
+  sigCtx.beginPath();
+  sigCtx.moveTo(x, y);
+  document.getElementById('sig-hint').classList.add('hidden');
+}
+function drawSig(e) {
+  if (!sigDrawing) return;
+  const { x, y } = getSigPos(e);
+  sigCtx.lineTo(x, y);
+  sigCtx.stroke();
+  sigHasData = true;
+}
+function endSig() { sigDrawing = false; }
+
+window.clearSig = () => {
+  if (!sigCanvas) initSigCanvas();
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigHasData = false;
+  document.getElementById('sig-hint').classList.remove('hidden');
+};
+
+window.submitQuoteApproval = async () => {
+  if (!sigHasData) { toast('Please sign above to approve.', 'error'); return; }
+  const uid = currentUser.uid;
+  const sigDataUrl = sigCanvas.toDataURL('image/png');
+
+  // Upload signature image to Firebase Storage via base64 REST call
+  try {
+    const base64data = sigDataUrl.split(',')[1];
+    const token = await getToken();
+    const storagePath = `clients/${uid}/signatures/${activeQuote.id}.png`;
+    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(storagePath)}`;
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'image/png',
+      },
+      body: Uint8Array.from(atob(base64data), c => c.charCodeAt(0))
+    });
+    if (!uploadRes.ok) throw new Error('Upload failed');
+    const uploadData = await uploadRes.json();
+    const signatureUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`;
+
+    await fbSet(`clients/${uid}/quotes/${activeQuote.id}`, {
+      status: 'approved',
+      signatureUrl,
+      approvedAt: new Date().toISOString(),
+      approvedBy: currentUser.email,
+    });
+
+    const idx = cache.quotes.findIndex(q => q.id === activeQuote.id);
+    if (idx >= 0) cache.quotes[idx] = { ...cache.quotes[idx], status: 'approved', signatureUrl };
+    updateBadges();
+    renderQuotes();
+    renderDashboard();
+    closeModal('modal-quote');
+    toast('Quote approved and signed!', 'success');
+  } catch(err) {
+    console.error(err);
+    toast('Something went wrong. Please try again.', 'error');
+  }
+};
+
+// ── INVOICES ─────────────────────────────────
+function renderInvoices() {
+  const tbody = document.getElementById('invoices-tbody');
+  if (!cache.invoices) return;
+  if (cache.invoices.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">💳</div><div class="empty-title">No invoices yet</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = cache.invoices.map(inv => `
+    <tr>
+      <td><strong>${esc(inv.number || inv.id.slice(0,6).toUpperCase())}</strong></td>
+      <td>${esc(inv.name || '—')}</td>
+      <td>${fmtDate(inv.dueDate)}</td>
+      <td class="amount">$${(inv.amount || 0).toFixed(2)}</td>
+      <td>${badge(inv.status || 'unpaid')}</td>
+      <td>
+        ${inv.status === 'unpaid' || inv.status === 'overdue'
+          ? `<button class="btn btn-primary btn-sm" onclick="payInvoice('${inv.id}')">Pay now</button>`
+          : `<span class="text-muted">Paid</span>`}
+      </td>
+    </tr>`).join('');
+}
+
+window.payInvoice = async (id) => {
+  const inv = cache.invoices.find(x => x.id === id);
+  if (!inv) return;
+
+  if (inv.paymentUrl) {
+    window.open(inv.paymentUrl, '_blank');
+    return;
+  }
+
+  // Fetch payment link from worker (Square)
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_payment_link', invoiceId: inv.squareInvoiceId || inv.id })
+    });
+    const data = await res.json();
+    if (data.paymentUrl) {
+      window.open(data.paymentUrl, '_blank');
+    } else {
+      toast('Payment link unavailable. Please contact us.', 'error');
+    }
+  } catch(e) {
+    toast('Unable to reach payment system. Please try again.', 'error');
+  }
+};
+
+// ── ORDERS ───────────────────────────────────
+function renderOrders() {
+  const list = document.getElementById('orders-list');
+  if (!cache.orders) return;
+  if (cache.orders.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-title">No past orders</div><div class="empty-sub">Completed orders will appear here.</div></div>`;
+    return;
+  }
+  list.innerHTML = cache.orders.map(o => `
+    <div class="order-row">
+      <div class="order-meta">
+        <div class="order-name">${esc(o.name || 'Order')}</div>
+        <div class="order-date">${fmtDate(o.completedAt || o.createdAt)}</div>
+      </div>
+      <div class="order-amount">$${(o.total || 0).toFixed(2)}</div>
+      <button class="btn btn-ghost btn-sm" onclick="requestReorder('${o.id}')">Re-order</button>
+    </div>`).join('');
+}
+
+window.requestReorder = async (id) => {
+  const o = cache.orders.find(x => x.id === id);
+  if (!o) return;
+  // Send re-order request to worker → email to admin
+  try {
+    await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'send_reorder',
+        clientEmail: currentUser.email,
+        orderName: o.name,
+        orderId: o.id,
+      })
+    });
+    toast(`Re-order request sent for "${o.name}"!`, 'success');
+  } catch(e) {
+    toast('Request sent! We\'ll be in touch soon.', 'success');
+  }
+};
+
+// ── MODAL HELPERS ────────────────────────────
+window.openModal = (id) => {
+  document.getElementById(id).classList.add('open');
+  if (id === 'modal-quote') {
+    // init canvas after modal opens (needs layout)
+    setTimeout(() => { if (!sigCanvas) initSigCanvas(); clearSig(); }, 50);
+  }
+};
+window.closeModal = (id) => { document.getElementById(id).classList.remove('open'); };
+
+// close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ── UTILS ────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  catch { return iso; }
+}
+function badge(status) {
+  const map = {
+    pending:   ['badge-pending',  'Pending'],
+    approved:  ['badge-approved', 'Approved'],
+    changes:   ['badge-changes',  'Changes requested'],
+    paid:      ['badge-paid',     'Paid'],
+    unpaid:    ['badge-unpaid',   'Unpaid'],
+    overdue:   ['badge-overdue',  'Overdue'],
+    completed: ['badge-approved', 'Completed'],
+  };
+  const [cls, label] = map[status] || ['badge-pending', status || 'Unknown'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+window.toast = (msg, type = '') => {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+};
+
+// expose firebaseConfig for storage calls
+window.firebaseConfig = firebaseConfig;
+
+// ── KEYBOARD ─────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
+    if (!document.getElementById('forgot-view').classList.contains('hidden')) window.doReset();
+    else window.doLogin();
+  }
+});
+</script>
+</body>
+</html>
