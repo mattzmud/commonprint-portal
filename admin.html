@@ -1171,7 +1171,7 @@ async function loadClientDetail(uid) {
         <td>${q.signatureUrl ? `<img class="sig-thumb" src="${esc(q.signatureUrl)}" alt="Signature">` : '—'}</td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="openEditQuoteModal('${q.id}')">Edit</button>
-          ${q.status === 'approved' ? `<button class="btn btn-ghost btn-sm" onclick="openViewQuoteModal('${q.id}')">View</button>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="openViewQuoteModal('${q.id}')">View</button>
           ${q.status === 'approved' && !q.convertedToInvoice ? `<button class="btn btn-primary btn-sm" onclick="convertQuoteToInvoice('${q.id}')">Convert to invoice</button>` : ''}
           ${q.convertedToInvoice ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Invoiced</span>` : ''}
           ${!q.convertedToInvoice ? `<button class="btn btn-danger btn-sm" onclick="cancelQuote('${q.id}','${esc(q.name||'this quote')}')">Cancel</button>` : ''}
@@ -2150,7 +2150,9 @@ window.openViewQuoteModal = (quoteId) => {
   if (!q) return;
 
   document.getElementById('vq-title').textContent = `Quote ${q.number || '#' + quoteId.slice(0,6).toUpperCase()}`;
-  document.getElementById('vq-meta').textContent  = `Approved ${fmtDate(q.approvedAt)} · ${esc(q.approvedBy || '')}`;
+  document.getElementById('vq-meta').textContent  = q.status === 'approved'
+    ? `Approved ${fmtDate(q.approvedAt)} · ${esc(q.approvedBy || '')}`
+    : `Created ${fmtDate(q.createdAt)} · ${badge(q.status || 'pending')}`;
   document.getElementById('vq-desc').textContent  = q.name || '';
 
   // Line items
