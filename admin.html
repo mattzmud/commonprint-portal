@@ -509,7 +509,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev';
-const ADMIN_EMAIL = 'matt@commonprintco.com';
+const ADMIN_EMAIL = 'matthew@commonprintco.com';
 
 let firebaseConfig = {};
 let app, auth;
@@ -753,6 +753,9 @@ async function loadClientDetail(uid) {
     <div class="info-row"><span class="info-label">Proofs</span><span class="info-val">${proofs.length}</span></div>
     <div class="info-row"><span class="info-label">Quotes</span><span class="info-val">${quotes.length}</span></div>
     <div class="info-row"><span class="info-label">Invoices</span><span class="info-val">${invoices.length}</span></div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--linen-dark)">
+      <button class="btn btn-ghost btn-sm" onclick="resendInvite('${esc(selectedClient.uid)}')">Resend portal invite</button>
+    </div>
   `;
 
   // Proofs tab
@@ -1069,6 +1072,24 @@ window.createInvoice = async () => {
   closeModal('modal-new-invoice');
   toast('Invoice saved and client notified!', 'success');
   await loadClientDetail(uid);
+};
+
+// ── RESEND INVITE ─────────────────────────────
+window.resendInvite = async (uid) => {
+  const client = allClients.find(c => c.uid === uid);
+  if (!client) return;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'resend_invite', email: client.email, name: client.name })
+    });
+    const data = await res.json();
+    if (data.ok) toast('Invite resent to ' + client.email, 'success');
+    else toast('Failed: ' + (data.error || 'Unknown error'), 'error');
+  } catch(e) {
+    toast('Failed to resend invite.', 'error');
+  }
 };
 
 // ── MODALS ────────────────────────────────────
