@@ -879,7 +879,10 @@
     <div id="modal-quote-body">
       <div class="text-muted" style="margin-bottom:16px" id="modal-quote-desc"></div>
       <div class="line-items" id="modal-quote-lines"></div>
-      <div id="modal-quote-status-row" style="margin-top:16px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;flex-wrap:wrap;gap:8px">
+        <div id="modal-quote-status-row"></div>
+        <button class="btn btn-ghost btn-sm" onclick="printClientQuote()" style="flex-shrink:0">Print / Save PDF</button>
+      </div>
     </div>
 
     <div id="modal-quote-sign" class="hidden">
@@ -1200,25 +1203,41 @@ function renderDashboard() {
 
   // Recent activity feed
   const allItems = [
-    ...(cache.proofs   || []).map(p => ({ date: p.createdAt || '', label: `Proof uploaded: ${p.name || 'Untitled'}`, status: p.status })),
-    ...(cache.quotes   || []).map(q => ({ date: q.createdAt || '', label: `Quote: ${q.name || 'Untitled'}`,         status: q.status })),
-    ...(cache.invoices || []).map(i => ({ date: i.createdAt || '', label: `Invoice: ${i.name || 'Untitled'}`,       status: i.status })),
-    ...(cache.orders   || []).map(o => ({ date: o.completedAt || o.createdAt || '', label: `Order completed: ${o.name || 'Untitled'}`, status: 'completed' })),
+    ...(cache.proofs   || []).map(p => ({ date: p.createdAt || '', label: `Proof: ${p.name || 'Untitled'}`,         status: p.status,   type:'proofs',   id: p.id })),
+    ...(cache.quotes   || []).map(q => ({ date: q.createdAt || '', label: `Quote: ${q.name || 'Untitled'}`,         status: q.status,   type:'quotes',   id: q.id })),
+    ...(cache.invoices || []).map(i => ({ date: i.createdAt || '', label: `Invoice: ${i.name || 'Untitled'}`,       status: i.status,   type:'invoices', id: i.id })),
+    ...(cache.orders   || []).map(o => ({ date: o.completedAt || o.createdAt || '', label: `Order: ${o.name || 'Untitled'}`, status: 'completed', type:'orders', id: o.id })),
   ].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 8);
 
   if (allItems.length === 0) {
     recentEl.innerHTML = `<div class="empty"><div class="empty-sub">No activity yet.</div></div>`;
   } else {
     recentEl.innerHTML = allItems.map(item => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--linen-dark)">
+      <div onclick="handleActivityClick('${item.type}','${item.id}')"
+        style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--linen-dark);cursor:pointer;border-radius:6px;transition:background .15s"
+        onmouseover="this.style.background='var(--green-pale)';this.style.padding='10px 8px'"
+        onmouseout="this.style.background='';this.style.padding='10px 0'">
         <div style="font-size:14px;color:var(--charcoal)">${esc(item.label)}</div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:12px">
           ${badge(item.status)}
           <div style="font-size:12px;color:var(--mid-gray)">${fmtDate(item.date)}</div>
+          <div style="color:var(--mid-gray);font-size:16px">›</div>
         </div>
       </div>`).join('');
   }
 }
+
+// ── ACTIVITY CLICK ───────────────────────────
+window.handleActivityClick = (type, id) => {
+  showPage(type);
+  // After navigating, open the specific item
+  setTimeout(() => {
+    if (type === 'proofs')   { const p = cache.proofs?.find(x=>x.id===id);   if(p) openProof(id); }
+    if (type === 'quotes')   { const q = cache.quotes?.find(x=>x.id===id);   if(q) openQuote(id); }
+    if (type === 'invoices') { /* invoices show inline in table, just navigate to tab */ }
+    if (type === 'orders')   { /* orders show inline in list, just navigate to tab */ }
+  }, 50);
+};
 
 // ── PROOFS ───────────────────────────────────
 function renderProofs() {
@@ -1589,6 +1608,51 @@ window.toast = (msg, type = '') => {
 
 // expose firebaseConfig for storage calls
 window.firebaseConfig = firebaseConfig;
+
+// ── PRINT QUOTE ──────────────────────────────
+window.printClientQuote = () => {
+  if (!activeQuote) return;
+  const q        = activeQuote;
+  const title    = document.getElementById('modal-quote-title').textContent;
+  const desc     = document.getElementById('modal-quote-desc').textContent;
+  const linesHtml= document.getElementById('modal-quote-lines').innerHTML;
+  const sigSrc   = document.getElementById('modal-existing-sig')?.src || '';
+  const isSigned = q.status === 'approved';
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>${esc(title)}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      body { font-family:'Outfit',sans-serif; color:#2E2B28; max-width:600px; margin:40px auto; padding:0 24px; }
+      .logo { font-family:'DM Serif Display',serif; font-size:22px; margin-bottom:32px; }
+      .logo .wc { color:#2D5A3D; }
+      .logo .wp { color:#2E2B28; font-style:italic; opacity:.45; }
+      h1 { font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; margin-bottom:4px; }
+      .desc { font-size:14px; color:#888780; margin-bottom:24px; }
+      .line-item { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #E8E4DF; font-size:14px; }
+      .line-total { display:flex; justify-content:space-between; padding:14px 0 0; font-size:16px; font-weight:600; border-top:2px solid #D3D1C7; margin-top:4px; }
+      .sig-section { margin-top:32px; padding-top:24px; border-top:1px solid #E8E4DF; }
+      .sig-label { font-size:11px; font-weight:600; color:#888780; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+      .sig-img { max-height:80px; border:1px solid #D3D1C7; border-radius:8px; background:#F7F6F3; padding:4px 8px; }
+      .sig-note { font-size:12px; color:#888780; margin-top:8px; }
+      .status { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; background:#EAF3EE; color:#2D5A3D; margin-bottom:20px; }
+      @media print { body { margin:20px auto; } }
+    </style></head><body>
+    <div class="logo"><span class="wc">common</span> <span class="wp">print co.</span></div>
+    <h1>${esc(title)}</h1>
+    <div class="desc">${esc(desc)}</div>
+    ${isSigned ? '<div class="status">Approved</div>' : ''}
+    ${linesHtml}
+    ${isSigned && sigSrc ? `
+      <div class="sig-section">
+        <div class="sig-label">Your signature</div>
+        <img class="sig-img" src="${sigSrc}" alt="Signature">
+        <div class="sig-note">Signed by ${esc(q.approvedBy || '')} on ${fmtDate(q.approvedAt)}</div>
+      </div>` : ''}
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+};
 
 // ── KEYBOARD ─────────────────────────────────
 document.addEventListener('keydown', e => {

@@ -964,23 +964,32 @@ function renderAllInvoices() {
 function renderOverview() { updateSidebarBadges(); }
 function renderOverviewActivity() {
   const all = [
-    ...(window._allProofs   ||[]).map(p => ({ date:p.createdAt||'', text:`Proof uploaded for ${p.clientName}: ${p.name||'Untitled'}`, status:p.status })),
-    ...(window._allQuotes   ||[]).map(q => ({ date:q.createdAt||'', text:`Quote sent to ${q.clientName}: ${q.name||'Untitled'}`,      status:q.status })),
-    ...(window._allInvoices ||[]).map(i => ({ date:i.createdAt||'', text:`Invoice for ${i.clientName}: ${i.name||'Untitled'}`,        status:i.status })),
+    ...(window._allProofs   ||[]).map(p => ({ date:p.createdAt||'', text:`Proof for ${p.clientName}: ${p.name||'Untitled'}`,   status:p.status,   clientUid:p.clientUid, tab:'proofs'   })),
+    ...(window._allQuotes   ||[]).map(q => ({ date:q.createdAt||'', text:`Quote for ${q.clientName}: ${q.name||'Untitled'}`,   status:q.status,   clientUid:q.clientUid, tab:'quotes'   })),
+    ...(window._allInvoices ||[]).map(i => ({ date:i.createdAt||'', text:`Invoice for ${i.clientName}: ${i.name||'Untitled'}`, status:i.status,   clientUid:i.clientUid, tab:'invoices' })),
   ].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 12);
 
   const el = document.getElementById('ov-activity');
   el.innerHTML = all.length === 0
     ? `<div class="empty">No activity yet.</div>`
     : all.map(a => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--linen-dark)">
+      <div onclick="navigateToClientTab('${a.clientUid}','${a.tab}')"
+        style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--linen-dark);cursor:pointer;border-radius:6px;transition:background .15s"
+        onmouseover="this.style.background='var(--green-pale)';this.style.padding='10px 8px'"
+        onmouseout="this.style.background='';this.style.padding='10px 0'">
         <div style="font-size:14px">${esc(a.text)}</div>
         <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;margin-left:16px">
           ${badge(a.status)}
           <span class="text-muted">${fmtDate(a.date)}</span>
+          <span style="color:var(--mid-gray);font-size:16px">›</span>
         </div>
       </div>`).join('');
 }
+
+window.navigateToClientTab = async (clientUid, tab) => {
+  await openClientDetail(clientUid);
+  showDetailTab(tab);
+};
 
 // ── INVITE CLIENT ─────────────────────────────
 window.openNewClientModal = () => {
