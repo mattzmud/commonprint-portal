@@ -295,6 +295,14 @@
         <div class="stat-card"><div class="stat-label">Invoices unpaid</div><div class="stat-num green" id="ov-invoices">—</div></div>
       </div>
       <div class="card">
+        <div class="card-title">Re-order requests</div>
+        <div id="ov-reorder-queue"><div class="loading-center"><div class="spinner"></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pending orders</div>
+        <div id="ov-pending-queue"><div class="loading-center"><div class="spinner"></div></div></div>
+      </div>
+      <div class="card">
         <div class="card-title">Recent activity (all clients)</div>
         <div id="ov-activity"><div class="loading-center"><div class="spinner"></div></div></div>
       </div>
@@ -327,11 +335,14 @@
       </div>
 
       <div class="detail-tabs">
-        <button class="detail-tab active" onclick="showDetailTab('info')"    data-dtab="info">Info</button>
-        <button class="detail-tab"        onclick="showDetailTab('proofs')"  data-dtab="proofs">Proofs</button>
-        <button class="detail-tab"        onclick="showDetailTab('quotes')"  data-dtab="quotes">Quotes</button>
-        <button class="detail-tab"        onclick="showDetailTab('invoices')"data-dtab="invoices">Invoices</button>
-        <button class="detail-tab"        onclick="showDetailTab('orders')"  data-dtab="orders">Orders</button>
+        <button class="detail-tab active" onclick="showDetailTab('info')"     data-dtab="info">Info</button>
+        <button class="detail-tab"        onclick="showDetailTab('proofs')"   data-dtab="proofs">Proofs</button>
+        <button class="detail-tab"        onclick="showDetailTab('quotes')"   data-dtab="quotes">Quotes</button>
+        <button class="detail-tab"        onclick="showDetailTab('invoices')" data-dtab="invoices">Invoices</button>
+        <button class="detail-tab"        onclick="showDetailTab('orders')"   data-dtab="orders">Orders</button>
+        <button class="detail-tab"        onclick="showDetailTab('requests')" data-dtab="requests">
+          Requests <span class="nav-badge hidden" id="badge-requests"></span>
+        </button>
       </div>
 
       <div class="detail-panel active" id="dtab-info">
@@ -365,7 +376,15 @@
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
             <thead><tr><th>Order name</th><th>Completed</th><th>Total</th><th>Items</th></tr></thead>
-            <tbody id="detail-orders-tbody"><tr><td colspan="3"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+            <tbody id="detail-orders-tbody"><tr><td colspan="4"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="detail-panel" id="dtab-requests">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Order name</th><th>Submitted</th><th>Items</th><th>Note</th><th>Status</th><th></th></tr></thead>
+            <tbody id="detail-requests-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -757,22 +776,26 @@ async function addClientUidToAdmin(uid) {
 }
 
 async function loadAllWorkItems() {
-  const allProofs=[], allQuotes=[], allInvoices=[];
+  const allProofs=[], allQuotes=[], allInvoices=[], allRequests=[];
   for (const c of allClients) {
-    const [ps, qs, is_] = await Promise.all([
+    const [ps, qs, is_, rs] = await Promise.all([
       fbList(`clients/${c.uid}/proofs`),
       fbList(`clients/${c.uid}/quotes`),
       fbList(`clients/${c.uid}/invoices`),
+      fbList(`clients/${c.uid}/reorderRequests`),
     ]);
-    ps.forEach(d  => allProofs.push({ ...ff(d.fields),   id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
-    qs.forEach(d  => allQuotes.push({ ...ff(d.fields),   id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
-    is_.forEach(d => allInvoices.push({ ...ff(d.fields), id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    ps.forEach(d  => allProofs.push({ ...ff(d.fields),    id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    qs.forEach(d  => allQuotes.push({ ...ff(d.fields),    id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    is_.forEach(d => allInvoices.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    rs.forEach(d  => allRequests.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
   }
-  window._allProofs   = allProofs;
-  window._allQuotes   = allQuotes;
-  window._allInvoices = allInvoices;
+  window._allProofs    = allProofs;
+  window._allQuotes    = allQuotes;
+  window._allInvoices  = allInvoices;
+  window._allRequests  = allRequests;
   updateSidebarBadges();
   renderOverviewActivity();
+  renderOverviewQueues();
   renderAllProofs();
   renderAllQuotes();
   renderAllInvoices();
@@ -841,17 +864,19 @@ window.openClientDetail = async (uid) => {
 };
 
 async function loadClientDetail(uid) {
-  const [proofDocs, quoteDocs, invoiceDocs, orderDocs] = await Promise.all([
+  const [proofDocs, quoteDocs, invoiceDocs, orderDocs, requestDocs] = await Promise.all([
     fbList(`clients/${uid}/proofs`),
     fbList(`clients/${uid}/quotes`),
     fbList(`clients/${uid}/invoices`),
     fbList(`clients/${uid}/orders`),
+    fbList(`clients/${uid}/reorderRequests`),
   ]);
   const proofs   = proofDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
   const quotes   = quoteDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
   const invoices = invoiceDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
   const orders   = orderDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
-  selectedClientData = { proofs, quotes, invoices, orders };
+  const requests = requestDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
+  selectedClientData = { proofs, quotes, invoices, orders, requests };
 
   // Info tab
   document.getElementById('detail-info-body').innerHTML = `
@@ -908,10 +933,41 @@ async function loadClientDetail(uid) {
         <td>${fmtDate(i.dueDate)}</td>
         <td>$${(i.amount||0).toFixed(2)}</td>
         <td>${badge(i.status||'unpaid')}</td>
-        <td>
-          ${i.status === 'paid' && !i.completedAsOrder
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          ${!i.completedAsOrder && i.status !== 'processing' && i.status !== 'completed'
+            ? `<button class="btn btn-ghost btn-sm" onclick="markInProcess('${i.id}')">Mark in process</button>`
+            : ''}
+          ${i.status === 'processing'
             ? `<button class="btn btn-primary btn-sm" onclick="markAsCompletedOrder('${i.id}')">Mark complete</button>`
-            : i.completedAsOrder ? `<span class="text-muted" style="font-size:12px">Order created</span>` : ''}
+            : ''}
+          ${i.completedAsOrder
+            ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Order created</span>`
+            : ''}
+        </td>
+      </tr>`).join('');
+
+  // Requests tab
+  const requests = selectedClientData.requests || [];
+  const pendingReqs = requests.filter(r => r.requestStatus === 'pending').length;
+  const badge_el = document.getElementById('badge-requests');
+  if (badge_el) {
+    if (pendingReqs > 0) { badge_el.textContent = pendingReqs; badge_el.classList.remove('hidden'); }
+    else { badge_el.classList.add('hidden'); }
+  }
+  document.getElementById('detail-requests-tbody').innerHTML = requests.length === 0
+    ? `<tr><td colspan="6"><div class="empty">No re-order requests yet.</div></td></tr>`
+    : requests.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(r => `
+      <tr>
+        <td style="font-weight:500">${esc(r.orderName||'—')}</td>
+        <td>${fmtDate(r.createdAt)}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${(r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
+        <td style="font-size:13px;color:var(--mid-gray);max-width:160px">${esc(r.note||'—')}</td>
+        <td>${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          ${r.requestStatus === 'pending' ? `
+            <button class="btn btn-ghost btn-sm" onclick="quoteFromRequest('${r.id}')">New quote</button>
+            <button class="btn btn-primary btn-sm" onclick="invoiceFromRequest('${r.id}')">Convert to invoice</button>
+          ` : `<span class="text-muted" style="font-size:12px">${r.requestStatus === 'quoted' ? 'Quoted' : 'Invoiced'}</span>`}
         </td>
       </tr>`).join('');
 
@@ -970,6 +1026,64 @@ function renderAllInvoices() {
 
 // ── OVERVIEW ACTIVITY ─────────────────────────
 function renderOverview() { updateSidebarBadges(); }
+
+function renderOverviewQueues() {
+  // Re-order requests queue — only pending ones
+  const pendingRequests = (window._allRequests||[])
+    .filter(r => r.requestStatus === 'pending' || !r.requestStatus)
+    .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+
+  const reqEl = document.getElementById('ov-reorder-queue');
+  if (reqEl) {
+    reqEl.innerHTML = pendingRequests.length === 0
+      ? `<div class="empty" style="padding:24px">No pending re-order requests.</div>`
+      : pendingRequests.map(r => `
+        <div onclick="navigateToClientTab('${r.clientUid}','requests')"
+          style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--linen-dark);cursor:pointer"
+          onmouseover="this.style.background='var(--green-pale)'"
+          onmouseout="this.style.background=''">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--near-black)">${esc(r.clientName)}</div>
+            <div style="font-size:13px;color:var(--mid-gray)">${esc(r.orderName||'Re-order request')}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:16px">
+            ${badge('pending')}
+            <span class="text-muted">${fmtDate(r.createdAt)}</span>
+            <span style="color:var(--mid-gray)">›</span>
+          </div>
+        </div>`).join('');
+  }
+
+  // Pending orders queue — quotes (pending/approved not yet invoiced) + invoices (unpaid/overdue/processing)
+  const pendingOrders = [
+    ...(window._allQuotes||[])
+      .filter(q => (q.status === 'pending' || q.status === 'approved') && !q.convertedToInvoice)
+      .map(q => ({ ...q, itemType:'Quote' })),
+    ...(window._allInvoices||[])
+      .filter(i => i.status === 'unpaid' || i.status === 'overdue' || i.status === 'processing')
+      .map(i => ({ ...i, itemType:'Invoice' })),
+  ].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+
+  const pendEl = document.getElementById('ov-pending-queue');
+  if (pendEl) {
+    pendEl.innerHTML = pendingOrders.length === 0
+      ? `<div class="empty" style="padding:24px">No pending orders.</div>`
+      : pendingOrders.map(item => `
+        <div onclick="navigateToClientTab('${item.clientUid}','${item.itemType==='Quote'?'quotes':'invoices'}')"
+          style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--linen-dark);cursor:pointer"
+          onmouseover="this.style.background='var(--green-pale)'"
+          onmouseout="this.style.background=''">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--near-black)">${esc(item.clientName)}</div>
+            <div style="font-size:13px;color:var(--mid-gray)">${esc(item.name||'—')} <span style="color:var(--border)">·</span> ${item.itemType}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:16px">
+            ${badge(item.status)}
+            <span style="color:var(--mid-gray)">›</span>
+          </div>
+        </div>`).join('');
+  }
+}
 function renderOverviewActivity() {
   const all = [
     ...(window._allProofs   ||[]).map(p => ({ date:p.createdAt||'', text:`Proof for ${p.clientName}: ${p.name||'Untitled'}`,   status:p.status,   clientUid:p.clientUid, tab:'proofs'   })),
@@ -1115,6 +1229,7 @@ let editingQuoteId = null;
 window.openNewQuoteModal = () => {
   if (!selectedClient) return;
   editingQuoteId = null;
+  window._quotingFromRequestId = null;
   document.getElementById('nq-modal-title').textContent = 'Create quote';
   document.getElementById('nq-save-btn').textContent = 'Send quote to client';
   document.getElementById('nq-client-label').textContent = selectedClient.name || selectedClient.email;
@@ -1196,6 +1311,11 @@ window.saveQuote = async () => {
     await fbSet(`clients/${uid}/quotes/${quoteId}`, {
       name, number, total, lineItems, status:'pending', createdAt: new Date().toISOString()
     });
+    // Mark source request as quoted
+    if (window._quotingFromRequestId) {
+      await fbUpdate(`clients/${uid}/reorderRequests/${window._quotingFromRequestId}`, { requestStatus: 'quoted' });
+      window._quotingFromRequestId = null;
+    }
     await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'quote', itemName: name, amount: total })
@@ -1203,13 +1323,15 @@ window.saveQuote = async () => {
     closeModal('modal-new-quote');
     toast('Quote sent to client!', 'success');
     await loadClientDetail(uid);
+    await loadAllWorkItems();
   }
 };
 
 // ── INVOICE ───────────────────────────────────
 window.openNewInvoiceModal = () => {
   if (!selectedClient) return;
-  window._convertingFromQuoteId = null;
+  window._convertingFromQuoteId   = null;
+  window._invoicingFromRequestId  = null;
   document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
   ['ni-name','ni-number','ni-amount','ni-due','ni-square-id','ni-pay-url','ni-sq-lookup'].forEach(id => document.getElementById(id).value='');
   document.getElementById('ni-error').classList.remove('show');
@@ -1281,6 +1403,11 @@ window.createInvoice = async () => {
       await fbUpdate(`clients/${uid}/quotes/${sourceQuoteId}`, { convertedToInvoice: true });
     }
     window._convertingFromQuoteId = null;
+    // Mark source request as invoiced
+    if (window._invoicingFromRequestId) {
+      await fbUpdate(`clients/${uid}/reorderRequests/${window._invoicingFromRequestId}`, { requestStatus: 'invoiced' });
+      window._invoicingFromRequestId = null;
+    }
   } catch(e) {
     err.textContent = 'Failed to save invoice: ' + e.message;
     err.classList.add('show');
@@ -1318,6 +1445,21 @@ window.convertQuoteToInvoice = (quoteId) => {
 };
 
 // ── MARK INVOICE AS COMPLETED ORDER ───────────
+window.markInProcess = async (invoiceId) => {
+  const uid = selectedClient.uid;
+  try {
+    await fbUpdate(`clients/${uid}/invoices/${invoiceId}`, {
+      status: 'processing',
+      processingAt: new Date().toISOString(),
+    });
+    toast('Order marked as in process!', 'success');
+    await loadClientDetail(uid);
+    await loadAllWorkItems();
+  } catch(e) {
+    toast('Failed: ' + e.message, 'error');
+  }
+};
+
 window.markAsCompletedOrder = async (invoiceId) => {
   const inv = selectedClientData.invoices?.find(x => x.id === invoiceId);
   if (!inv) return;
@@ -1342,14 +1484,59 @@ window.markAsCompletedOrder = async (invoiceId) => {
 
   try {
     await fbSet(`clients/${uid}/orders/${orderId}`, orderData);
-    // Mark invoice as having generated an order
-    await fbUpdate(`clients/${uid}/invoices/${invoiceId}`, { completedAsOrder: true });
-    toast('Order created from invoice!', 'success');
+    await fbUpdate(`clients/${uid}/invoices/${invoiceId}`, {
+      completedAsOrder: true,
+      status: 'paid', // ensure status is paid when completed
+    });
+    toast('Order created!', 'success');
     await loadClientDetail(uid);
+    await loadAllWorkItems();
     showDetailTab('orders');
   } catch(e) {
     toast('Failed to create order: ' + e.message, 'error');
   }
+};
+
+// ── REQUEST → QUOTE / INVOICE ─────────────────
+window.quoteFromRequest = (requestId) => {
+  const r = selectedClientData.requests?.find(x => x.id === requestId);
+  if (!r) return;
+  // Pre-fill quote modal with request items
+  editingQuoteId = null;
+  document.getElementById('nq-modal-title').textContent = 'New quote from re-order';
+  document.getElementById('nq-save-btn').textContent    = 'Send quote to client';
+  document.getElementById('nq-client-label').textContent = selectedClient.name || selectedClient.email;
+  document.getElementById('nq-name').value = r.orderName || '';
+  document.getElementById('nq-error').classList.remove('show');
+  lineItems = (r.lineItems || []).map(li => ({
+    desc:  li.description || li.desc || '',
+    qty:   li.qty  || 1,
+    price: li.price || 0,
+  }));
+  if (lineItems.length === 0) lineItems.push({ desc:'', qty:1, price:0 });
+  renderLineItems();
+  // Store request ID to mark it quoted after save
+  window._quotingFromRequestId = requestId;
+  openModal('modal-new-quote');
+};
+
+window.invoiceFromRequest = (requestId) => {
+  const r = selectedClientData.requests?.find(x => x.id === requestId);
+  if (!r) return;
+  // Pre-fill invoice modal
+  window._convertingFromQuoteId = null;
+  window._invoicingFromRequestId = requestId;
+  document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
+  document.getElementById('ni-name').value    = r.orderName || '';
+  document.getElementById('ni-number').value  = '';
+  document.getElementById('ni-amount').value  = '';
+  document.getElementById('ni-due').value     = '';
+  document.getElementById('ni-square-id').value = '';
+  document.getElementById('ni-pay-url').value   = '';
+  document.getElementById('ni-sq-lookup').value = '';
+  document.getElementById('ni-error').classList.remove('show');
+  document.getElementById('ni-lookup-status').textContent = '';
+  openModal('modal-new-invoice');
 };
 
 // ── VIEW APPROVED QUOTE ───────────────────────

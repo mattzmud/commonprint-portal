@@ -716,6 +716,9 @@
       <button class="nav-tab" onclick="showPage('invoices')" data-page="invoices">
         Invoices <span class="nav-badge hidden" id="badge-invoices"></span>
       </button>
+      <button class="nav-tab" onclick="showPage('inprocess')" data-page="inprocess">
+        In Process <span class="nav-badge hidden" id="badge-inprocess"></span>
+      </button>
       <button class="nav-tab" onclick="showPage('orders')" data-page="orders">Past Orders</button>
     </div>
     <div class="nav-right">
@@ -742,6 +745,10 @@
       <div class="dash-stat">
         <div class="dash-stat-label">Invoices due</div>
         <div class="dash-stat-num highlight" id="stat-invoices">—</div>
+      </div>
+      <div class="dash-stat" style="cursor:pointer" onclick="showPage('inprocess')">
+        <div class="dash-stat-label">In process</div>
+        <div class="dash-stat-num highlight" id="stat-inprocess">—</div>
       </div>
     </div>
 
@@ -816,6 +823,30 @@
         </thead>
         <tbody id="invoices-tbody">
           <tr><td colspan="6" class="loading-center"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- IN PROCESS -->
+  <div class="page" id="page-inprocess">
+    <div class="page-header">
+      <div class="page-title">Orders in Process</div>
+      <div class="page-sub">Jobs currently in production.</div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="data-table" id="inprocess-table">
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Invoice #</th>
+            <th>Amount</th>
+            <th>Payment</th>
+            <th>In process since</th>
+          </tr>
+        </thead>
+        <tbody id="inprocess-tbody">
+          <tr><td colspan="5" class="loading-center"><div class="spinner"></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -1146,10 +1177,12 @@ window.showPage = (id) => {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelector(`[data-page="${id}"]`).classList.add('active');
-  if (id === 'proofs'   && !cache.proofs)   renderProofs();
-  if (id === 'quotes'   && !cache.quotes)   renderQuotes();
-  if (id === 'invoices' && !cache.invoices) renderInvoices();
-  if (id === 'orders'   && !cache.orders)   renderOrders();
+  if (id === 'proofs'    && !cache.proofs)   renderProofs();
+  if (id === 'quotes'    && !cache.quotes)   renderQuotes();
+  if (id === 'invoices'  && !cache.invoices) renderInvoices();
+  if (id === 'inprocess' && !cache.invoices) renderInProcess();
+  if (id === 'inprocess')                    renderInProcess();
+  if (id === 'orders'    && !cache.orders)   renderOrders();
 };
 
 // ── LOAD ALL DATA ────────────────────────────
@@ -1172,6 +1205,7 @@ async function loadAll() {
   renderProofs();
   renderQuotes();
   renderInvoices();
+  renderInProcess();
   renderOrders();
 }
 
@@ -1179,14 +1213,17 @@ function updateBadges() {
   const pendingProofs   = (cache.proofs   || []).filter(p => p.status === 'pending').length;
   const pendingQuotes   = (cache.quotes   || []).filter(q => q.status === 'pending').length;
   const unpaidInvoices  = (cache.invoices || []).filter(i => i.status === 'unpaid' || i.status === 'overdue').length;
+  const inProcessCount  = (cache.invoices || []).filter(i => i.status === 'processing').length;
 
-  setBadge('badge-proofs',   pendingProofs);
-  setBadge('badge-quotes',   pendingQuotes);
-  setBadge('badge-invoices', unpaidInvoices);
+  setBadge('badge-proofs',    pendingProofs);
+  setBadge('badge-quotes',    pendingQuotes);
+  setBadge('badge-invoices',  unpaidInvoices);
+  setBadge('badge-inprocess', inProcessCount);
 
-  document.getElementById('stat-proofs').textContent   = pendingProofs;
-  document.getElementById('stat-quotes').textContent   = pendingQuotes;
-  document.getElementById('stat-invoices').textContent = unpaidInvoices;
+  document.getElementById('stat-proofs').textContent    = pendingProofs;
+  document.getElementById('stat-quotes').textContent    = pendingQuotes;
+  document.getElementById('stat-invoices').textContent  = unpaidInvoices;
+  document.getElementById('stat-inprocess').textContent = inProcessCount;
 }
 
 function setBadge(id, count) {
@@ -1209,6 +1246,9 @@ function renderDashboard() {
   });
   (cache.invoices|| []).filter(i => i.status === 'unpaid' || i.status === 'overdue').forEach(inv => {
     actions.push({ icon: '💳', label: inv.name || 'Invoice due', sub: `$${(inv.amount || 0).toFixed(2)} — tap to pay`, page: 'invoices', id: inv.id });
+  });
+  (cache.invoices|| []).filter(i => i.status === 'processing').forEach(inv => {
+    actions.push({ icon: '🖨', label: inv.name || 'Order in process', sub: 'Currently in production', page: 'inprocess', id: inv.id });
   });
 
   if (actions.length === 0) {
@@ -1576,6 +1616,25 @@ window.payInvoice = async (id) => {
   }
 };
 
+// ── IN PROCESS ───────────────────────────────
+function renderInProcess() {
+  const tbody = document.getElementById('inprocess-tbody');
+  if (!cache.invoices) return;
+  const items = (cache.invoices || []).filter(i => i.status === 'processing');
+  if (items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🖨</div><div class="empty-title">Nothing in process yet</div><div class="empty-sub">Orders currently in production will appear here.</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(i => `
+    <tr>
+      <td style="font-weight:500">${esc(i.name||'—')}</td>
+      <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+      <td class="amount">$${(i.amount||0).toFixed(2)}</td>
+      <td>${badge(i.status === 'paid' ? 'paid' : 'unpaid')}</td>
+      <td>${fmtDate(i.processingAt||i.createdAt)}</td>
+    </tr>`).join('');
+}
+
 // ── ORDERS ───────────────────────────────────
 function renderOrders() {
   const list = document.getElementById('orders-list');
@@ -1659,12 +1718,15 @@ window.submitReorder = async () => {
   btn.textContent = 'Sending…';
 
   try {
+    const requestId = 'req-' + Date.now().toString(36);
     await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action:      'send_reorder',
         clientEmail: currentUser.email,
+        clientUid:   currentUser.uid,
+        requestId,
         orderName:   activeReorder.name,
         orderId:     activeReorder.id,
         lineItems:   remaining,
