@@ -339,8 +339,11 @@
         <button class="detail-tab"        onclick="showDetailTab('proofs')"   data-dtab="proofs">Proofs</button>
         <button class="detail-tab"        onclick="showDetailTab('quotes')"   data-dtab="quotes">Quotes</button>
         <button class="detail-tab"        onclick="showDetailTab('invoices')" data-dtab="invoices">Invoices</button>
-        <button class="detail-tab"        onclick="showDetailTab('orders')"   data-dtab="orders">Orders</button>
-        <button class="detail-tab"        onclick="showDetailTab('requests')" data-dtab="requests">
+        <button class="detail-tab"        onclick="showDetailTab('orders')"    data-dtab="orders">Orders</button>
+        <button class="detail-tab"        onclick="showDetailTab('inprocess')" data-dtab="inprocess">
+          In Process <span class="nav-badge hidden" id="badge-client-inprocess"></span>
+        </button>
+        <button class="detail-tab"        onclick="showDetailTab('requests')"  data-dtab="requests">
           Requests <span class="nav-badge hidden" id="badge-requests"></span>
         </button>
       </div>
@@ -377,6 +380,14 @@
           <table class="data-table">
             <thead><tr><th>Order name</th><th>Completed</th><th>Total</th><th>Items</th></tr></thead>
             <tbody id="detail-orders-tbody"><tr><td colspan="4"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="detail-panel" id="dtab-inprocess">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th></tr></thead>
+            <tbody id="detail-inprocess-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -433,6 +444,51 @@
 </div><!-- /app -->
 
 <!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- Admin In Process Order Detail -->
+<div class="modal-overlay" id="modal-admin-inprocess">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="aip-title">Order in process</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:3px" id="aip-client"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-admin-inprocess')">×</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">In process since</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="aip-since"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Invoice #</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="aip-invoice"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Amount</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="aip-amount"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Payment</div>
+        <div id="aip-payment"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Due date</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="aip-due"></div>
+      </div>
+    </div>
+
+    <div id="aip-lines-section">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Line items</div>
+      <div id="aip-lines"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-inprocess')">Close</button>
+    </div>
+  </div>
+</div>
 
 <!-- View Approved Quote -->
 <div class="modal-overlay" id="modal-view-quote">
@@ -967,7 +1023,7 @@ async function loadClientDetail(uid) {
             : ''}
           ${(i.status === 'unpaid' || i.status === 'overdue') && !i.completedAsOrder
             ? `<button class="btn btn-danger btn-sm" onclick="cancelInvoice('${i.id}','${esc(i.name||'this invoice')}')">Cancel</button>`
-            : ''}
+            : i.status === 'cancelled' ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Cancelled in Square</span>` : ''}
         </td>
       </tr>`).join('');
 
@@ -994,6 +1050,24 @@ async function loadClientDetail(uid) {
             <button class="btn btn-primary btn-sm" onclick="invoiceFromRequest('${r.id}')">Convert to invoice</button>
           ` : `<span class="text-muted" style="font-size:12px">${r.requestStatus === 'quoted' ? 'Quoted' : 'Invoiced'}</span>`}
         </td>
+      </tr>`).join('');
+
+  // In Process tab
+  const inProcessInvoices = invoices.filter(i => i.status === 'processing');
+  const ipBadge = document.getElementById('badge-client-inprocess');
+  if (ipBadge) {
+    if (inProcessInvoices.length > 0) { ipBadge.textContent = inProcessInvoices.length; ipBadge.classList.remove('hidden'); }
+    else { ipBadge.classList.add('hidden'); }
+  }
+  document.getElementById('detail-inprocess-tbody').innerHTML = inProcessInvoices.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No orders currently in process.</div></td></tr>`
+    : inProcessInvoices.map(i => `
+      <tr style="cursor:pointer" onclick="openAdminInProcessModal('${i.id}')" onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(i.name||'—')}</td>
+        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.status === 'paid' ? 'paid' : 'unpaid')}</td>
+        <td>${fmtDate(i.processingAt||i.createdAt)}</td>
       </tr>`).join('');
 
   // Orders tab
@@ -1581,6 +1655,46 @@ window.cancelQuote = async (quoteId, quoteName) => {
   } catch(e) {
     toast('Failed to cancel quote: ' + e.message, 'error');
   }
+};
+
+// ── IN PROCESS ORDER MODAL (ADMIN) ────────────
+window.openAdminInProcessModal = (invoiceId) => {
+  const inv = selectedClientData.invoices?.find(x => x.id === invoiceId);
+  if (!inv) return;
+
+  // Find linked quote for line items
+  const linkedQuote = inv.sourceQuoteId
+    ? selectedClientData.quotes?.find(q => q.id === inv.sourceQuoteId)
+    : null;
+  const lineItems = linkedQuote?.lineItems || [];
+
+  document.getElementById('aip-title').textContent   = inv.name || 'Order in process';
+  document.getElementById('aip-client').textContent  = selectedClient?.name || selectedClient?.email || '';
+  document.getElementById('aip-since').textContent   = fmtDate(inv.processingAt || inv.createdAt);
+  document.getElementById('aip-invoice').textContent = inv.number || inv.id.slice(0,6).toUpperCase();
+  document.getElementById('aip-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
+  document.getElementById('aip-payment').innerHTML   = badge(inv.status === 'paid' ? 'paid' : 'unpaid');
+  document.getElementById('aip-due').textContent     = fmtDate(inv.dueDate);
+
+  const linesEl = document.getElementById('aip-lines');
+  if (lineItems.length > 0) {
+    linesEl.innerHTML = lineItems.map(li => `
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
+        <div>
+          <div style="font-weight:500;color:var(--near-black)">${esc(li.description||li.desc||'')}</div>
+          <div style="font-size:12px;color:var(--mid-gray)">${li.qty||1} × $${(li.price||0).toFixed(2)} each</div>
+        </div>
+        <div style="font-weight:500">$${((li.price||0)*(li.qty||1)).toFixed(2)}</div>
+      </div>`).join('') +
+      `<div style="display:flex;justify-content:space-between;padding:12px 0 0;font-size:15px;font-weight:600;border-top:2px solid var(--border);margin-top:4px">
+        <span>Total</span><span>$${(inv.amount||0).toFixed(2)}</span>
+      </div>`;
+    document.getElementById('aip-lines-section').classList.remove('hidden');
+  } else {
+    document.getElementById('aip-lines-section').classList.add('hidden');
+  }
+
+  openModal('modal-admin-inprocess');
 };
 
 // ── CANCEL INVOICE ────────────────────────────
