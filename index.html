@@ -970,6 +970,23 @@ async function fbSet(path, data) {
   }
   return res.json();
 }
+
+// Partial update — only touches the specified fields, leaves all others intact
+async function fbUpdate(path, data) {
+  const token = await getToken();
+  const fields = toFS(data).mapValue?.fields || toFS(data);
+  const fieldPaths = Object.keys(fields).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+  const res = await fetch(`${getFS_BASE()}/${path}?${fieldPaths}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Firestore update failed (${res.status})`);
+  }
+  return res.json();
+}
 async function fbList(path) {
   const token = await getToken();
   const res = await fetch(`${getFS_BASE()}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
@@ -1262,7 +1279,7 @@ window.respondToProof = async (action) => {
   if (!activeProof) return;
   const comment = document.getElementById('proof-comment').value.trim();
   const uid = currentUser.uid;
-  await fbSet(`clients/${uid}/proofs/${activeProof.id}`, {
+  await fbUpdate(`clients/${uid}/proofs/${activeProof.id}`, {
     status: action,
     comment,
     respondedAt: new Date().toISOString(),
@@ -1415,7 +1432,7 @@ window.submitQuoteApproval = async () => {
     const uploadData = await uploadRes.json();
     const signatureUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`;
 
-    await fbSet(`clients/${uid}/quotes/${activeQuote.id}`, {
+    await fbUpdate(`clients/${uid}/quotes/${activeQuote.id}`, {
       status: 'approved',
       signatureUrl,
       approvedAt: new Date().toISOString(),

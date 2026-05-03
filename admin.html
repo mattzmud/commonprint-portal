@@ -556,8 +556,6 @@ async function fbGet(path) {
 }
 async function fbSet(path, data) {
   const token = await getToken();
-  // toFS on an object returns { mapValue: { fields: {...} } }
-  // Firestore REST expects { fields: {...} } at the top level
   const fields = toFS(data).mapValue?.fields || toFS(data);
   const res = await fetch(`${getFS_BASE()}/${path}`, {
     method: 'PATCH',
@@ -568,6 +566,23 @@ async function fbSet(path, data) {
     const err = await res.json().catch(() => ({}));
     console.error('fbSet failed:', path, res.status, err?.error?.message || '');
     throw new Error(err?.error?.message || `Firestore write failed (${res.status})`);
+  }
+  return res.json();
+}
+
+// Partial update — only touches specified fields, leaves all others intact
+async function fbUpdate(path, data) {
+  const token = await getToken();
+  const fields = toFS(data).mapValue?.fields || toFS(data);
+  const fieldPaths = Object.keys(fields).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+  const res = await fetch(`${getFS_BASE()}/${path}?${fieldPaths}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Firestore update failed (${res.status})`);
   }
   return res.json();
 }
