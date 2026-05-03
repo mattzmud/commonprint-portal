@@ -979,7 +979,6 @@
   <div class="page" id="page-profile">
     <div class="page-header">
       <div><div class="page-title">My Profile</div><div class="page-sub">Update your contact information and password.</div></div>
-      <button class="btn btn-primary" onclick="saveProfile()">Save changes</button>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px">
@@ -1059,6 +1058,9 @@
     <div style="max-width:760px;margin-top:8px">
       <div class="form-error hidden" id="prof-error"></div>
       <div class="form-success hidden" id="prof-success"></div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save changes</button>
+      </div>
     </div>
   </div>
 
