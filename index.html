@@ -749,12 +749,44 @@
   .mt-8 { margin-top: 8px; }
   .mt-16 { margin-top: 16px; }
 
+  .portal-footer {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--mid-gray);
+  }
+  .portal-footer a {
+    color: var(--mid-gray);
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .portal-footer a:hover { color: var(--green); }
+  .footer-contact {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .footer-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   @media (max-width: 700px) {
     .nav { padding: 0 16px; }
     .nav-tabs { display: none; }
     .page { padding: 24px 16px; }
     .dash-grid { grid-template-columns: 1fr 1fr; }
     .modal { padding: 24px 20px; }
+    .portal-footer { padding: 16px; flex-direction: column; align-items: flex-start; }
+    .footer-contact { gap: 12px; }
   }
 </style>
 </head>
@@ -873,6 +905,21 @@
       <div class="card-title">Recent activity</div>
       <div id="dash-recent">
         <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--green);border-color:var(--green)">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:12px">Need help?</div>
+      <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+        <div>
+          <div style="font-family:var(--font-display);font-size:18px;color:var(--white);margin-bottom:8px">Common Print Co.</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.8);line-height:1.8">
+            <a href="mailto:hello@commonprintco.com" style="color:var(--white);text-decoration:none;display:block">hello@commonprintco.com</a>
+            <a href="tel:+15864049242" style="color:var(--white);text-decoration:none;display:block">(586) 404-9242</a>
+            <span style="display:block">2060 Arbor Circle East #108</span>
+            <span style="display:block">Ypsilanti, MI 48197</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1065,6 +1112,26 @@
   </div>
 
 </div><!-- /app -->
+
+<footer class="portal-footer" id="portal-footer" style="display:none">
+  <div style="font-family:var(--font-display);font-size:15px;color:var(--charcoal)">
+    <span style="color:var(--green)">common</span><span style="font-style:italic;opacity:.45"> print co.</span>
+  </div>
+  <div class="footer-contact">
+    <div class="footer-contact-item">
+      <span>✉</span>
+      <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a>
+    </div>
+    <div class="footer-contact-item">
+      <span>📞</span>
+      <a href="tel:+15864049242">(586) 404-9242</a>
+    </div>
+    <div class="footer-contact-item">
+      <span>📍</span>
+      <span>2060 Arbor Circle East #108, Ypsilanti, MI 48197</span>
+    </div>
+  </div>
+</footer>
 
 <!-- ══════════════════════════════════════════
      MODALS
@@ -1492,6 +1559,7 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    document.getElementById('portal-footer').style.display = 'flex';
     document.getElementById('nav-user-name').textContent = user.email;
     setGreeting();
     await loadAll();
@@ -1542,6 +1610,7 @@ window.doLogin = async () => {
 window.doSignOut = async () => {
   await signOut(auth);
   cache = { proofs: null, quotes: null, invoices: null, orders: null };
+  document.getElementById('portal-footer').style.display = 'none';
 };
 
 window.showForgot = () => {
