@@ -348,7 +348,7 @@
       <div class="detail-panel" id="dtab-quotes">
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table" id="detail-quotes-table">
-            <thead><tr><th>Quote #</th><th>Name</th><th>Date</th><th>Total</th><th>Status</th><th>Signature</th></tr></thead>
+            <thead><tr><th>Quote #</th><th>Name</th><th>Date</th><th>Total</th><th>Status</th><th>Signature</th><th></th></tr></thead>
             <tbody id="detail-quotes-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
         </div>
@@ -462,7 +462,7 @@
 <div class="modal-overlay" id="modal-new-quote">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Create quote</div>
+      <div class="modal-title" id="nq-modal-title">Create quote</div>
       <button class="modal-close" onclick="closeModal('modal-new-quote')">×</button>
     </div>
     <p class="text-muted" style="margin-bottom:20px">Client: <strong id="nq-client-label"></strong></p>
@@ -475,7 +475,7 @@
     <div class="form-error" id="nq-error"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-quote')">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="createQuote()">Send quote to client</button>
+      <button class="btn btn-primary btn-sm" id="nq-save-btn" onclick="saveQuote()">Send quote to client</button>
     </div>
   </div>
 </div>
@@ -862,6 +862,7 @@ async function loadClientDetail(uid) {
         <td>$${(q.total||0).toFixed(2)}</td>
         <td>${badge(q.status||'pending')}</td>
         <td>${q.signatureUrl ? `<img class="sig-thumb" src="${esc(q.signatureUrl)}" alt="Signature">` : '—'}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="openEditQuoteModal('${q.id}')">Edit</button></td>
       </tr>`).join('');
 
   // Invoices tab
@@ -1061,13 +1062,39 @@ window.uploadProof = async () => {
 };
 
 // ── QUOTE BUILDER ─────────────────────────────
+let editingQuoteId = null;
+
 window.openNewQuoteModal = () => {
   if (!selectedClient) return;
+  editingQuoteId = null;
+  document.getElementById('nq-modal-title').textContent = 'Create quote';
+  document.getElementById('nq-save-btn').textContent = 'Send quote to client';
   document.getElementById('nq-client-label').textContent = selectedClient.name || selectedClient.email;
   document.getElementById('nq-name').value = '';
   document.getElementById('nq-error').classList.remove('show');
   lineItems = [];
   addLineItem();
+  openModal('modal-new-quote');
+};
+
+window.openEditQuoteModal = (quoteId) => {
+  if (!selectedClient) return;
+  const q = selectedClientData.quotes?.find(x => x.id === quoteId);
+  if (!q) return;
+  editingQuoteId = quoteId;
+  document.getElementById('nq-modal-title').textContent = 'Edit quote';
+  document.getElementById('nq-save-btn').textContent = 'Save changes';
+  document.getElementById('nq-client-label').textContent = selectedClient.name || selectedClient.email;
+  document.getElementById('nq-name').value = q.name || '';
+  document.getElementById('nq-error').classList.remove('show');
+  // Pre-fill line items
+  lineItems = (q.lineItems || []).map(li => ({
+    desc: li.description || li.desc || '',
+    qty:  li.qty  || 1,
+    price: li.price || 0,
+  }));
+  if (lineItems.length === 0) lineItems.push({ desc:'', qty:1, price:0 });
+  renderLineItems();
   openModal('modal-new-quote');
 };
 
@@ -1097,29 +1124,38 @@ function renderLineItems() {
   document.getElementById('nq-total').textContent = '$' + lineItems.reduce((s,li)=>s+(li.price||0)*(li.qty||1),0).toFixed(2);
 }
 
-window.createQuote = async () => {
+window.saveQuote = async () => {
   const name = document.getElementById('nq-name').value.trim();
   const err  = document.getElementById('nq-error');
   if (!name) { err.textContent='Please enter a quote name.'; err.classList.add('show'); return; }
   if (lineItems.length === 0 || !lineItems.some(li=>li.desc)) { err.textContent='Add at least one line item.'; err.classList.add('show'); return; }
 
-  const uid    = selectedClient.uid;
-  const quoteId = genId();
-  const total  = lineItems.reduce((s,li)=>s+(li.price||0)*(li.qty||1), 0);
-  const number = 'Q-' + Date.now().toString().slice(-5);
+  const uid   = selectedClient.uid;
+  const total = lineItems.reduce((s,li)=>s+(li.price||0)*(li.qty||1), 0);
 
-  await fbSet(`clients/${uid}/quotes/${quoteId}`, {
-    name, number, total, lineItems, status:'pending', createdAt: new Date().toISOString()
-  });
-
-  await fetch(WORKER_URL, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'quote', itemName: name, amount: total })
-  }).catch(()=>{});
-
-  closeModal('modal-new-quote');
-  toast('Quote sent to client!', 'success');
-  await loadClientDetail(uid);
+  if (editingQuoteId) {
+    // Edit existing quote — use fbUpdate to preserve number, createdAt, signature etc.
+    await fbUpdate(`clients/${uid}/quotes/${editingQuoteId}`, {
+      name, total, lineItems, status: 'pending', updatedAt: new Date().toISOString()
+    });
+    closeModal('modal-new-quote');
+    toast('Quote updated!', 'success');
+    await loadClientDetail(uid);
+  } else {
+    // Create new quote
+    const quoteId = genId();
+    const number  = 'Q-' + Date.now().toString().slice(-5);
+    await fbSet(`clients/${uid}/quotes/${quoteId}`, {
+      name, number, total, lineItems, status:'pending', createdAt: new Date().toISOString()
+    });
+    await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'quote', itemName: name, amount: total })
+    }).catch(()=>{});
+    closeModal('modal-new-quote');
+    toast('Quote sent to client!', 'success');
+    await loadClientDetail(uid);
+  }
 };
 
 // ── INVOICE ───────────────────────────────────
