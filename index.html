@@ -1694,6 +1694,8 @@ onAuthStateChanged(auth, async (user) => {
     await loadAll();
     await loadProfile();
     restorePageFromHash();
+    // Write last login timestamp (fire and forget)
+    fbUpdate(`clients/${user.uid}`, { lastLoginAt: new Date().toISOString() }).catch(()=>{});
   } else {
     currentUser = null;
     document.getElementById('login-screen').style.display = 'flex';
