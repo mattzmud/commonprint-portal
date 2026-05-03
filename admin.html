@@ -941,6 +941,7 @@ async function loadClientDetail(uid) {
           ${q.status === 'approved' ? `<button class="btn btn-ghost btn-sm" onclick="openViewQuoteModal('${q.id}')">View</button>` : ''}
           ${q.status === 'approved' && !q.convertedToInvoice ? `<button class="btn btn-primary btn-sm" onclick="convertQuoteToInvoice('${q.id}')">Convert to invoice</button>` : ''}
           ${q.convertedToInvoice ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Invoiced</span>` : ''}
+          ${!q.convertedToInvoice ? `<button class="btn btn-danger btn-sm" onclick="cancelQuote('${q.id}','${esc(q.name||'this quote')}')">Cancel</button>` : ''}
         </td>
       </tr>`).join('');
 
@@ -963,6 +964,9 @@ async function loadClientDetail(uid) {
             : ''}
           ${i.completedAsOrder
             ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Order created</span>`
+            : ''}
+          ${(i.status === 'unpaid' || i.status === 'overdue') && !i.completedAsOrder
+            ? `<button class="btn btn-danger btn-sm" onclick="cancelInvoice('${i.id}','${esc(i.name||'this invoice')}')">Cancel</button>`
             : ''}
         </td>
       </tr>`).join('');
@@ -1558,6 +1562,44 @@ window.invoiceFromRequest = (requestId) => {
   document.getElementById('ni-error').classList.remove('show');
   document.getElementById('ni-lookup-status').textContent = '';
   openModal('modal-new-invoice');
+};
+
+// ── CANCEL QUOTE ──────────────────────────────
+window.cancelQuote = async (quoteId, quoteName) => {
+  if (!confirm(`Cancel "${quoteName}"? This will permanently delete the quote and cannot be undone.`)) return;
+  const uid = selectedClient.uid;
+  try {
+    const token = await getToken();
+    const res = await fetch(`${getFS_BASE()}/clients/${uid}/quotes/${quoteId}`, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    toast('Quote cancelled and deleted.', 'success');
+    await loadClientDetail(uid);
+    await loadAllWorkItems();
+  } catch(e) {
+    toast('Failed to cancel quote: ' + e.message, 'error');
+  }
+};
+
+// ── CANCEL INVOICE ────────────────────────────
+window.cancelInvoice = async (invoiceId, invoiceName) => {
+  if (!confirm(`Cancel "${invoiceName}"? This will delete the invoice from the portal. Remember to also void it in Square.`)) return;
+  const uid = selectedClient.uid;
+  try {
+    const token = await getToken();
+    const res = await fetch(`${getFS_BASE()}/clients/${uid}/invoices/${invoiceId}`, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('Delete failed');
+    toast('Invoice cancelled. Remember to void it in Square.', 'success');
+    await loadClientDetail(uid);
+    await loadAllWorkItems();
+  } catch(e) {
+    toast('Failed to cancel invoice: ' + e.message, 'error');
+  }
 };
 
 // ── VIEW APPROVED QUOTE ───────────────────────
