@@ -1100,6 +1100,76 @@
   </div>
 </div>
 
+<!-- Invoice Detail Modal -->
+<div class="modal-overlay" id="modal-invoice-detail">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="invd-title">Invoice</div>
+        <div style="font-size:12px;color:var(--mid-gray);margin-top:2px" id="invd-meta"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="invd-status"></div>
+        <button class="modal-close" onclick="closeModal('modal-invoice-detail')">×</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Invoice #</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="invd-number"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Amount</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="invd-amount"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Due date</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="invd-due"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Issued</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="invd-created"></div>
+      </div>
+    </div>
+    <div id="invd-lines-section" class="hidden">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Line items</div>
+      <div class="line-items" id="invd-lines"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-invoice-detail')">Close</button>
+      <div id="invd-pay-btn"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Past Order Detail Modal -->
+<div class="modal-overlay" id="modal-order-detail">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="ordd-title">Order</div>
+      <button class="modal-close" onclick="closeModal('modal-order-detail')">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Completed</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="ordd-completed"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:500;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Total</div>
+        <div style="font-size:14px;font-weight:500;color:var(--near-black)" id="ordd-total"></div>
+      </div>
+    </div>
+    <div id="ordd-lines-section" class="hidden">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Order details</div>
+      <div class="line-items" id="ordd-lines"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-order-detail')">Close</button>
+      <button class="btn btn-primary btn-sm" id="ordd-reorder-btn" onclick="">Re-order</button>
+    </div>
+  </div>
+</div>
+
 <!-- In Process Order Detail Modal -->
 <div class="modal-overlay" id="modal-inprocess">
   <div class="modal">
@@ -1867,8 +1937,8 @@ function renderInvoices() {
   }
   tbody.innerHTML = cache.invoices.map(inv => `
     <tr>
-      <td><strong>${esc(inv.number || inv.id.slice(0,6).toUpperCase())}</strong></td>
-      <td>${esc(inv.name || '—')}</td>
+      <td style="cursor:pointer;font-weight:500" onclick="openInvoiceModal('${inv.id}')">${esc(inv.number || inv.id.slice(0,6).toUpperCase())}</td>
+      <td style="cursor:pointer" onclick="openInvoiceModal('${inv.id}')">${esc(inv.name || '—')}</td>
       <td>${fmtDate(inv.dueDate)}</td>
       <td class="amount">$${(inv.amount || 0).toFixed(2)}</td>
       <td>${badge(inv.status || 'unpaid')}</td>
@@ -1968,6 +2038,88 @@ window.openInProcessModal = (invoiceId) => {
   openModal('modal-inprocess');
 };
 
+// ── INVOICE DETAIL MODAL ─────────────────────
+window.openInvoiceModal = (id) => {
+  const inv = (cache.invoices || []).find(x => x.id === id);
+  if (!inv) return;
+
+  document.getElementById('invd-title').textContent   = inv.name || 'Invoice';
+  document.getElementById('invd-meta').textContent    = `Invoice #${inv.number || inv.id.slice(0,6).toUpperCase()}`;
+  document.getElementById('invd-status').innerHTML    = badge(inv.status || 'unpaid');
+  document.getElementById('invd-number').textContent  = inv.number || inv.id.slice(0,6).toUpperCase();
+  document.getElementById('invd-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
+  document.getElementById('invd-due').textContent     = fmtDate(inv.dueDate);
+  document.getElementById('invd-created').textContent = fmtDate(inv.createdAt);
+
+  // Line items from linked quote
+  const linkedQuote = inv.sourceQuoteId
+    ? (cache.quotes || []).find(q => q.id === inv.sourceQuoteId)
+    : null;
+  const lineItems = linkedQuote?.lineItems || [];
+  const linesEl = document.getElementById('invd-lines');
+  const linesSection = document.getElementById('invd-lines-section');
+  if (lineItems.length > 0) {
+    linesEl.innerHTML = lineItems.map(li => `
+      <div class="line-item">
+        <div>
+          <div class="line-item-desc">${esc(li.description||li.desc||'')}</div>
+          <div class="line-item-qty">${li.qty||1} × $${(li.price||0).toFixed(2)} each</div>
+        </div>
+        <div class="line-item-price">$${((li.price||0)*(li.qty||1)).toFixed(2)}</div>
+      </div>`).join('') +
+      `<div class="line-total"><span>Total</span><span>$${(inv.amount||0).toFixed(2)}</span></div>`;
+    linesSection.classList.remove('hidden');
+  } else {
+    linesSection.classList.add('hidden');
+  }
+
+  // Pay button
+  const payBtn = document.getElementById('invd-pay-btn');
+  if (inv.status === 'unpaid' || inv.status === 'overdue') {
+    payBtn.innerHTML = `<button class="btn btn-primary btn-sm" onclick="closeModal('modal-invoice-detail');payInvoice('${inv.id}')">Pay now</button>`;
+  } else {
+    payBtn.innerHTML = '';
+  }
+
+  openModal('modal-invoice-detail');
+};
+
+// ── PAST ORDER DETAIL MODAL ───────────────────
+window.openOrderModal = (id) => {
+  const o = (cache.orders || []).find(x => x.id === id);
+  if (!o) return;
+
+  document.getElementById('ordd-title').textContent     = o.name || 'Order';
+  document.getElementById('ordd-completed').textContent = fmtDate(o.completedAt || o.createdAt);
+  document.getElementById('ordd-total').textContent     = '$' + (o.total || 0).toFixed(2);
+
+  const lineItems = o.lineItems || [];
+  const linesEl = document.getElementById('ordd-lines');
+  const linesSection = document.getElementById('ordd-lines-section');
+  if (lineItems.length > 0) {
+    linesEl.innerHTML = lineItems.map(li => `
+      <div class="line-item">
+        <div>
+          <div class="line-item-desc">${esc(li.description||li.desc||'')}</div>
+          <div class="line-item-qty">${li.qty||1} × $${(li.price||0).toFixed(2)} each</div>
+        </div>
+        <div class="line-item-price">$${((li.price||0)*(li.qty||1)).toFixed(2)}</div>
+      </div>`).join('') +
+      `<div class="line-total"><span>Total</span><span>$${(o.total||0).toFixed(2)}</span></div>`;
+    linesSection.classList.remove('hidden');
+  } else {
+    linesSection.classList.add('hidden');
+  }
+
+  // Wire up re-order button
+  document.getElementById('ordd-reorder-btn').onclick = () => {
+    closeModal('modal-order-detail');
+    openReorderModal(id);
+  };
+
+  openModal('modal-order-detail');
+};
+
 // ── ORDERS ───────────────────────────────────
 function renderOrders() {
   const list = document.getElementById('orders-list');
@@ -1978,14 +2130,15 @@ function renderOrders() {
   }
   list.innerHTML = cache.orders.map(o => `
     <div class="order-row" style="flex-direction:column;align-items:flex-start;gap:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer" onclick="openOrderModal('${o.id}')">
         <div class="order-meta">
           <div class="order-name">${esc(o.name || 'Order')}</div>
           <div class="order-date">${fmtDate(o.completedAt || o.createdAt)}</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
           <div class="order-amount">$${(o.total || 0).toFixed(2)}</div>
-          <button class="btn btn-ghost btn-sm" onclick="openReorderModal('${o.id}')">Re-order</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openReorderModal('${o.id}')">Re-order</button>
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
         </div>
       </div>
       ${(o.lineItems||[]).length > 0 ? `

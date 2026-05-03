@@ -558,6 +558,80 @@
 
 <!-- ══════════════════ MODALS ══════════════════ -->
 
+<!-- Admin Invoice Detail Modal -->
+<div class="modal-overlay" id="modal-admin-invoice">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="ainv-title">Invoice</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:3px" id="ainv-client"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="ainv-status"></div>
+        <button class="modal-close" onclick="closeModal('modal-admin-invoice')">×</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Invoice #</div>
+        <div style="font-size:14px;font-weight:500" id="ainv-number"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Amount</div>
+        <div style="font-size:14px;font-weight:500" id="ainv-amount"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Due date</div>
+        <div style="font-size:14px;font-weight:500" id="ainv-due"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Created</div>
+        <div style="font-size:14px;font-weight:500" id="ainv-created"></div>
+      </div>
+    </div>
+    <div id="ainv-lines-section">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Line items</div>
+      <div id="ainv-lines"></div>
+    </div>
+    <div id="ainv-payurl-row" class="hidden" style="margin-top:16px">
+      <a id="ainv-payurl" href="#" target="_blank" class="btn btn-ghost btn-sm">View Square invoice →</a>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-invoice')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Completed Order Detail Modal -->
+<div class="modal-overlay" id="modal-admin-order">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="aord-title">Completed order</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:3px" id="aord-client"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-admin-order')">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Completed</div>
+        <div style="font-size:14px;font-weight:500" id="aord-completed"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Total</div>
+        <div style="font-size:14px;font-weight:500" id="aord-total"></div>
+      </div>
+    </div>
+    <div id="aord-lines-section">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Line items</div>
+      <div id="aord-lines"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-order')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Admin In Process Order Detail -->
 <div class="modal-overlay" id="modal-admin-inprocess">
   <div class="modal" style="max-width:560px">
@@ -1183,8 +1257,8 @@ async function loadClientDetail(uid) {
     ? `<tr><td colspan="6"><div class="empty">No invoices yet.</div></td></tr>`
     : invoices.map(i => `
       <tr>
-        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
-        <td>${esc(i.name||'—')}</td>
+        <td style="cursor:pointer;font-weight:500" onclick="openAdminInvoiceModal('${i.id}')">${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+        <td style="cursor:pointer" onclick="openAdminInvoiceModal('${i.id}')">${esc(i.name||'—')}</td>
         <td>${fmtDate(i.dueDate)}</td>
         <td>$${(i.amount||0).toFixed(2)}</td>
         <td>${badge(i.status||'unpaid')}</td>
@@ -1236,8 +1310,9 @@ async function loadClientDetail(uid) {
   document.getElementById('detail-inprocess-tbody').innerHTML = inProcessInvoices.length === 0
     ? `<tr><td colspan="5"><div class="empty">No orders currently in process.</div></td></tr>`
     : inProcessInvoices.map(i => `
-      <tr>
-        <td style="font-weight:500;cursor:pointer" onclick="openAdminInProcessModal('${i.id}')">${esc(i.name||'—')}</td>
+      <tr style="cursor:pointer" onclick="openAdminInProcessModal('${i.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(i.name||'—')}</td>
         <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
         <td>$${(i.amount||0).toFixed(2)}</td>
         <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
@@ -1251,7 +1326,8 @@ async function loadClientDetail(uid) {
   document.getElementById('detail-orders-tbody').innerHTML = orders.length === 0
     ? `<tr><td colspan="4"><div class="empty">No orders yet.</div></td></tr>`
     : orders.map(o => `
-      <tr>
+      <tr style="cursor:pointer" onclick="openAdminOrderModal('${o.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
         <td style="font-weight:500">${esc(o.name||'Order')}</td>
         <td>${fmtDate(o.completedAt||o.createdAt)}</td>
         <td>$${(o.total||0).toFixed(2)}</td>
@@ -2126,6 +2202,86 @@ function renderProofsInDetail() {
       </tr>`;
       }).join('');
 }
+
+// ── ADMIN INVOICE DETAIL MODAL ────────────────
+window.openAdminInvoiceModal = (invoiceId) => {
+  const inv = selectedClientData.invoices?.find(x => x.id === invoiceId);
+  if (!inv) return;
+
+  const linkedQuote = inv.sourceQuoteId
+    ? selectedClientData.quotes?.find(q => q.id === inv.sourceQuoteId)
+    : null;
+  const lineItems = linkedQuote?.lineItems || [];
+
+  document.getElementById('ainv-title').textContent   = inv.name || 'Invoice';
+  document.getElementById('ainv-client').textContent  = selectedClient?.name || selectedClient?.email || '';
+  document.getElementById('ainv-status').innerHTML    = badge(inv.status || 'unpaid');
+  document.getElementById('ainv-number').textContent  = inv.number || inv.id.slice(0,6).toUpperCase();
+  document.getElementById('ainv-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
+  document.getElementById('ainv-due').textContent     = fmtDate(inv.dueDate);
+  document.getElementById('ainv-created').textContent = fmtDate(inv.createdAt);
+
+  const linesEl = document.getElementById('ainv-lines');
+  if (lineItems.length > 0) {
+    linesEl.innerHTML = lineItems.map(li => `
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
+        <div>
+          <div style="font-weight:500;color:var(--near-black)">${esc(li.description||li.desc||'')}</div>
+          <div style="font-size:12px;color:var(--mid-gray)">${li.qty||1} × $${(li.price||0).toFixed(2)} each</div>
+        </div>
+        <div style="font-weight:500">$${((li.price||0)*(li.qty||1)).toFixed(2)}</div>
+      </div>`).join('') +
+      `<div style="display:flex;justify-content:space-between;padding:12px 0 0;font-size:15px;font-weight:600;border-top:2px solid var(--border);margin-top:4px">
+        <span>Total</span><span>$${(inv.amount||0).toFixed(2)}</span>
+      </div>`;
+    document.getElementById('ainv-lines-section').classList.remove('hidden');
+  } else {
+    document.getElementById('ainv-lines-section').classList.add('hidden');
+  }
+
+  const payUrlRow = document.getElementById('ainv-payurl-row');
+  if (inv.paymentUrl) {
+    document.getElementById('ainv-payurl').href = inv.paymentUrl;
+    payUrlRow.classList.remove('hidden');
+  } else {
+    payUrlRow.classList.add('hidden');
+  }
+
+  openModal('modal-admin-invoice');
+};
+
+// ── ADMIN COMPLETED ORDER DETAIL MODAL ────────
+window.openAdminOrderModal = (orderId) => {
+  const o = selectedClientData.orders?.find(x => x.id === orderId);
+  if (!o) return;
+
+  document.getElementById('aord-title').textContent     = o.name || 'Completed order';
+  document.getElementById('aord-client').textContent    = selectedClient?.name || selectedClient?.email || '';
+  document.getElementById('aord-completed').textContent = fmtDate(o.completedAt || o.createdAt);
+  document.getElementById('aord-total').textContent     = '$' + (o.total || 0).toFixed(2);
+
+  const linesEl = document.getElementById('aord-lines');
+  const lineItems = o.lineItems || [];
+  if (lineItems.length > 0) {
+    linesEl.innerHTML = lineItems.map(li => `
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
+        <div>
+          <div style="font-weight:500;color:var(--near-black)">${esc(li.description||li.desc||'')}</div>
+          <div style="font-size:12px;color:var(--mid-gray)">${li.qty||1} × $${(li.price||0).toFixed(2)} each</div>
+        </div>
+        <div style="font-weight:500">$${((li.price||0)*(li.qty||1)).toFixed(2)}</div>
+      </div>`).join('') +
+      `<div style="display:flex;justify-content:space-between;padding:12px 0 0;font-size:15px;font-weight:600;border-top:2px solid var(--border);margin-top:4px">
+        <span>Total</span><span>$${(o.total||0).toFixed(2)}</span>
+      </div>`;
+    document.getElementById('aord-lines-section').classList.remove('hidden');
+  } else {
+    linesEl.innerHTML = '<div style="font-size:14px;color:var(--mid-gray)">No line item details available.</div>';
+    document.getElementById('aord-lines-section').classList.remove('hidden');
+  }
+
+  openModal('modal-admin-order');
+};
 
 // ── CANCEL INVOICE ────────────────────────────
 window.cancelInvoice = async (invoiceId, invoiceName) => {
