@@ -2583,20 +2583,27 @@ window.saveFirstLoginProfile = async () => {
   }
 };
 
-function populateProfilePage() {
-  document.getElementById('prof-company').value      = clientProfile.company || '';
-  document.getElementById('prof-name').value         = clientProfile.name    || '';
-  document.getElementById('prof-phone').value        = clientProfile.phone   || '';
+async function populateProfilePage() {
+  // Always re-fetch from Firestore for freshest data
+  const doc = await fbGet(`clients/${currentUser.uid}`);
+  if (doc) {
+    clientProfile = ff(doc.fields);
+  }
+
+  const p = clientProfile;
+  document.getElementById('prof-company').value      = p.company || '';
+  document.getElementById('prof-name').value         = p.name    || '';
+  document.getElementById('prof-phone').value        = p.phone   || '';
   document.getElementById('prof-email').value        = currentUser.email;
 
-  const ship = clientProfile.shippingAddress || {};
+  const ship = p.shippingAddress || {};
   document.getElementById('prof-ship-street').value  = ship.street || '';
   document.getElementById('prof-ship-city').value    = ship.city   || '';
   document.getElementById('prof-ship-state').value   = ship.state  || '';
   document.getElementById('prof-ship-zip').value     = ship.zip    || '';
 
-  const bill = clientProfile.billingAddress || {};
-  const sameAddr = bill.street === ship.street && bill.city === ship.city && bill.zip === ship.zip && !!ship.street;
+  const bill = p.billingAddress || {};
+  const sameAddr = !!ship.street && bill.street === ship.street && bill.city === ship.city && bill.zip === ship.zip;
   document.getElementById('prof-same-address').checked = sameAddr;
   toggleSameAddress(sameAddr);
   if (!sameAddr) {
