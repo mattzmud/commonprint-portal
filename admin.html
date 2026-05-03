@@ -192,6 +192,21 @@
   .toast.error { background:var(--red); }
   @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
 
+  /* ── MESSAGES / THREADS ── */
+  .thread-list { display:flex; flex-direction:column; gap:0; }
+  .thread-row { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--linen-dark); cursor:pointer; transition:background .12s; }
+  .thread-row:hover { background:var(--linen); }
+  .thread-row-subject { font-size:14px; font-weight:500; color:var(--near-black); margin-bottom:2px; }
+  .thread-row-preview { font-size:12px; color:var(--mid-gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:300px; }
+  .thread-row-meta { font-size:12px; color:var(--mid-gray); text-align:right; flex-shrink:0; margin-left:12px; }
+  .thread-unread-dot { width:7px; height:7px; border-radius:50%; background:var(--green); display:inline-block; margin-right:5px; }
+  .msg-bubble { max-width:82%; padding:9px 13px; border-radius:12px; font-size:13px; line-height:1.55; }
+  .msg-bubble-admin { background:var(--green); color:var(--white); align-self:flex-end; border-bottom-right-radius:4px; }
+  .msg-bubble-client { background:var(--linen-dark); color:var(--charcoal); align-self:flex-start; border-bottom-left-radius:4px; }
+  .msg-bubble-meta { font-size:11px; font-weight:500; margin-bottom:2px; }
+  .msg-bubble-admin .msg-bubble-meta { color:rgba(255,255,255,0.7); text-align:right; }
+  .msg-bubble-client .msg-bubble-meta { color:var(--mid-gray); }
+
   /* ── PROOF THREAD ── */
   .proof-modal-wrap {
     display: grid;
@@ -491,6 +506,10 @@
         <span class="sidebar-item-icon">🖨</span> In Process
         <span class="sidebar-badge hidden" id="sb-inprocess-orders"></span>
       </button>
+      <button class="sidebar-item" onclick="showPage('all-messages')" data-page="all-messages">
+        <span class="sidebar-item-icon">💬</span> Messages
+        <span class="sidebar-badge hidden" id="sb-all-messages"></span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user" id="sidebar-email"></div>
@@ -564,6 +583,9 @@
           In Process Orders <span class="nav-badge hidden" id="badge-client-inprocess"></span>
         </button>
         <button class="detail-tab"        onclick="showDetailTab('orders')"    data-dtab="orders">Completed Orders</button>
+        <button class="detail-tab"        onclick="showDetailTab('client-messages')" data-dtab="client-messages">
+          Messages <span class="nav-badge hidden" id="badge-client-messages"></span>
+        </button>
       </div>
 
       <div class="detail-panel active" id="dtab-info">
@@ -615,6 +637,44 @@
             <thead><tr><th>Order name</th><th>Submitted</th><th>Items</th><th>Note</th><th>Status</th><th></th></tr></thead>
             <tbody id="detail-requests-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
+        </div>
+      </div>
+      <div class="detail-panel" id="dtab-client-messages">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-primary btn-sm" onclick="openAdminNewThreadModal()">+ New message</button>
+        </div>
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:12px">
+          <button onclick="switchAdminMsgTab('active')" id="admintab-active"
+            style="padding:7px 16px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--green);color:var(--green);font-family:var(--font-body)">Active</button>
+          <button onclick="switchAdminMsgTab('resolved')" id="admintab-resolved"
+            style="padding:7px 16px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--mid-gray);font-family:var(--font-body)">Resolved</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="admin-msg-active-list" class="thread-list"></div>
+          <div id="admin-msg-resolved-list" class="thread-list hidden"></div>
+        </div>
+        <!-- Thread view -->
+        <div id="admin-thread-view" class="hidden" style="margin-top:16px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <button class="btn btn-ghost btn-sm" onclick="closeAdminThreadView()">← Back</button>
+            <div style="flex:1;font-size:15px;font-weight:500;color:var(--near-black)" id="admin-thread-subject"></div>
+            <button class="btn btn-ghost btn-sm" id="admin-resolve-btn" onclick="resolveThread()" style="color:var(--green)">Mark resolved</button>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div id="admin-thread-messages" style="min-height:200px;max-height:380px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+            <div id="admin-thread-compose" style="border-top:1px solid var(--border);padding:12px 16px">
+              <textarea id="admin-msg-reply" placeholder="Reply to client…"
+                style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--linen);outline:none;resize:none;height:68px;transition:border-color .15s"
+                onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
+                onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'"></textarea>
+              <div style="display:flex;justify-content:flex-end;margin-top:8px">
+                <button class="btn btn-primary btn-sm" onclick="sendAdminMessage()">Send reply</button>
+              </div>
+            </div>
+            <div id="admin-thread-resolved-bar" class="hidden" style="border-top:1px solid var(--border);padding:12px 16px;background:var(--linen);font-size:13px;color:var(--mid-gray);text-align:center">
+              This conversation has been marked as resolved.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -669,6 +729,23 @@
           <thead><tr><th>Client</th><th>Order name</th><th>Submitted</th><th>Items</th><th>Status</th></tr></thead>
           <tbody id="all-requests-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ALL MESSAGES (all clients) -->
+    <div class="page" id="page-all-messages">
+      <div class="page-header">
+        <div><div class="page-title">Messages</div><div class="page-sub">All client conversations.</div></div>
+      </div>
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px">
+        <button onclick="switchAllMsgTab('active')" id="allmsgtab-active"
+          style="padding:7px 16px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--green);color:var(--green);font-family:var(--font-body)">Active</button>
+        <button onclick="switchAllMsgTab('resolved')" id="allmsgtab-resolved"
+          style="padding:7px 16px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--mid-gray);font-family:var(--font-body)">Resolved</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div id="all-msg-active-list" class="thread-list"></div>
+        <div id="all-msg-resolved-list" class="thread-list hidden"></div>
       </div>
     </div>
 
@@ -1063,6 +1140,33 @@
   </div>
 </div>
 
+<!-- Admin: Start New Thread Modal -->
+<div class="modal-overlay" id="modal-admin-new-thread">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title">New message</div>
+      <button class="modal-close" onclick="closeModal('modal-admin-new-thread')">×</button>
+    </div>
+    <p class="text-muted" style="margin-bottom:16px">To: <strong id="ant-client-label"></strong></p>
+    <div class="field">
+      <label>Subject</label>
+      <input type="text" id="ant-subject" placeholder="e.g. Update on your order">
+    </div>
+    <div class="field">
+      <label>Message</label>
+      <textarea id="ant-body" placeholder="Type your message…"
+        style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--linen);outline:none;resize:vertical;height:100px;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
+        onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'"></textarea>
+    </div>
+    <div class="form-error hidden" id="ant-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-new-thread')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="startAdminThread()">Send message</button>
+    </div>
+  </div>
+</div>
+
 <!-- Invite Client -->
 <div class="modal-overlay" id="modal-new-client">
   <div class="modal">
@@ -1433,7 +1537,7 @@ async function addClientUidToAdmin(uid) {
 }
 
 async function loadAllWorkItems() {
-  const allProofs=[], allQuotes=[], allInvoices=[], allRequests=[];
+  const allProofs=[], allQuotes=[], allInvoices=[], allRequests=[], allMessages=[];
   for (const c of allClients) {
     const [ps, qs, is_, rs] = await Promise.all([
       fbList(`clients/${c.uid}/proofs`),
@@ -1445,11 +1549,14 @@ async function loadAllWorkItems() {
     qs.forEach(d  => allQuotes.push({ ...ff(d.fields),    id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
     is_.forEach(d => allInvoices.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
     rs.forEach(d  => allRequests.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    const ms = await fbList(`clients/${c.uid}/messages`);
+    ms.forEach(d  => allMessages.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
   }
   window._allProofs    = allProofs;
   window._allQuotes    = allQuotes;
   window._allInvoices  = allInvoices;
   window._allRequests  = allRequests;
+  window._allMessages  = allMessages;
   updateSidebarBadges();
   renderOverviewActivity();
   renderOverviewQueues();
@@ -1458,6 +1565,7 @@ async function loadAllWorkItems() {
   renderAllInvoices();
   renderAllRequests();
   renderAllInProcess();
+  renderAllMessages();
 }
 
 function updateSidebarBadges() {
@@ -1471,6 +1579,11 @@ function updateSidebarBadges() {
   const inProcessCount= (window._allInvoices ||[]).filter(i => i.status === 'processing').length;
   setSBadge('sb-pending-orders',  pendingReqs);
   setSBadge('sb-inprocess-orders',inProcessCount);
+  const unreadAllMsgs = (window._allMessages||[]).filter(t =>
+    t.status !== 'resolved' &&
+    (t.messages||[]).some(m => m.sender === 'client' && !m.readByAdmin)
+  ).length;
+  setSBadge('sb-all-messages', unreadAllMsgs);
   document.getElementById('ov-clients').textContent  = allClients.length;
   document.getElementById('ov-proofs').textContent   = pendingP;
   document.getElementById('ov-quotes').textContent   = pendingQ;
@@ -1562,19 +1675,21 @@ window.openClientDetail = async (uid) => {
 };
 
 async function loadClientDetail(uid) {
-  const [proofDocs, quoteDocs, invoiceDocs, orderDocs, requestDocs] = await Promise.all([
+  const [proofDocs, quoteDocs, invoiceDocs, orderDocs, requestDocs, msgDocs] = await Promise.all([
     fbList(`clients/${uid}/proofs`),
     fbList(`clients/${uid}/quotes`),
     fbList(`clients/${uid}/invoices`),
     fbList(`clients/${uid}/orders`),
     fbList(`clients/${uid}/reorderRequests`),
+    fbList(`clients/${uid}/messages`),
   ]);
-  const proofs   = proofDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
-  const quotes   = quoteDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
-  const invoices = invoiceDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
-  const orders   = orderDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
-  const requests = requestDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
-  selectedClientData = { proofs, quotes, invoices, orders, requests };
+  const proofs    = proofDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
+  const quotes    = quoteDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
+  const invoices  = invoiceDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
+  const orders    = orderDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
+  const requests  = requestDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
+  const clientMsgs= msgDocs.map(d     => ({ id:docId(d),  ...ff(d.fields) }));
+  selectedClientData = { proofs, quotes, invoices, orders, requests, messages: clientMsgs };
 
   // Info tab
   // Load existing notes from client doc
@@ -1685,6 +1800,19 @@ async function loadClientDetail(uid) {
             : i.status === 'cancelled' ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Cancelled in Square</span>` : ''}
         </td>
       </tr>`).join('');
+
+  // Messages tab
+  const clientMsgsList = selectedClientData.messages || [];
+  const unreadMsgs = clientMsgsList.filter(t =>
+    t.status !== 'resolved' &&
+    (t.messages||[]).some(m => m.sender === 'client' && !m.readByAdmin)
+  ).length;
+  const msgBadge = document.getElementById('badge-client-messages');
+  if (msgBadge) {
+    if (unreadMsgs > 0) { msgBadge.textContent = unreadMsgs; msgBadge.classList.remove('hidden'); }
+    else { msgBadge.classList.add('hidden'); }
+  }
+  renderAdminClientMessages(clientMsgsList);
 
   // Requests tab
   const requestsList = selectedClientData.requests || [];
@@ -1925,6 +2053,50 @@ function renderAllInProcess() {
         <td style="color:var(--mid-gray)">›</td>
       </tr>`).join('');
 }
+
+function renderAllMessages() {
+  const threads = (window._allMessages||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  const active   = threads.filter(t => t.status !== 'resolved');
+  const resolved = threads.filter(t => t.status === 'resolved');
+
+  const renderRow = (t) => {
+    const msgs   = t.messages || [];
+    const last   = msgs[msgs.length - 1];
+    const unread = msgs.some(m => m.sender === 'client' && !m.readByAdmin);
+    return `
+      <div class="thread-row" onclick="navigateToClientTab('${t.clientUid}','client-messages')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <div style="flex:1;min-width:0">
+          <div class="thread-row-subject">
+            ${unread ? '<span class="thread-unread-dot"></span>' : ''}
+            <strong>${esc(t.clientName)}</strong> — ${esc(t.subject||'No subject')}
+          </div>
+          <div class="thread-row-preview">${last ? esc(last.text||'') : 'No messages yet'}</div>
+        </div>
+        <div class="thread-row-meta">
+          ${fmtDate(last?.timestamp||t.createdAt)}
+          <div style="margin-top:3px">${msgs.length} msg${msgs.length!==1?'s':''}</div>
+        </div>
+      </div>`;
+  };
+
+  const empty = (msg) => `<div style="padding:24px;text-align:center;font-size:13px;color:var(--mid-gray)">${msg}</div>`;
+  const activeEl   = document.getElementById('all-msg-active-list');
+  const resolvedEl = document.getElementById('all-msg-resolved-list');
+  if (activeEl)   activeEl.innerHTML   = active.length   ? active.map(renderRow).join('')   : empty('No active conversations.');
+  if (resolvedEl) resolvedEl.innerHTML = resolved.length ? resolved.map(renderRow).join('') : empty('No resolved conversations.');
+}
+
+window.switchAllMsgTab = (tab) => {
+  const activeEl   = document.getElementById('all-msg-active-list');
+  const resolvedEl = document.getElementById('all-msg-resolved-list');
+  if (activeEl)   activeEl.classList.toggle('hidden',   tab !== 'active');
+  if (resolvedEl) resolvedEl.classList.toggle('hidden', tab !== 'resolved');
+  document.getElementById('allmsgtab-active').style.borderBottomColor   = tab === 'active'   ? 'var(--green)' : 'transparent';
+  document.getElementById('allmsgtab-active').style.color               = tab === 'active'   ? 'var(--green)' : 'var(--mid-gray)';
+  document.getElementById('allmsgtab-resolved').style.borderBottomColor = tab === 'resolved' ? 'var(--green)' : 'transparent';
+  document.getElementById('allmsgtab-resolved').style.color             = tab === 'resolved' ? 'var(--green)' : 'var(--mid-gray)';
+};
 
 // ── OVERVIEW ACTIVITY ─────────────────────────
 function renderOverview() { updateSidebarBadges(); }
@@ -3089,6 +3261,189 @@ window.openAdminOrderModal = (orderId) => {
   }
 
   openModal('modal-admin-order');
+};
+
+// ── CLIENT MESSAGES (ADMIN) ───────────────────
+let activeAdminThreadId = null;
+
+function renderAdminClientMessages(threads) {
+  if (!threads) return;
+  const sorted   = threads.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  const active   = sorted.filter(t => t.status !== 'resolved');
+  const resolved = sorted.filter(t => t.status === 'resolved');
+
+  const renderRow = (t) => {
+    const msgs   = t.messages || [];
+    const last   = msgs[msgs.length - 1];
+    const unread = msgs.some(m => m.sender === 'client' && !m.readByAdmin);
+    return `
+      <div class="thread-row" onclick="openAdminThread('${t.id}')">
+        <div style="flex:1;min-width:0">
+          <div class="thread-row-subject">
+            ${unread ? '<span class="thread-unread-dot"></span>' : ''}
+            ${esc(t.subject||'No subject')}
+          </div>
+          <div class="thread-row-preview">${last ? esc(last.text||'') : 'No messages yet'}</div>
+        </div>
+        <div class="thread-row-meta">
+          ${fmtDate(last?.timestamp||t.createdAt)}
+          <div style="margin-top:3px">${msgs.length} msg${msgs.length!==1?'s':''}</div>
+        </div>
+      </div>`;
+  };
+
+  const empty = (msg) => `<div style="padding:24px;text-align:center;font-size:13px;color:var(--mid-gray)">${msg}</div>`;
+  document.getElementById('admin-msg-active-list').innerHTML   = active.length   ? active.map(renderRow).join('')   : empty('No active conversations.');
+  document.getElementById('admin-msg-resolved-list').innerHTML = resolved.length ? resolved.map(renderRow).join('') : empty('No resolved conversations.');
+
+  // Hide thread view, show list
+  document.getElementById('admin-thread-view').classList.add('hidden');
+}
+
+window.switchAdminMsgTab = (tab) => {
+  document.getElementById('admin-msg-active-list').classList.toggle('hidden',   tab !== 'active');
+  document.getElementById('admin-msg-resolved-list').classList.toggle('hidden', tab !== 'resolved');
+  document.getElementById('admintab-active').style.borderBottomColor   = tab === 'active'   ? 'var(--green)' : 'transparent';
+  document.getElementById('admintab-active').style.color               = tab === 'active'   ? 'var(--green)' : 'var(--mid-gray)';
+  document.getElementById('admintab-resolved').style.borderBottomColor = tab === 'resolved' ? 'var(--green)' : 'transparent';
+  document.getElementById('admintab-resolved').style.color             = tab === 'resolved' ? 'var(--green)' : 'var(--mid-gray)';
+};
+
+window.openAdminThread = async (threadId) => {
+  const thread = selectedClientData.messages?.find(t => t.id === threadId);
+  if (!thread) return;
+  activeAdminThreadId = threadId;
+
+  document.getElementById('admin-thread-subject').textContent = thread.subject || 'No subject';
+  document.getElementById('admin-thread-view').classList.remove('hidden');
+  document.getElementById('admin-msg-reply').value = '';
+
+  const isResolved = thread.status === 'resolved';
+  document.getElementById('admin-thread-compose').classList.toggle('hidden', isResolved);
+  document.getElementById('admin-thread-resolved-bar').classList.toggle('hidden', !isResolved);
+  document.getElementById('admin-resolve-btn').classList.toggle('hidden', isResolved);
+
+  // Mark client messages as read by admin
+  const msgs = thread.messages || [];
+  const hasUnread = msgs.some(m => m.sender === 'client' && !m.readByAdmin);
+  if (hasUnread) {
+    const updated = msgs.map(m => m.sender === 'client' ? { ...m, readByAdmin: true } : m);
+    await fbUpdate(`clients/${selectedClient.uid}/messages/${threadId}`, { messages: updated });
+    thread.messages = updated;
+    const badge = document.getElementById('badge-client-messages');
+    const remaining = (selectedClientData.messages||[]).filter(t =>
+      t.status !== 'resolved' && (t.messages||[]).some(m => m.sender === 'client' && !m.readByAdmin)
+    ).length;
+    if (badge) {
+      if (remaining > 0) { badge.textContent = remaining; badge.classList.remove('hidden'); }
+      else { badge.classList.add('hidden'); }
+    }
+  }
+
+  renderAdminThreadMessages(thread);
+};
+
+function renderAdminThreadMessages(thread) {
+  const msgs = thread.messages || [];
+  const el   = document.getElementById('admin-thread-messages');
+  el.innerHTML = msgs.length === 0
+    ? '<div style="text-align:center;padding:20px;font-size:13px;color:var(--mid-gray)">No messages yet.</div>'
+    : msgs.map(m => {
+        const isAdmin = m.sender === 'admin';
+        return `
+          <div style="display:flex;flex-direction:column;align-items:${isAdmin?'flex-end':'flex-start'}">
+            <div class="msg-bubble ${isAdmin?'msg-bubble-admin':'msg-bubble-client'}">
+              <div class="msg-bubble-meta">${esc(isAdmin ? 'Common Print Co.' : (selectedClient.name||selectedClient.email))} · ${fmtDate(m.timestamp)}</div>
+              ${esc(m.text||'')}
+            </div>
+          </div>`;
+      }).join('');
+  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+}
+
+window.closeAdminThreadView = () => {
+  activeAdminThreadId = null;
+  document.getElementById('admin-thread-view').classList.add('hidden');
+};
+
+window.sendAdminMessage = async () => {
+  const text = document.getElementById('admin-msg-reply').value.trim();
+  if (!text || !activeAdminThreadId) return;
+  const uid    = selectedClient.uid;
+  const thread = selectedClientData.messages?.find(t => t.id === activeAdminThreadId);
+  if (!thread || thread.status === 'resolved') return;
+
+  const newMsg  = { sender:'admin', text, timestamp: new Date().toISOString() };
+  const updated = [...(thread.messages||[]), newMsg];
+  await fbUpdate(`clients/${uid}/messages/${activeAdminThreadId}`, { messages: updated });
+  thread.messages = updated;
+  document.getElementById('admin-msg-reply').value = '';
+  renderAdminThreadMessages(thread);
+
+  // Notify client
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name,
+      type:'message_reply', itemName: thread.subject || 'your message',
+    })
+  }).catch(()=>{});
+};
+
+window.resolveThread = async () => {
+  if (!activeAdminThreadId) return;
+  const uid    = selectedClient.uid;
+  const thread = selectedClientData.messages?.find(t => t.id === activeAdminThreadId);
+  if (!thread) return;
+  await fbUpdate(`clients/${uid}/messages/${activeAdminThreadId}`, {
+    status: 'resolved', resolvedAt: new Date().toISOString()
+  });
+  thread.status = 'resolved';
+  document.getElementById('admin-thread-compose').classList.add('hidden');
+  document.getElementById('admin-thread-resolved-bar').classList.remove('hidden');
+  document.getElementById('admin-resolve-btn').classList.add('hidden');
+  renderAdminClientMessages(selectedClientData.messages);
+  toast('Conversation marked as resolved.', 'success');
+};
+
+window.openAdminNewThreadModal = () => {
+  if (!selectedClient) return;
+  document.getElementById('ant-client-label').textContent = selectedClient.name || selectedClient.email;
+  document.getElementById('ant-subject').value = '';
+  document.getElementById('ant-body').value    = '';
+  document.getElementById('ant-error').classList.add('hidden');
+  openModal('modal-admin-new-thread');
+};
+
+window.startAdminThread = async () => {
+  const subject = document.getElementById('ant-subject').value.trim();
+  const body    = document.getElementById('ant-body').value.trim();
+  const errEl   = document.getElementById('ant-error');
+  errEl.classList.add('hidden');
+  if (!subject) { errEl.textContent='Please enter a subject.'; errEl.classList.remove('hidden'); return; }
+  if (!body)    { errEl.textContent='Please enter a message.'; errEl.classList.remove('hidden'); return; }
+
+  const uid      = selectedClient.uid;
+  const threadId = 'msg-' + Date.now().toString(36);
+  const firstMsg = { sender:'admin', text: body, timestamp: new Date().toISOString() };
+
+  await fbSet(`clients/${uid}/messages/${threadId}`, {
+    subject, status:'active', createdBy:'admin',
+    createdAt: new Date().toISOString(), messages:[firstMsg],
+  });
+
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name,
+      type:'message_reply', itemName: subject,
+    })
+  }).catch(()=>{});
+
+  closeModal('modal-admin-new-thread');
+  toast('Message sent!', 'success');
+  await loadClientDetail(uid);
+  showDetailTab('client-messages');
 };
 
 // ── CANCEL INVOICE ────────────────────────────

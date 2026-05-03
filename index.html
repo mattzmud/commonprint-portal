@@ -601,6 +601,25 @@
   .order-date { font-size: 12px; color: var(--mid-gray); }
   .order-amount { font-family: var(--font-display); font-size: 18px; color: var(--near-black); margin-right: 16px; }
 
+  /* ── MESSAGES ── */
+  .thread-list { display:flex; flex-direction:column; gap:0; }
+  .thread-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; border-bottom:1px solid var(--linen-dark);
+    cursor:pointer; transition:background .12s;
+  }
+  .thread-row:hover { background:var(--green-pale); }
+  .thread-row-subject { font-size:14px; font-weight:500; color:var(--near-black); margin-bottom:3px; }
+  .thread-row-preview { font-size:12px; color:var(--mid-gray); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:340px; }
+  .thread-row-meta { font-size:12px; color:var(--mid-gray); text-align:right; flex-shrink:0; margin-left:16px; }
+  .thread-unread-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; margin-right:6px; }
+  .msg-bubble { max-width:80%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.55; }
+  .msg-bubble-admin { background:var(--green-soft); color:var(--charcoal); align-self:flex-start; border-bottom-left-radius:4px; }
+  .msg-bubble-client { background:var(--green); color:var(--white); align-self:flex-end; border-bottom-right-radius:4px; }
+  .msg-bubble-meta { font-size:11px; font-weight:500; margin-bottom:3px; }
+  .msg-bubble-admin .msg-bubble-meta { color:var(--mid-gray); }
+  .msg-bubble-client .msg-bubble-meta { color:rgba(255,255,255,0.7); text-align:right; }
+
   /* ── PROOF THREAD ── */
   .proof-modal-wrap {
     display: grid;
@@ -859,6 +878,9 @@
       <button class="nav-tab" onclick="showPage('inprocess')" data-page="inprocess">
         In Process Orders <span class="nav-badge hidden" id="badge-inprocess"></span>
       </button>
+      <button class="nav-tab" onclick="showPage('messages')" data-page="messages">
+        Messages <span class="nav-badge hidden" id="badge-messages"></span>
+      </button>
       <button class="nav-tab" onclick="showPage('orders')" data-page="orders">Past Orders</button>
     </div>
     <div class="nav-right">
@@ -891,6 +913,10 @@
       <div class="dash-stat" style="cursor:pointer" onclick="showPage('inprocess')">
         <div class="dash-stat-label">In process</div>
         <div class="dash-stat-num highlight" id="stat-inprocess">—</div>
+      </div>
+      <div class="dash-stat" style="cursor:pointer" onclick="showPage('messages')">
+        <div class="dash-stat-label">Unread messages</div>
+        <div class="dash-stat-num highlight" id="stat-messages">—</div>
       </div>
     </div>
 
@@ -1018,6 +1044,54 @@
     <div class="card" style="padding:0;overflow:hidden">
       <div id="orders-list">
         <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="page" id="page-messages">
+    <div class="page-header">
+      <div><div class="page-title">Messages</div><div class="page-sub">Chat directly with Common Print Co.</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openNewThreadModal()">+ New message</button>
+    </div>
+
+    <!-- Thread view (hidden by default, shown when a thread is open) -->
+    <div id="msg-thread-view" class="hidden">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <button class="btn btn-ghost btn-sm" onclick="closeThreadView()">← Back</button>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:500;color:var(--near-black)" id="msg-thread-subject"></div>
+          <div style="font-size:12px;color:var(--mid-gray)" id="msg-thread-status-label"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column" id="msg-thread-card">
+        <div id="msg-thread-messages" style="min-height:240px;max-height:420px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+        <div id="msg-thread-compose" style="border-top:1px solid var(--border);padding:12px 16px">
+          <textarea id="msg-reply-text" placeholder="Type a message…"
+            style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--linen);outline:none;resize:none;height:72px;transition:border-color .15s"
+            onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
+            onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+            <button class="btn btn-primary btn-sm" onclick="sendClientMessage()">Send</button>
+          </div>
+        </div>
+        <div id="msg-thread-resolved-bar" class="hidden" style="border-top:1px solid var(--border);padding:12px 16px;background:var(--linen);font-size:13px;color:var(--mid-gray);text-align:center">
+          This conversation has been marked as resolved.
+        </div>
+      </div>
+    </div>
+
+    <!-- Thread list (shown by default) -->
+    <div id="msg-list-view">
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px">
+        <button onclick="switchMsgTab('active')" id="msgtab-active"
+          style="padding:8px 18px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--green);color:var(--green);font-family:var(--font-body)">Active</button>
+        <button onclick="switchMsgTab('resolved')" id="msgtab-resolved"
+          style="padding:8px 18px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--mid-gray);font-family:var(--font-body)">Resolved</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div id="msg-active-list" class="thread-list"></div>
+        <div id="msg-resolved-list" class="thread-list hidden"></div>
       </div>
     </div>
   </div>
@@ -1331,6 +1405,32 @@
   </div>
 </div>
 
+<!-- New Message Thread Modal -->
+<div class="modal-overlay" id="modal-new-thread">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title">New message</div>
+      <button class="modal-close" onclick="closeModal('modal-new-thread')">×</button>
+    </div>
+    <div class="field">
+      <label>Subject</label>
+      <input type="text" id="nt-subject" placeholder="e.g. Question about my sticker order">
+    </div>
+    <div class="field">
+      <label>Message</label>
+      <textarea id="nt-body" placeholder="Type your message…"
+        style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--linen);outline:none;resize:vertical;height:100px;transition:border-color .15s"
+        onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
+        onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'"></textarea>
+    </div>
+    <div class="form-error hidden" id="nt-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-thread')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="startNewThread()">Send message</button>
+    </div>
+  </div>
+</div>
+
 <!-- In Process Order Detail Modal -->
 <div class="modal-overlay" id="modal-inprocess">
   <div class="modal">
@@ -1548,7 +1648,7 @@ function docId(doc) { return doc.name?.split('/').pop(); }
 
 // ── STATE ────────────────────────────────────
 let currentUser = null;
-let cache = { proofs: null, quotes: null, invoices: null, orders: null };
+let cache = { proofs: null, quotes: null, invoices: null, orders: null, messages: null };
 let activeProof = null;
 let activeQuote = null;
 
@@ -1609,7 +1709,7 @@ window.doLogin = async () => {
 
 window.doSignOut = async () => {
   await signOut(auth);
-  cache = { proofs: null, quotes: null, invoices: null, orders: null };
+  cache = { proofs: null, quotes: null, invoices: null, orders: null, messages: null };
   document.getElementById('portal-footer').style.display = 'none';
 };
 
@@ -1673,6 +1773,7 @@ window.showPage = (id) => {
   if (id === 'inprocess' && !cache.invoices) renderInProcess();
   if (id === 'inprocess')                    renderInProcess();
   if (id === 'orders'    && !cache.orders)   renderOrders();
+  if (id === 'messages')                     renderMessages();
   if (id === 'profile')                      populateProfilePage();
   // Persist page in URL hash
   history.replaceState(null, '', '#' + id);
@@ -1691,17 +1792,19 @@ function restorePageFromHash() {
 // ── LOAD ALL DATA ────────────────────────────
 async function loadAll() {
   const uid = currentUser.uid;
-  const [proofDocs, quoteDocs, invoiceDocs, orderDocs] = await Promise.all([
+  const [proofDocs, quoteDocs, invoiceDocs, orderDocs, msgDocs] = await Promise.all([
     fbList(`clients/${uid}/proofs`),
     fbList(`clients/${uid}/quotes`),
     fbList(`clients/${uid}/invoices`),
     fbList(`clients/${uid}/orders`),
+    fbList(`clients/${uid}/messages`),
   ]);
 
   cache.proofs   = proofDocs.map(d  => ({ id: docId(d),  ...ff(d.fields) }));
   cache.quotes   = quoteDocs.map(d  => ({ id: docId(d),  ...ff(d.fields) }));
   cache.invoices = invoiceDocs.map(d => ({ id: docId(d), ...ff(d.fields) }));
   cache.orders   = orderDocs.map(d  => ({ id: docId(d),  ...ff(d.fields) }));
+  cache.messages = msgDocs.map(d    => ({ id: docId(d),  ...ff(d.fields) }));
 
   updateBadges();
   renderDashboard();
@@ -1710,6 +1813,7 @@ async function loadAll() {
   renderInvoices();
   renderInProcess();
   renderOrders();
+  renderMessages();
 }
 
 function updateBadges() {
@@ -1723,10 +1827,17 @@ function updateBadges() {
   setBadge('badge-invoices',  unpaidInvoices);
   setBadge('badge-inprocess', inProcessCount);
 
+  const unreadMessages  = (cache.messages || []).filter(t =>
+    t.status !== 'resolved' &&
+    (t.messages||[]).some(m => m.sender === 'admin' && !m.readByClient)
+  ).length;
+  setBadge('badge-messages', unreadMessages);
+
   document.getElementById('stat-proofs').textContent    = pendingProofs;
   document.getElementById('stat-quotes').textContent    = pendingQuotes;
   document.getElementById('stat-invoices').textContent  = unpaidInvoices;
   document.getElementById('stat-inprocess').textContent = inProcessCount;
+  document.getElementById('stat-messages').textContent  = unreadMessages;
 }
 
 function setBadge(id, count) {
@@ -2813,6 +2924,176 @@ window.saveProfile = async () => {
   } catch(e) {
     errEl.textContent = 'Failed to save: ' + e.message; errEl.classList.remove('hidden');
   }
+};
+
+// ── MESSAGES ─────────────────────────────────
+let activeThreadId = null;
+let activeMsgTab   = 'active';
+
+function renderMessages() {
+  if (!cache.messages) return;
+  const threads = cache.messages.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  const active   = threads.filter(t => t.status !== 'resolved');
+  const resolved = threads.filter(t => t.status === 'resolved');
+
+  const renderRow = (t) => {
+    const msgs   = t.messages || [];
+    const last   = msgs[msgs.length - 1];
+    const unread = msgs.some(m => m.sender === 'admin' && !m.readByClient);
+    return `
+      <div class="thread-row" onclick="openThread('${t.id}')">
+        <div style="flex:1;min-width:0">
+          <div class="thread-row-subject">
+            ${unread ? '<span class="thread-unread-dot"></span>' : ''}
+            ${esc(t.subject||'No subject')}
+          </div>
+          <div class="thread-row-preview">${last ? esc(last.text||'') : 'No messages yet'}</div>
+        </div>
+        <div class="thread-row-meta">
+          ${fmtDate(last?.timestamp||t.createdAt)}
+          <div style="margin-top:4px">${msgs.length} msg${msgs.length!==1?'s':''}</div>
+        </div>
+      </div>`;
+  };
+
+  const emptyActive   = '<div style="padding:32px;text-align:center;font-size:13px;color:var(--mid-gray)">No active conversations. Start a new message above.</div>';
+  const emptyResolved = '<div style="padding:32px;text-align:center;font-size:13px;color:var(--mid-gray)">No resolved conversations yet.</div>';
+
+  document.getElementById('msg-active-list').innerHTML   = active.length   ? active.map(renderRow).join('')   : emptyActive;
+  document.getElementById('msg-resolved-list').innerHTML = resolved.length ? resolved.map(renderRow).join('') : emptyResolved;
+}
+
+window.switchMsgTab = (tab) => {
+  activeMsgTab = tab;
+  document.getElementById('msg-active-list').classList.toggle('hidden',   tab !== 'active');
+  document.getElementById('msg-resolved-list').classList.toggle('hidden', tab !== 'resolved');
+  document.getElementById('msgtab-active').style.borderBottomColor   = tab === 'active'   ? 'var(--green)' : 'transparent';
+  document.getElementById('msgtab-active').style.color               = tab === 'active'   ? 'var(--green)' : 'var(--mid-gray)';
+  document.getElementById('msgtab-resolved').style.borderBottomColor = tab === 'resolved' ? 'var(--green)' : 'transparent';
+  document.getElementById('msgtab-resolved').style.color             = tab === 'resolved' ? 'var(--green)' : 'var(--mid-gray)';
+};
+
+window.openThread = async (threadId) => {
+  const thread = cache.messages.find(t => t.id === threadId);
+  if (!thread) return;
+  activeThreadId = threadId;
+
+  document.getElementById('msg-thread-subject').textContent     = thread.subject || 'No subject';
+  document.getElementById('msg-thread-status-label').textContent = thread.status === 'resolved' ? 'Resolved' : 'Active';
+  document.getElementById('msg-list-view').classList.add('hidden');
+  document.getElementById('msg-thread-view').classList.remove('hidden');
+
+  const isResolved = thread.status === 'resolved';
+  document.getElementById('msg-thread-compose').classList.toggle('hidden', isResolved);
+  document.getElementById('msg-thread-resolved-bar').classList.toggle('hidden', !isResolved);
+  document.getElementById('msg-reply-text').value = '';
+
+  // Mark admin messages as read
+  const msgs = thread.messages || [];
+  const hasUnread = msgs.some(m => m.sender === 'admin' && !m.readByClient);
+  if (hasUnread) {
+    const updated = msgs.map(m => m.sender === 'admin' ? { ...m, readByClient: true } : m);
+    await fbUpdate(`clients/${currentUser.uid}/messages/${threadId}`, { messages: updated });
+    thread.messages = updated;
+    updateBadges();
+  }
+
+  renderThreadMessages(thread);
+};
+
+function renderThreadMessages(thread) {
+  const msgs     = thread.messages || [];
+  const clientName = clientProfile.name || currentUser.email;
+  const el = document.getElementById('msg-thread-messages');
+  el.innerHTML = msgs.length === 0
+    ? '<div style="text-align:center;padding:24px;font-size:13px;color:var(--mid-gray)">No messages yet.</div>'
+    : msgs.map(m => {
+        const isClient = m.sender === 'client';
+        return `
+          <div style="display:flex;flex-direction:column;align-items:${isClient?'flex-end':'flex-start'}">
+            <div class="msg-bubble ${isClient?'msg-bubble-client':'msg-bubble-admin'}">
+              <div class="msg-bubble-meta">${esc(isClient ? clientName : 'Common Print Co.')} · ${fmtDate(m.timestamp)}</div>
+              ${esc(m.text||'')}
+            </div>
+          </div>`;
+      }).join('');
+  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+}
+
+window.closeThreadView = () => {
+  activeThreadId = null;
+  document.getElementById('msg-thread-view').classList.add('hidden');
+  document.getElementById('msg-list-view').classList.remove('hidden');
+  renderMessages();
+};
+
+window.openNewThreadModal = () => {
+  document.getElementById('nt-subject').value = '';
+  document.getElementById('nt-body').value    = '';
+  document.getElementById('nt-error').classList.add('hidden');
+  openModal('modal-new-thread');
+};
+
+window.startNewThread = async () => {
+  const subject = document.getElementById('nt-subject').value.trim();
+  const body    = document.getElementById('nt-body').value.trim();
+  const errEl   = document.getElementById('nt-error');
+  errEl.classList.add('hidden');
+  if (!subject) { errEl.textContent = 'Please enter a subject.'; errEl.classList.remove('hidden'); return; }
+  if (!body)    { errEl.textContent = 'Please enter a message.';  errEl.classList.remove('hidden'); return; }
+
+  const uid      = currentUser.uid;
+  const threadId = 'msg-' + Date.now().toString(36);
+  const firstMsg = { sender: 'client', text: body, timestamp: new Date().toISOString() };
+
+  await fbSet(`clients/${uid}/messages/${threadId}`, {
+    subject,
+    status:    'active',
+    createdBy: 'client',
+    createdAt: new Date().toISOString(),
+    messages:  [firstMsg],
+  });
+
+  // Notify admin
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action: 'notify_admin', type: 'new_message',
+      clientEmail: currentUser.email,
+      itemName: subject, comment: body,
+    })
+  }).catch(()=>{});
+
+  closeModal('modal-new-thread');
+  // Add to cache and open
+  const newThread = { id: threadId, subject, status:'active', createdBy:'client', createdAt: new Date().toISOString(), messages:[firstMsg] };
+  cache.messages = [newThread, ...(cache.messages||[])];
+  renderMessages();
+  openThread(threadId);
+};
+
+window.sendClientMessage = async () => {
+  const text = document.getElementById('msg-reply-text').value.trim();
+  if (!text || !activeThreadId) return;
+  const uid    = currentUser.uid;
+  const thread = cache.messages.find(t => t.id === activeThreadId);
+  if (!thread || thread.status === 'resolved') return;
+
+  const newMsg = { sender:'client', text, timestamp: new Date().toISOString() };
+  const updated = [...(thread.messages||[]), newMsg];
+  await fbUpdate(`clients/${uid}/messages/${activeThreadId}`, { messages: updated });
+  thread.messages = updated;
+  document.getElementById('msg-reply-text').value = '';
+  renderThreadMessages(thread);
+
+  await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action: 'notify_admin', type: 'new_message',
+      clientEmail: currentUser.email,
+      itemName: thread.subject||'Message', comment: text,
+    })
+  }).catch(()=>{});
 };
 
 // ── KEYBOARD ─────────────────────────────────
