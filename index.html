@@ -830,7 +830,9 @@
       <button class="nav-tab" onclick="showPage('orders')" data-page="orders">Past Orders</button>
     </div>
     <div class="nav-right">
-      <span class="nav-user" id="nav-user-email"></span>
+      <button class="btn btn-ghost btn-sm" onclick="showPage('profile')" style="font-size:13px">
+        <span id="nav-user-name" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      </button>
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">Sign out</button>
     </div>
   </nav>
@@ -970,6 +972,93 @@
       <div id="orders-list">
         <div class="loading-center"><div class="spinner"></div></div>
       </div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="page" id="page-profile">
+    <div class="page-header">
+      <div><div class="page-title">My Profile</div><div class="page-sub">Update your contact information and password.</div></div>
+      <button class="btn btn-primary" onclick="saveProfile()">Save changes</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px">
+
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-title">Contact information</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="field">
+            <label>Company / Organization</label>
+            <input type="text" id="prof-company" placeholder="Acme Corp">
+          </div>
+          <div class="field">
+            <label>Contact name</label>
+            <input type="text" id="prof-name" placeholder="Your name">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="tel" id="prof-phone" placeholder="(734) 555-0100" oninput="this.value=formatPhoneClient(this.value)">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="prof-email" disabled style="opacity:.5;cursor:not-allowed">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Shipping address</div>
+        <div class="field"><label>Street address</label><input type="text" id="prof-ship-street" placeholder="123 Main St"></div>
+        <div class="field"><label>City</label><input type="text" id="prof-ship-city" placeholder="Ann Arbor"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field"><label>State</label><input type="text" id="prof-ship-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
+          <div class="field"><label>ZIP</label><input type="text" id="prof-ship-zip" placeholder="48104" maxlength="10"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+          Billing address
+          <label style="font-size:12px;font-weight:400;color:var(--mid-gray);cursor:pointer;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="prof-same-address" onchange="toggleSameAddress(this.checked)">
+            Same as shipping
+          </label>
+        </div>
+        <div id="billing-fields">
+          <div class="field"><label>Street address</label><input type="text" id="prof-bill-street" placeholder="123 Main St"></div>
+          <div class="field"><label>City</label><input type="text" id="prof-bill-city" placeholder="Ann Arbor"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="field"><label>State</label><input type="text" id="prof-bill-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
+            <div class="field"><label>ZIP</label><input type="text" id="prof-bill-zip" placeholder="48104" maxlength="10"></div>
+          </div>
+        </div>
+        <div id="billing-same-msg" class="hidden" style="font-size:13px;color:var(--mid-gray);padding:8px 0">Same as shipping address.</div>
+      </div>
+
+      <div class="card" style="grid-column:1/-1">
+        <div class="card-title">Change password</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+          <div class="field">
+            <label>Current password</label>
+            <input type="password" id="prof-current-pw" placeholder="••••••••">
+          </div>
+          <div class="field">
+            <label>New password</label>
+            <input type="password" id="prof-new-pw" placeholder="At least 8 characters">
+          </div>
+          <div class="field">
+            <label>Confirm new password</label>
+            <input type="password" id="prof-confirm-pw" placeholder="Re-enter new password">
+          </div>
+        </div>
+        <div class="form-error hidden" id="prof-pw-error"></div>
+        <div class="form-success hidden" id="prof-pw-success"></div>
+      </div>
+
+    </div>
+    <div style="max-width:760px;margin-top:8px">
+      <div class="form-error hidden" id="prof-error"></div>
+      <div class="form-success hidden" id="prof-success"></div>
     </div>
   </div>
 
@@ -1215,6 +1304,71 @@
   </div>
 </div>
 
+<!-- First Login / Complete Profile Modal -->
+<div class="modal-overlay" id="modal-first-login" style="background:rgba(30,28,26,0.7)">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Welcome! Let's set up your profile.</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:3px">This helps us make sure your orders reach you correctly.</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field">
+        <label>Company / Organization</label>
+        <input type="text" id="fl-company" placeholder="Acme Corp">
+      </div>
+      <div class="field">
+        <label>Contact name</label>
+        <input type="text" id="fl-name" placeholder="Your name">
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="fl-phone" placeholder="(734) 555-0100" oninput="this.value=formatPhoneClient(this.value)">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="fl-email" disabled style="opacity:.5;cursor:not-allowed">
+      </div>
+    </div>
+
+    <div style="margin-top:4px">
+      <div class="card-title" style="margin-bottom:10px">Shipping address</div>
+      <div class="field"><label>Street address</label><input type="text" id="fl-ship-street" placeholder="123 Main St"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+        <div class="field"><label>City</label><input type="text" id="fl-ship-city" placeholder="Ann Arbor"></div>
+        <div class="field"><label>State</label><input type="text" id="fl-ship-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
+        <div class="field"><label>ZIP</label><input type="text" id="fl-ship-zip" placeholder="48104" maxlength="10"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:4px">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        Billing address
+        <label style="font-size:12px;font-weight:400;color:var(--mid-gray);cursor:pointer;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="fl-same-address" onchange="toggleFirstLoginSame(this.checked)">
+          Same as shipping
+        </label>
+      </div>
+      <div id="fl-billing-fields">
+        <div class="field"><label>Street address</label><input type="text" id="fl-bill-street" placeholder="123 Main St"></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+          <div class="field"><label>City</label><input type="text" id="fl-bill-city" placeholder="Ann Arbor"></div>
+          <div class="field"><label>State</label><input type="text" id="fl-bill-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
+          <div class="field"><label>ZIP</label><input type="text" id="fl-bill-zip" placeholder="48104" maxlength="10"></div>
+        </div>
+      </div>
+      <div id="fl-billing-same-msg" class="hidden" style="font-size:13px;color:var(--mid-gray);padding:8px 0">Same as shipping address.</div>
+    </div>
+
+    <div class="form-error hidden" id="fl-error" style="margin-top:8px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="min-width:160px" onclick="saveFirstLoginProfile()">Save &amp; continue</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════
      FIREBASE + APP LOGIC
 ══════════════════════════════════════════ -->
@@ -1336,9 +1490,10 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    document.getElementById('nav-user-email').textContent = user.email;
+    document.getElementById('nav-user-name').textContent = user.email;
     setGreeting();
     await loadAll();
+    await loadProfile();
   } else {
     currentUser = null;
     document.getElementById('login-screen').style.display = 'flex';
@@ -1444,6 +1599,7 @@ window.showPage = (id) => {
   if (id === 'inprocess' && !cache.invoices) renderInProcess();
   if (id === 'inprocess')                    renderInProcess();
   if (id === 'orders'    && !cache.orders)   renderOrders();
+  if (id === 'profile')                      populateProfilePage();
 };
 
 // ── LOAD ALL DATA ────────────────────────────
@@ -2333,6 +2489,196 @@ window.printClientQuote = () => {
   </body></html>`);
   win.document.close();
   setTimeout(() => win.print(), 500);
+};
+
+// ── PROFILE ──────────────────────────────────
+let clientProfile = {};
+
+function formatPhoneClient(val) {
+  const digits = val.replace(/\D/g, '').slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+}
+window.formatPhoneClient = formatPhoneClient;
+
+async function loadProfile() {
+  const uid = currentUser.uid;
+  const doc = await fbGet(`clients/${uid}`);
+  if (!doc) return;
+  clientProfile = ff(doc.fields);
+
+  // Update nav name display
+  const displayName = clientProfile.company || clientProfile.name || currentUser.email;
+  document.getElementById('nav-user-name').textContent = displayName;
+
+  // Check if profile is complete (has shipping address)
+  const ship = clientProfile.shippingAddress || {};
+  const profileComplete = clientProfile.profileCompleted || (ship.street && ship.city);
+  if (!profileComplete) {
+    showFirstLoginModal();
+  }
+}
+
+function showFirstLoginModal() {
+  // Pre-populate from existing client data
+  document.getElementById('fl-company').value     = clientProfile.company || '';
+  document.getElementById('fl-name').value        = clientProfile.name    || '';
+  document.getElementById('fl-phone').value       = clientProfile.phone   || '';
+  document.getElementById('fl-email').value       = currentUser.email;
+
+  const ship = clientProfile.shippingAddress || {};
+  document.getElementById('fl-ship-street').value = ship.street || '';
+  document.getElementById('fl-ship-city').value   = ship.city   || '';
+  document.getElementById('fl-ship-state').value  = ship.state  || '';
+  document.getElementById('fl-ship-zip').value    = ship.zip    || '';
+
+  const bill = clientProfile.billingAddress || {};
+  document.getElementById('fl-bill-street').value = bill.street || '';
+  document.getElementById('fl-bill-city').value   = bill.city   || '';
+  document.getElementById('fl-bill-state').value  = bill.state  || '';
+  document.getElementById('fl-bill-zip').value    = bill.zip    || '';
+
+  document.getElementById('modal-first-login').classList.add('open');
+}
+
+window.toggleFirstLoginSame = (checked) => {
+  document.getElementById('fl-billing-fields').style.display   = checked ? 'none' : 'block';
+  document.getElementById('fl-billing-same-msg').classList.toggle('hidden', !checked);
+};
+
+window.saveFirstLoginProfile = async () => {
+  const company   = document.getElementById('fl-company').value.trim();
+  const name      = document.getElementById('fl-name').value.trim();
+  const phone     = document.getElementById('fl-phone').value.trim();
+  const shipStreet= document.getElementById('fl-ship-street').value.trim();
+  const shipCity  = document.getElementById('fl-ship-city').value.trim();
+  const shipState = document.getElementById('fl-ship-state').value.trim().toUpperCase();
+  const shipZip   = document.getElementById('fl-ship-zip').value.trim();
+  const sameAddr  = document.getElementById('fl-same-address').checked;
+  const errEl     = document.getElementById('fl-error');
+  errEl.classList.add('hidden');
+
+  if (!name) { errEl.textContent = 'Please enter your contact name.'; errEl.classList.remove('hidden'); return; }
+
+  const shippingAddress = { street: shipStreet, city: shipCity, state: shipState, zip: shipZip };
+  const billingAddress  = sameAddr ? { ...shippingAddress } : {
+    street: document.getElementById('fl-bill-street').value.trim(),
+    city:   document.getElementById('fl-bill-city').value.trim(),
+    state:  document.getElementById('fl-bill-state').value.trim().toUpperCase(),
+    zip:    document.getElementById('fl-bill-zip').value.trim(),
+  };
+
+  try {
+    await fbUpdate(`clients/${currentUser.uid}`, {
+      company, name, phone, shippingAddress, billingAddress, profileCompleted: true,
+    });
+    clientProfile = { ...clientProfile, company, name, phone, shippingAddress, billingAddress, profileCompleted: true };
+    document.getElementById('nav-user-name').textContent = company || name || currentUser.email;
+    document.getElementById('modal-first-login').classList.remove('open');
+    toast('Profile saved!', 'success');
+  } catch(e) {
+    errEl.textContent = 'Failed to save profile: ' + e.message;
+    errEl.classList.remove('hidden');
+  }
+};
+
+function populateProfilePage() {
+  document.getElementById('prof-company').value      = clientProfile.company || '';
+  document.getElementById('prof-name').value         = clientProfile.name    || '';
+  document.getElementById('prof-phone').value        = clientProfile.phone   || '';
+  document.getElementById('prof-email').value        = currentUser.email;
+
+  const ship = clientProfile.shippingAddress || {};
+  document.getElementById('prof-ship-street').value  = ship.street || '';
+  document.getElementById('prof-ship-city').value    = ship.city   || '';
+  document.getElementById('prof-ship-state').value   = ship.state  || '';
+  document.getElementById('prof-ship-zip').value     = ship.zip    || '';
+
+  const bill = clientProfile.billingAddress || {};
+  const sameAddr = bill.street === ship.street && bill.city === ship.city && bill.zip === ship.zip && !!ship.street;
+  document.getElementById('prof-same-address').checked = sameAddr;
+  toggleSameAddress(sameAddr);
+  if (!sameAddr) {
+    document.getElementById('prof-bill-street').value = bill.street || '';
+    document.getElementById('prof-bill-city').value   = bill.city   || '';
+    document.getElementById('prof-bill-state').value  = bill.state  || '';
+    document.getElementById('prof-bill-zip').value    = bill.zip    || '';
+  }
+
+  ['prof-error','prof-success','prof-pw-error','prof-pw-success'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.add('hidden'); el.textContent = '';
+  });
+  ['prof-current-pw','prof-new-pw','prof-confirm-pw'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+window.toggleSameAddress = (checked) => {
+  document.getElementById('billing-fields').style.display        = checked ? 'none' : 'block';
+  document.getElementById('billing-same-msg').classList.toggle('hidden', !checked);
+};
+
+window.saveProfile = async () => {
+  const company   = document.getElementById('prof-company').value.trim();
+  const name      = document.getElementById('prof-name').value.trim();
+  const phone     = document.getElementById('prof-phone').value.trim();
+  const shipStreet= document.getElementById('prof-ship-street').value.trim();
+  const shipCity  = document.getElementById('prof-ship-city').value.trim();
+  const shipState = document.getElementById('prof-ship-state').value.trim().toUpperCase();
+  const shipZip   = document.getElementById('prof-ship-zip').value.trim();
+  const sameAddr  = document.getElementById('prof-same-address').checked;
+  const errEl     = document.getElementById('prof-error');
+  const okEl      = document.getElementById('prof-success');
+  errEl.classList.add('hidden'); okEl.classList.add('hidden');
+
+  const shippingAddress = { street: shipStreet, city: shipCity, state: shipState, zip: shipZip };
+  const billingAddress  = sameAddr ? { ...shippingAddress } : {
+    street: document.getElementById('prof-bill-street').value.trim(),
+    city:   document.getElementById('prof-bill-city').value.trim(),
+    state:  document.getElementById('prof-bill-state').value.trim().toUpperCase(),
+    zip:    document.getElementById('prof-bill-zip').value.trim(),
+  };
+
+  // Handle password change if fields are filled
+  const currentPw = document.getElementById('prof-current-pw').value;
+  const newPw     = document.getElementById('prof-new-pw').value;
+  const confirmPw = document.getElementById('prof-confirm-pw').value;
+  const pwErrEl   = document.getElementById('prof-pw-error');
+  const pwOkEl    = document.getElementById('prof-pw-success');
+  pwErrEl.classList.add('hidden'); pwOkEl.classList.add('hidden');
+
+  if (newPw || currentPw || confirmPw) {
+    if (!currentPw) { pwErrEl.textContent = 'Enter your current password.'; pwErrEl.classList.remove('hidden'); return; }
+    if (newPw.length < 8) { pwErrEl.textContent = 'New password must be at least 8 characters.'; pwErrEl.classList.remove('hidden'); return; }
+    if (newPw !== confirmPw) { pwErrEl.textContent = "Passwords don't match."; pwErrEl.classList.remove('hidden'); return; }
+    try {
+      const { signInWithEmailAndPassword: reauth, updatePassword } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const cred = await reauth(auth, currentUser.email, currentPw);
+      await updatePassword(cred.user, newPw);
+      pwOkEl.textContent = 'Password updated successfully.';
+      pwOkEl.classList.remove('hidden');
+      ['prof-current-pw','prof-new-pw','prof-confirm-pw'].forEach(id => document.getElementById(id).value = '');
+    } catch(e) {
+      const msg = e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
+        ? 'Current password is incorrect.' : 'Failed to update password.';
+      pwErrEl.textContent = msg; pwErrEl.classList.remove('hidden'); return;
+    }
+  }
+
+  try {
+    await fbUpdate(`clients/${currentUser.uid}`, {
+      company, name, phone, shippingAddress, billingAddress, profileCompleted: true,
+    });
+    clientProfile = { ...clientProfile, company, name, phone, shippingAddress, billingAddress };
+    document.getElementById('nav-user-name').textContent = company || name || currentUser.email;
+    okEl.textContent = 'Profile saved!'; okEl.classList.remove('hidden');
+    setTimeout(() => okEl.classList.add('hidden'), 3000);
+  } catch(e) {
+    errEl.textContent = 'Failed to save: ' + e.message; errEl.classList.remove('hidden');
+  }
 };
 
 // ── KEYBOARD ─────────────────────────────────
