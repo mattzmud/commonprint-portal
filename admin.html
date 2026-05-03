@@ -1053,6 +1053,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('sidebar-email').textContent = user.email;
     await loadAllClients();
     renderOverview();
+    await restoreAdminFromHash();
   } else {
     currentUser = null;
     document.getElementById('login-screen').style.display = 'flex';
@@ -1192,9 +1193,14 @@ function setSBadge(id, n) {
 window.showPage = (id) => {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
+  const pageEl = document.getElementById('page-' + id);
+  if (pageEl) pageEl.classList.add('active');
   const btn = document.querySelector(`[data-page="${id}"]`);
   if (btn) btn.classList.add('active');
+  // Persist in hash — clear client detail state when navigating away
+  if (id !== 'client-detail') {
+    history.replaceState(null, '', '#' + id);
+  }
 };
 
 window.showDetailTab = (tab) => {
@@ -1202,7 +1208,34 @@ window.showDetailTab = (tab) => {
   document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('active'));
   document.querySelector(`[data-dtab="${tab}"]`).classList.add('active');
   document.getElementById('dtab-' + tab).classList.add('active');
+  // Persist tab in hash alongside client UID
+  const uid = selectedClient?.uid || '';
+  if (uid) history.replaceState(null, '', `#client:${uid}:${tab}`);
 };
+
+async function restoreAdminFromHash() {
+  const hash = window.location.hash.replace('#', '');
+  if (!hash) { showPage('overview'); return; }
+
+  // Format: client:UID:tab
+  if (hash.startsWith('client:')) {
+    const parts = hash.split(':');
+    const uid   = parts[1];
+    const tab   = parts[2] || 'info';
+    if (uid) {
+      await openClientDetail(uid);
+      showDetailTab(tab);
+      return;
+    }
+  }
+
+  const validPages = ['overview','clients','proofs','quotes','invoices'];
+  if (validPages.includes(hash)) {
+    showPage(hash);
+  } else {
+    showPage('overview');
+  }
+}
 
 // ── CLIENTS ───────────────────────────────────
 function renderClientsGrid() {
@@ -1227,7 +1260,10 @@ window.openClientDetail = async (uid) => {
   if (!selectedClient) return;
   document.getElementById('detail-name').textContent   = selectedClient.name || selectedClient.email;
   document.getElementById('detail-email-sub').textContent = selectedClient.email || '';
-  showPage('client-detail');
+  // Show page without writing hash (showDetailTab will write it)
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-client-detail').classList.add('active');
   showDetailTab('info');
   await loadClientDetail(uid);
 };

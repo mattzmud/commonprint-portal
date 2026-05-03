@@ -1496,6 +1496,7 @@ onAuthStateChanged(auth, async (user) => {
     setGreeting();
     await loadAll();
     await loadProfile();
+    restorePageFromHash();
   } else {
     currentUser = null;
     document.getElementById('login-screen').style.display = 'flex';
@@ -1604,7 +1605,19 @@ window.showPage = (id) => {
   if (id === 'inprocess')                    renderInProcess();
   if (id === 'orders'    && !cache.orders)   renderOrders();
   if (id === 'profile')                      populateProfilePage();
+  // Persist page in URL hash
+  history.replaceState(null, '', '#' + id);
 };
+
+function restorePageFromHash() {
+  const hash = window.location.hash.replace('#', '');
+  const validPages = ['dashboard','proofs','quotes','invoices','inprocess','orders','profile'];
+  if (hash && validPages.includes(hash)) {
+    showPage(hash);
+  } else {
+    showPage('dashboard');
+  }
+}
 
 // ── LOAD ALL DATA ────────────────────────────
 async function loadAll() {
