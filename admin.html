@@ -1368,7 +1368,7 @@ window.openViewQuoteModal = (quoteId) => {
     <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
       <div>
         <div style="font-weight:500;color:var(--near-black)">${esc(li.description || li.desc || '')}</div>
-        <div style="font-size:12px;color:var(--mid-gray)">Qty: ${li.qty || 1}</div>
+        <div style="font-size:12px;color:var(--mid-gray)">${li.qty || 1} × $${(li.price || 0).toFixed(2)} each</div>
       </div>
       <div style="font-weight:500">$${((li.price || 0) * (li.qty || 1)).toFixed(2)}</div>
     </div>`).join('') +

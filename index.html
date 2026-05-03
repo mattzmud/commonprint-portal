@@ -1386,7 +1386,10 @@ window.openQuote = (id) => {
   const lines = q.lineItems || [];
   const linesHtml = lines.map(li => `
     <div class="line-item">
-      <div><div class="line-item-desc">${esc(li.description || li.desc || '')}</div><div class="line-item-qty">Qty: ${li.qty || 1}</div></div>
+      <div>
+        <div class="line-item-desc">${esc(li.description || li.desc || '')}</div>
+        <div class="line-item-qty">${li.qty || 1} × $${(li.price || 0).toFixed(2)} each</div>
+      </div>
       <div class="line-item-price">$${((li.price || 0) * (li.qty || 1)).toFixed(2)}</div>
     </div>`).join('');
   const total = q.total || lines.reduce((s, li) => s + (li.price || 0) * (li.qty || 1), 0);
