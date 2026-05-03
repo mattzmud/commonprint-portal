@@ -817,7 +817,8 @@
       <button class="modal-close" onclick="closeModal('modal-new-client')">×</button>
     </div>
     <p class="text-muted" style="margin-bottom:20px">Enter the client's details. They'll receive an email with a link to set their password and access the portal.</p>
-    <div class="field"><label>Client name / company</label><input type="text" id="nc-name" placeholder="Acme Corp"></div>
+    <div class="field"><label>Company / Organization</label><input type="text" id="nc-company" placeholder="Acme Corp"></div>
+    <div class="field"><label>Contact name</label><input type="text" id="nc-name" placeholder="Jane Smith"></div>
     <div class="field"><label>Email address</label><input type="email" id="nc-email" placeholder="client@example.com"></div>
     <div class="field"><label>Phone (optional)</label><input type="tel" id="nc-phone" placeholder="(734) 555-0100" oninput="this.value=formatPhoneInput(this.value)"></div>
     <div class="form-error" id="nc-error"></div>
@@ -1212,11 +1213,11 @@ function renderClientsGrid() {
   }
   grid.innerHTML = allClients.map(c => `
     <div class="client-card" onclick="openClientDetail('${c.uid}')">
+      ${c.company ? `<div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px">${esc(c.company)}</div>` : ''}
       <div class="client-name">${esc(c.name || c.email)}</div>
       <div class="client-email">${esc(c.email || '')}</div>
-      <div class="client-meta">
+      <div class="client-meta" style="margin-top:8px">
         ${badge(c.status || 'active')}
-        <span class="text-muted">${esc(c.phone || '')}</span>
       </div>
     </div>`).join('');
 }
@@ -1247,15 +1248,49 @@ async function loadClientDetail(uid) {
   selectedClientData = { proofs, quotes, invoices, orders, requests };
 
   // Info tab
+  // Load existing notes from client doc
+  const clientDoc = await fbGet(`clients/${uid}`);
+  const existingNotes = clientDoc ? (ff(clientDoc.fields).adminNotes || '') : '';
+
   document.getElementById('detail-info-body').innerHTML = `
-    <div class="info-row"><span class="info-label">Name</span><span class="info-val">${esc(selectedClient.name||'—')}</span></div>
-    <div class="info-row"><span class="info-label">Email</span><span class="info-val">${esc(selectedClient.email||'—')}</span></div>
-    <div class="info-row"><span class="info-label">Phone</span><span class="info-val">${esc(selectedClient.phone||'—')}</span></div>
-    <div class="info-row"><span class="info-label">Added</span><span class="info-val">${fmtDate(selectedClient.createdAt)}</span></div>
-    <div class="info-row"><span class="info-label">Proofs</span><span class="info-val">${proofs.length}</span></div>
-    <div class="info-row"><span class="info-label">Quotes</span><span class="info-val">${quotes.length}</span></div>
-    <div class="info-row"><span class="info-label">Invoices</span><span class="info-val">${invoices.length}</span></div>
-    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--linen-dark)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+      <div class="info-row" style="grid-column:1/-1"><span class="info-label">Company</span><span class="info-val">${esc(selectedClient.company||'—')}</span></div>
+      <div class="info-row" style="grid-column:1/-1"><span class="info-label">Contact name</span><span class="info-val">${esc(selectedClient.name||'—')}</span></div>
+      <div class="info-row" style="grid-column:1/-1"><span class="info-label">Email</span><span class="info-val">${esc(selectedClient.email||'—')}</span></div>
+      <div class="info-row" style="grid-column:1/-1"><span class="info-label">Phone</span><span class="info-val">${esc(selectedClient.phone||'—')}</span></div>
+      <div class="info-row" style="grid-column:1/-1"><span class="info-label">Client since</span><span class="info-val">${fmtDate(selectedClient.createdAt)}</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px;text-align:center">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Proofs</div>
+        <div style="font-family:var(--font-display);font-size:24px;color:var(--near-black)">${proofs.length}</div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px;text-align:center">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Quotes</div>
+        <div style="font-family:var(--font-display);font-size:24px;color:var(--near-black)">${quotes.length}</div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px;text-align:center">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Invoices</div>
+        <div style="font-family:var(--font-display);font-size:24px;color:var(--near-black)">${invoices.length}</div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px;text-align:center">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Completed</div>
+        <div style="font-family:var(--font-display);font-size:24px;color:var(--green)">${orders.length}</div>
+      </div>
+    </div>
+    <div style="margin-top:4px">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Admin notes</div>
+      <textarea id="admin-notes-field"
+        style="width:100%;min-height:100px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--linen);outline:none;resize:vertical;line-height:1.6;transition:border-color .15s"
+        placeholder="Notes about this client — preferences, special requirements, past conversations…"
+        onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
+        onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'"
+      >${esc(existingNotes)}</textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px">
+        <button class="btn btn-ghost btn-sm" onclick="saveAdminNotes('${uid}')">Save notes</button>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--linen-dark)">
       <button class="btn btn-ghost btn-sm" onclick="resendInvite('${esc(selectedClient.uid)}')">Resend portal invite</button>
     </div>
   `;
@@ -1515,7 +1550,7 @@ window.navigateToClientTab = async (clientUid, tab) => {
 
 // ── INVITE CLIENT ─────────────────────────────
 window.openNewClientModal = () => {
-  document.getElementById('nc-name').value=''; document.getElementById('nc-email').value=''; document.getElementById('nc-phone').value='';
+  document.getElementById('nc-company').value=''; document.getElementById('nc-name').value=''; document.getElementById('nc-email').value=''; document.getElementById('nc-phone').value='';
   document.getElementById('nc-error').classList.remove('show');
   openModal('modal-new-client');
 };
@@ -1538,12 +1573,13 @@ window.inviteClient = async () => {
     if (!data.uid) throw new Error(data.error || 'Failed');
 
     // Save client profile in Firestore
+    const company = document.getElementById('nc-company').value.trim();
     const formattedPhone = formatPhone(phone);
-    await fbSet(`clients/${data.uid}`, { name, email, phone: formattedPhone, createdAt: new Date().toISOString(), status:'active' });
+    await fbSet(`clients/${data.uid}`, { company, name, email, phone: formattedPhone, createdAt: new Date().toISOString(), status:'active' });
     // Add client UID to admin's clientUids array
     await addClientUidToAdmin(data.uid);
 
-    allClients.push({ uid: data.uid, name, email, phone: formattedPhone, status:'active' });
+    allClients.push({ uid: data.uid, company, name, email, phone: formattedPhone, status:'active' });
     renderClientsGrid();
     closeModal('modal-new-client');
     toast(`Invite sent to ${email}`, 'success');
@@ -2485,6 +2521,17 @@ window.printQuote = () => {
   </body></html>`);
   win.document.close();
   setTimeout(() => win.print(), 500);
+};
+
+// ── ADMIN NOTES ───────────────────────────────
+window.saveAdminNotes = async (uid) => {
+  const notes = document.getElementById('admin-notes-field')?.value || '';
+  try {
+    await fbUpdate(`clients/${uid}`, { adminNotes: notes });
+    toast('Notes saved.', 'success');
+  } catch(e) {
+    toast('Failed to save notes: ' + e.message, 'error');
+  }
 };
 
 // ── RESEND INVITE ─────────────────────────────
