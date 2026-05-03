@@ -1843,26 +1843,39 @@ window.openProof = (id) => {
     ? revisions[revisions.length - 1]
     : { url: p.fileUrl, fileType: p.fileType };
 
-  const img = document.getElementById('modal-proof-img');
-  const placeholder = document.getElementById('modal-proof-placeholder');
-  const pdfA = document.getElementById('modal-proof-pdf-a');
-  if (currentFile.url) {
-    pdfA.href = currentFile.url;
-    if (currentFile.fileType === 'pdf') {
-      img.classList.add('hidden');
-      placeholder.classList.remove('hidden');
-    } else {
-      img.src = currentFile.url;
-      img.classList.remove('hidden');
-      placeholder.classList.add('hidden');
+  // Build file tabs if proof has multiple files
+  const allFiles = p.files && p.files.length > 1 ? p.files : null;
+  const previewPane = document.getElementById('modal-proof-img').parentElement;
+
+  // Render file tabs
+  const navEl = document.getElementById('modal-proof-revision-nav');
+  if (allFiles) {
+    navEl.innerHTML = allFiles.map((f, i) => `
+      <button onclick="switchProofTab(${i})" id="proof-tab-${i}"
+        style="padding:4px 10px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:var(--font-body);cursor:pointer;background:${i===0?'var(--green)':'var(--linen)'};color:${i===0?'var(--white)':'var(--charcoal)'};transition:all .15s">
+        File ${i+1}
+      </button>`).join('');
+    window._proofTabs = allFiles;
+    switchProofTab(0);
+  } else {
+    navEl.innerHTML = revisions.length > 0 ? `<span style="font-size:12px;color:var(--mid-gray)">v${revisions.length + 1} (latest)</span>` : '';
+    window._proofTabs = null;
+
+    const img = document.getElementById('modal-proof-img');
+    const placeholder = document.getElementById('modal-proof-placeholder');
+    const pdfA = document.getElementById('modal-proof-pdf-a');
+    if (currentFile.url) {
+      pdfA.href = currentFile.url;
+      if (currentFile.fileType === 'pdf') {
+        img.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+      } else {
+        img.src = currentFile.url;
+        img.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      }
     }
   }
-
-  // Revision nav label
-  const navEl = document.getElementById('modal-proof-revision-nav');
-  navEl.textContent = revisions.length > 0
-    ? `v${revisions.length + 1} of ${revisions.length + 1} (latest)`
-    : '';
 
   // Show/hide action areas based on status
   const actionsDiv = document.getElementById('modal-proof-actions');
@@ -1885,6 +1898,34 @@ window.openProof = (id) => {
 
   renderClientProofThread(p);
   openModal('modal-proof');
+};
+
+window.switchProofTab = (idx) => {
+  const tabs = window._proofTabs;
+  if (!tabs || !tabs[idx]) return;
+  const f = tabs[idx];
+  const img = document.getElementById('modal-proof-img');
+  const placeholder = document.getElementById('modal-proof-placeholder');
+  const pdfA = document.getElementById('modal-proof-pdf-a');
+
+  pdfA.href = f.url;
+  if (f.fileType === 'pdf') {
+    img.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+  } else {
+    img.src = f.url;
+    img.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  }
+
+  // Update tab button styles
+  tabs.forEach((_, i) => {
+    const btn = document.getElementById(`proof-tab-${i}`);
+    if (btn) {
+      btn.style.background = i === idx ? 'var(--green)' : 'var(--linen)';
+      btn.style.color      = i === idx ? 'var(--white)' : 'var(--charcoal)';
+    }
+  });
 };
 
 function renderClientProofThread(p) {

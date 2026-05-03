@@ -305,6 +305,103 @@
     align-items: center;
   }
 
+  /* ── PROOF STAGING ── */
+  .staging-pool {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    padding: 12px;
+    background: var(--linen);
+    border-radius: var(--radius);
+    min-height: 80px;
+    border: 2px dashed var(--border);
+  }
+  .staging-card {
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    position: relative;
+    user-select: none;
+  }
+  .staging-card.selected {
+    border-color: var(--green);
+    box-shadow: 0 0 0 2px var(--green-soft);
+  }
+  .staging-card.in-group {
+    border-color: var(--green-soft);
+    background: var(--green-pale);
+  }
+  .staging-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    background: var(--linen);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+  .staging-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    font-size: 11px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .staging-card.selected .staging-check { display: flex; }
+  .staging-filename {
+    font-size: 11px;
+    color: var(--mid-gray);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .proof-group-card {
+    background: var(--white);
+    border: 2px solid var(--green);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .proof-group-files {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .proof-group-file-chip {
+    background: var(--green-pale);
+    border: 1px solid var(--green-soft);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .proof-group-file-chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--mid-gray);
+    padding: 0;
+    font-size: 13px;
+    line-height: 1;
+  }
+
   /* ── MISC ── */
   .hidden { display:none!important; }
   .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
@@ -987,25 +1084,58 @@
 </div>
 
 <!-- Upload Proof -->
-<div class="modal-overlay" id="modal-upload-proof">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Upload proof</div>
+<div class="modal-overlay" id="modal-upload-proof" style="padding:16px">
+  <div class="modal" style="max-width:780px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:90vh">
+    <div class="modal-header" style="padding:16px 20px;flex-shrink:0;border-bottom:1px solid var(--border)">
+      <div>
+        <div class="modal-title">Upload proofs</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:2px">Client: <strong id="up-client-label"></strong></div>
+      </div>
       <button class="modal-close" onclick="closeModal('modal-upload-proof')">×</button>
     </div>
-    <p class="text-muted" style="margin-bottom:20px">Client: <strong id="up-client-label"></strong></p>
-    <div class="field"><label>Proof name / label</label><input type="text" id="up-name" placeholder="e.g. Business Card Front — v2"></div>
-    <div class="upload-zone" id="up-zone" onclick="document.getElementById('up-file').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-      <input type="file" id="up-file" accept="image/*,.pdf" onchange="handleFileSelect(this)">
-      <div class="upload-icon">📎</div>
-      <div class="upload-label"><strong>Click to choose</strong> or drag and drop</div>
-      <div class="text-muted" style="font-size:12px;margin-top:4px">PNG, JPG, PDF — max 20MB</div>
+
+    <!-- Step 1: drop zone (shown when no files yet) -->
+    <div id="up-step-1" style="padding:24px">
+      <div class="upload-zone" id="up-zone" onclick="document.getElementById('up-file').click()"
+        ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+        <input type="file" id="up-file" accept="image/*,.pdf" multiple onchange="handleFileSelect(this)">
+        <div class="upload-icon">📎</div>
+        <div class="upload-label"><strong>Click to choose files</strong> or drag and drop</div>
+        <div class="text-muted" style="font-size:12px;margin-top:4px">PNG, JPG, PDF — select multiple files at once</div>
+      </div>
     </div>
-    <div id="up-preview" class="hidden"></div>
-    <div class="form-error" id="up-error" style="margin-top:8px"></div>
-    <div class="modal-footer">
+
+    <!-- Step 2: staging panel (shown after files selected) -->
+    <div id="up-step-2" class="hidden" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:20px">
+
+      <!-- Groups area -->
+      <div id="up-groups-area">
+        <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">
+          Proofs to send
+          <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--mid-gray)"> — each card = one proof</span>
+        </div>
+        <div id="up-groups"></div>
+      </div>
+
+      <!-- Unassigned pool -->
+      <div id="up-pool-area">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase">Unassigned files</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm hidden" id="up-group-btn" onclick="groupSelected()">Group selected into one proof</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('up-file-add').click()">+ Add more files</button>
+            <input type="file" id="up-file-add" accept="image/*,.pdf" multiple style="display:none" onchange="addMoreFiles(this)">
+          </div>
+        </div>
+        <div class="staging-pool" id="up-pool"></div>
+        <div style="font-size:12px;color:var(--mid-gray);margin-top:6px" id="up-select-hint">Click files to select, then group them or send individually.</div>
+      </div>
+    </div>
+
+    <div class="form-error hidden" id="up-error" style="margin:0 20px 12px"></div>
+    <div class="modal-footer" style="flex-shrink:0;padding:12px 20px;border-top:1px solid var(--border)">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-upload-proof')">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="uploadProof()">Upload &amp; notify client</button>
+      <button class="btn btn-primary btn-sm hidden" id="up-send-btn" onclick="uploadAllProofs()">Send all to client</button>
     </div>
   </div>
 </div>
@@ -1927,72 +2057,232 @@ window.inviteClient = async () => {
 };
 
 // ── UPLOAD PROOF ──────────────────────────────
+// ── PROOF STAGING STATE ───────────────────────
+let stagingFiles  = []; // { id, file, name, selected, groupId }
+let stagingGroups = []; // { id, name, fileIds[] }
+let stagingNextId = 0;
+
 window.openUploadProofModal = () => {
   if (!selectedClient) return;
+  stagingFiles  = [];
+  stagingGroups = [];
+  stagingNextId = 0;
   document.getElementById('up-client-label').textContent = selectedClient.name || selectedClient.email;
-  document.getElementById('up-name').value = '';
-  document.getElementById('up-preview').innerHTML = '';
-  document.getElementById('up-preview').classList.add('hidden');
-  document.getElementById('up-error').classList.remove('show');
-  uploadFile = null;
+  document.getElementById('up-step-1').classList.remove('hidden');
+  document.getElementById('up-step-2').classList.add('hidden');
+  document.getElementById('up-send-btn').classList.add('hidden');
+  document.getElementById('up-error').classList.add('hidden');
+  document.getElementById('up-file').value = '';
   openModal('modal-upload-proof');
 };
 
-window.handleFileSelect = (input) => {
-  const file = input.files[0];
-  if (!file) return;
-  uploadFile = file;
-  document.getElementById('up-preview').innerHTML = `<div class="upload-preview">📎 ${esc(file.name)} (${(file.size/1024/1024).toFixed(1)} MB)</div>`;
-  document.getElementById('up-preview').classList.remove('hidden');
-};
+function addFilesToStaging(fileList) {
+  Array.from(fileList).forEach(file => {
+    const baseName = file.name.replace(/\.[^.]+$/, '');
+    stagingFiles.push({ id: stagingNextId++, file, name: baseName, selected: false, groupId: null });
+  });
+  document.getElementById('up-step-1').classList.add('hidden');
+  document.getElementById('up-step-2').classList.remove('hidden');
+  document.getElementById('up-send-btn').classList.remove('hidden');
+  renderStagingPanel();
+}
+
+window.handleFileSelect = (input) => { if (input.files.length) addFilesToStaging(input.files); };
+window.addMoreFiles = (input) => { if (input.files.length) addFilesToStaging(input.files); input.value=''; };
 window.handleDrop = (e) => {
   e.preventDefault(); document.getElementById('up-zone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) { uploadFile = file; document.getElementById('up-file').files = e.dataTransfer.files; handleFileSelect({files:[file]}); }
+  if (e.dataTransfer.files.length) addFilesToStaging(e.dataTransfer.files);
 };
 window.handleDragOver  = (e) => { e.preventDefault(); document.getElementById('up-zone').classList.add('drag-over'); };
 window.handleDragLeave = ()  => { document.getElementById('up-zone').classList.remove('drag-over'); };
 
-window.uploadProof = async () => {
-  const name = document.getElementById('up-name').value.trim();
-  const err  = document.getElementById('up-error');
-  if (!name)        { err.textContent='Please enter a proof name.'; err.classList.add('show'); return; }
-  if (!uploadFile)  { err.textContent='Please choose a file.'; err.classList.add('show'); return; }
+function fileThumb(f) {
+  const ext = f.file.name.split('.').pop().toLowerCase();
+  if (['png','jpg','jpeg','webp','gif'].includes(ext)) {
+    return URL.createObjectURL(f.file);
+  }
+  return null;
+}
+
+function renderStagingPanel() {
+  // Render groups
+  const groupsEl = document.getElementById('up-groups');
+  groupsEl.innerHTML = stagingGroups.length === 0
+    ? '<div style="font-size:13px;color:var(--mid-gray);padding:4px 0 10px">No groups yet — select files below and group them, or send each file as its own proof.</div>'
+    : stagingGroups.map(g => {
+        const groupFiles = stagingFiles.filter(f => f.groupId === g.id);
+        return `
+          <div class="proof-group-card">
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="text" value="${esc(g.name)}" placeholder="Proof name"
+                oninput="updateGroupName(${g.id}, this.value)"
+                style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:var(--font-body);font-size:13px;background:var(--linen);outline:none"
+                onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
+                onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'">
+              <button class="btn btn-ghost btn-sm" style="color:var(--red);flex-shrink:0" onclick="ungroupAll(${g.id})">Ungroup</button>
+            </div>
+            <div class="proof-group-files">
+              ${groupFiles.map(f => `
+                <div class="proof-group-file-chip">
+                  ${esc(f.file.name)}
+                  <button onclick="removeFromGroup(${f.id})" title="Remove from group">×</button>
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }).join('');
+
+  // Render unassigned pool
+  const poolFiles = stagingFiles.filter(f => f.groupId === null);
+  const poolEl = document.getElementById('up-pool');
+  poolEl.innerHTML = poolFiles.length === 0
+    ? '<div style="font-size:13px;color:var(--mid-gray);padding:12px;text-align:center">All files are grouped.</div>'
+    : poolFiles.map(f => {
+        const thumb = fileThumb(f);
+        const ext   = f.file.name.split('.').pop().toUpperCase();
+        return `
+          <div class="staging-card ${f.selected ? 'selected' : ''}" onclick="toggleStagingSelect(${f.id})">
+            <div class="staging-check">✓</div>
+            ${thumb
+              ? `<img src="${thumb}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;margin-bottom:6px">`
+              : `<div class="staging-thumb">${ext === 'PDF' ? '📄' : '📎'}</div>`}
+            <input type="text" value="${esc(f.name)}" placeholder="Proof name"
+              onclick="event.stopPropagation()"
+              oninput="updateFileName(${f.id}, this.value)"
+              style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:var(--font-body);background:var(--linen);outline:none;margin-bottom:4px"
+              onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
+              onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'">
+            <div class="staging-filename">${esc(f.file.name)}</div>
+          </div>`;
+      }).join('');
+
+  // Show/hide group button
+  const selectedCount = stagingFiles.filter(f => f.selected && f.groupId === null).length;
+  const groupBtn = document.getElementById('up-group-btn');
+  if (selectedCount >= 2) {
+    groupBtn.classList.remove('hidden');
+    groupBtn.textContent = `Group ${selectedCount} selected into one proof`;
+  } else {
+    groupBtn.classList.add('hidden');
+  }
+
+  // Update send button label
+  const totalProofs = stagingGroups.length + stagingFiles.filter(f => f.groupId === null).length;
+  const sendBtn = document.getElementById('up-send-btn');
+  sendBtn.textContent = `Send ${totalProofs} proof${totalProofs !== 1 ? 's' : ''} to client`;
+}
+
+window.toggleStagingSelect = (id) => {
+  const f = stagingFiles.find(x => x.id === id);
+  if (f) { f.selected = !f.selected; renderStagingPanel(); }
+};
+window.updateFileName = (id, val) => {
+  const f = stagingFiles.find(x => x.id === id);
+  if (f) f.name = val;
+};
+window.updateGroupName = (gid, val) => {
+  const g = stagingGroups.find(x => x.id === gid);
+  if (g) g.name = val;
+};
+window.groupSelected = () => {
+  const selected = stagingFiles.filter(f => f.selected && f.groupId === null);
+  if (selected.length < 2) return;
+  const gid  = stagingNextId++;
+  const name = selected[0].name; // pre-fill with first file's name
+  stagingGroups.push({ id: gid, name });
+  selected.forEach(f => { f.groupId = gid; f.selected = false; });
+  renderStagingPanel();
+};
+window.ungroupAll = (gid) => {
+  stagingFiles.filter(f => f.groupId === gid).forEach(f => { f.groupId = null; });
+  stagingGroups = stagingGroups.filter(g => g.id !== gid);
+  renderStagingPanel();
+};
+window.removeFromGroup = (fid) => {
+  const f = stagingFiles.find(x => x.id === fid);
+  if (!f) return;
+  const gid = f.groupId;
+  f.groupId = null;
+  // Remove group if now empty
+  const remaining = stagingFiles.filter(x => x.groupId === gid);
+  if (remaining.length === 0) stagingGroups = stagingGroups.filter(g => g.id !== gid);
+  renderStagingPanel();
+};
+
+window.uploadAllProofs = async () => {
+  const uid   = selectedClient.uid;
+  const token = await getToken();
+  const err   = document.getElementById('up-error');
+  const btn   = document.getElementById('up-send-btn');
+  err.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+
+  async function uploadOneFile(file, proofId, idx) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const isImage = ['png','jpg','jpeg','webp','gif'].includes(ext);
+    const storagePath = `clients/${uid}/proofs/${proofId}_${idx}.${ext}`;
+    const uploadUrl   = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(storagePath)}`;
+    const res = await fetch(uploadUrl, {
+      method:'POST',
+      headers:{ Authorization:'Bearer '+token, 'Content-Type': file.type||'application/octet-stream' },
+      body: file
+    });
+    if (!res.ok) throw new Error(`Upload failed: ${file.name}`);
+    return {
+      url: `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`,
+      fileType: isImage ? 'image' : 'pdf',
+      name: file.name,
+    };
+  }
 
   try {
-    const uid   = selectedClient.uid;
-    const token = await getToken();
-    const proofId   = genId();
-    const ext       = uploadFile.name.split('.').pop().toLowerCase();
-    const isImage   = ['png','jpg','jpeg','webp','gif'].includes(ext);
-    const storagePath = `clients/${uid}/proofs/${proofId}.${ext}`;
-    const uploadUrl   = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(storagePath)}`;
+    const proofItems = [
+      // Groups
+      ...stagingGroups.map(g => ({
+        name: g.name || 'Proof',
+        files: stagingFiles.filter(f => f.groupId === g.id),
+      })),
+      // Individual unassigned files
+      ...stagingFiles
+        .filter(f => f.groupId === null)
+        .map(f => ({ name: f.name || f.file.name.replace(/\.[^.]+$/, ''), files: [f] })),
+    ];
 
-    const uploadRes = await fetch(uploadUrl, {
-      method:'POST',
-      headers:{ Authorization:'Bearer '+token, 'Content-Type': uploadFile.type || 'application/octet-stream' },
-      body: uploadFile
-    });
-    if (!uploadRes.ok) throw new Error('Upload failed');
-    const fileUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`;
+    if (proofItems.length === 0) {
+      err.textContent = 'No files to upload.'; err.classList.remove('hidden');
+      btn.disabled = false; btn.textContent = 'Send all to client';
+      return;
+    }
 
-    await fbSet(`clients/${uid}/proofs/${proofId}`, {
-      name, fileUrl, fileType: isImage ? 'image' : 'pdf',
-      status:'pending', createdAt: new Date().toISOString()
-    });
+    for (const item of proofItems) {
+      const proofId   = genId();
+      const uploaded  = await Promise.all(item.files.map((f, i) => uploadOneFile(f.file, proofId, i)));
 
-    // Notify client via worker
-    await fetch(WORKER_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'proof', itemName: name })
-    }).catch(()=>{});
+      // Primary file = first uploaded
+      const primary = uploaded[0];
+      const extraFiles = uploaded.slice(1);
+
+      await fbSet(`clients/${uid}/proofs/${proofId}`, {
+        name:     item.name,
+        fileUrl:  primary.url,
+        fileType: primary.fileType,
+        files:    uploaded, // all files for tabbed viewing
+        status:   'pending',
+        createdAt: new Date().toISOString(),
+      });
+
+      // Notify client once per proof
+      await fetch(WORKER_URL, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'proof', itemName: item.name })
+      }).catch(()=>{});
+    }
 
     closeModal('modal-upload-proof');
-    toast('Proof uploaded and client notified!', 'success');
+    toast(`${proofItems.length} proof${proofItems.length!==1?'s':''} uploaded and client notified!`, 'success');
     await loadClientDetail(uid);
   } catch(e) {
-    err.textContent = 'Upload failed. Please try again.';
-    err.classList.add('show');
+    err.textContent = 'Upload failed: ' + e.message; err.classList.remove('hidden');
+    btn.disabled = false; btn.textContent = 'Send all to client';
   }
 };
 
@@ -2427,6 +2717,31 @@ window.openAdminInProcessModal = (invoiceId) => {
 let activeAdminProof = null;
 let pendingRevisionFile = null;
 
+window.switchAdminProofTab = (idx) => {
+  const tabs = window._adminProofTabs;
+  if (!tabs || !tabs[idx]) return;
+  const f = tabs[idx];
+  const img = document.getElementById('ap-img');
+  const placeholder = document.getElementById('ap-placeholder');
+  const fileLink = document.getElementById('ap-file-link');
+  fileLink.href = f.url;
+  if (f.fileType === 'pdf') {
+    img.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+  } else {
+    img.src = f.url;
+    img.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  }
+  tabs.forEach((_, i) => {
+    const btn = document.getElementById(`ap-tab-${i}`);
+    if (btn) {
+      btn.style.background = i === idx ? 'var(--green)' : 'var(--linen)';
+      btn.style.color      = i === idx ? 'var(--white)' : 'var(--charcoal)';
+    }
+  });
+};
+
 window.openAdminProofModal = async (proofId) => {
   const p = selectedClientData.proofs?.find(x => x.id === proofId);
   if (!p) return;
@@ -2440,7 +2755,7 @@ window.openAdminProofModal = async (proofId) => {
   document.getElementById('ap-revision-preview').classList.add('hidden');
   document.getElementById('ap-revision-file').value = '';
 
-  // Show current proof file
+  // Show current proof file — with tabs if multi-file
   const img = document.getElementById('ap-img');
   const placeholder = document.getElementById('ap-placeholder');
   const fileLink = document.getElementById('ap-file-link');
@@ -2449,15 +2764,37 @@ window.openAdminProofModal = async (proofId) => {
     ? revisions[revisions.length - 1]
     : { url: p.fileUrl, fileType: p.fileType, name: p.name, uploadedAt: p.createdAt };
 
-  if (currentFile.url) {
-    fileLink.href = currentFile.url;
-    if (currentFile.fileType === 'pdf') {
-      img.classList.add('hidden');
-      placeholder.classList.remove('hidden');
-    } else {
-      img.src = currentFile.url;
-      img.classList.remove('hidden');
-      placeholder.classList.add('hidden');
+  // Build file tabs for multi-file proofs
+  const allFiles = p.files && p.files.length > 1 ? p.files : null;
+  let apTabsEl = document.getElementById('ap-file-tabs');
+  if (!apTabsEl) {
+    apTabsEl = document.createElement('div');
+    apTabsEl.id = 'ap-file-tabs';
+    apTabsEl.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--border)';
+    fileLink.parentElement.insertBefore(apTabsEl, fileLink.parentElement.firstChild);
+  }
+
+  if (allFiles) {
+    apTabsEl.innerHTML = allFiles.map((f, i) => `
+      <button onclick="switchAdminProofTab(${i})" id="ap-tab-${i}"
+        style="padding:4px 10px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:var(--font-body);cursor:pointer;background:${i===0?'var(--green)':'var(--linen)'};color:${i===0?'var(--white)':'var(--charcoal)'}">
+        File ${i + 1}: ${esc(f.name||'')}
+      </button>`).join('');
+    window._adminProofTabs = allFiles;
+    switchAdminProofTab(0);
+  } else {
+    apTabsEl.innerHTML = '';
+    window._adminProofTabs = null;
+    if (currentFile.url) {
+      fileLink.href = currentFile.url;
+      if (currentFile.fileType === 'pdf') {
+        img.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+      } else {
+        img.src = currentFile.url;
+        img.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      }
     }
   }
 
