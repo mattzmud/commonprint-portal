@@ -386,6 +386,14 @@
         <span class="sidebar-item-icon">💳</span> Invoices
         <span class="sidebar-badge hidden" id="sb-invoices"></span>
       </button>
+      <button class="sidebar-item" onclick="showPage('pending-orders')" data-page="pending-orders">
+        <span class="sidebar-item-icon">📥</span> Order Requests
+        <span class="sidebar-badge hidden" id="sb-pending-orders"></span>
+      </button>
+      <button class="sidebar-item" onclick="showPage('inprocess-orders')" data-page="inprocess-orders">
+        <span class="sidebar-item-icon">🖨</span> In Process
+        <span class="sidebar-badge hidden" id="sb-inprocess-orders"></span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user" id="sidebar-email"></div>
@@ -521,7 +529,7 @@
       </div>
       <div class="card" style="padding:0;overflow:hidden">
         <table class="data-table">
-          <thead><tr><th>Client</th><th>Proof name</th><th>Uploaded</th><th>Status</th><th>Comment</th></tr></thead>
+          <thead><tr><th>Client</th><th>Proof name</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
           <tbody id="all-proofs-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
         </table>
       </div>
@@ -534,7 +542,7 @@
       </div>
       <div class="card" style="padding:0;overflow:hidden">
         <table class="data-table">
-          <thead><tr><th>Client</th><th>Quote</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
+          <thead><tr><th>Client</th><th>Quote</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
           <tbody id="all-quotes-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
         </table>
       </div>
@@ -547,8 +555,35 @@
       </div>
       <div class="card" style="padding:0;overflow:hidden">
         <table class="data-table">
-          <thead><tr><th>Client</th><th>Invoice</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead>
+          <thead><tr><th>Client</th><th>Invoice</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr></thead>
           <tbody id="all-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- PENDING ORDER REQUESTS (all clients) -->
+    <div class="page" id="page-pending-orders">
+      <div class="page-header">
+        <div><div class="page-title">Order Requests</div><div class="page-sub">Re-order requests from all clients.</div></div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Order name</th><th>Submitted</th><th>Items</th><th>Status</th></tr></thead>
+          <tbody id="all-requests-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- IN PROCESS ORDERS (all clients) -->
+    <div class="page" id="page-inprocess-orders">
+      <div class="page-header">
+        <div><div class="page-title">In Process Orders</div><div class="page-sub">All orders currently in production.</div></div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th></tr></thead>
+          <tbody id="all-inprocess-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1178,6 +1213,10 @@ function updateSidebarBadges() {
   setSBadge('sb-proofs',   pendingP);
   setSBadge('sb-quotes',   pendingQ);
   setSBadge('sb-invoices', unpaidI);
+  const pendingReqs   = (window._allRequests ||[]).filter(r => r.requestStatus === 'pending' || !r.requestStatus).length;
+  const inProcessCount= (window._allInvoices ||[]).filter(i => i.status === 'processing').length;
+  setSBadge('sb-pending-orders',  pendingReqs);
+  setSBadge('sb-inprocess-orders',inProcessCount);
   document.getElementById('ov-clients').textContent  = allClients.length;
   document.getElementById('ov-proofs').textContent   = pendingP;
   document.getElementById('ov-quotes').textContent   = pendingQ;
@@ -1459,26 +1498,32 @@ function renderAllProofs() {
   const proofs = window._allProofs || [];
   document.getElementById('all-proofs-tbody').innerHTML = proofs.length === 0
     ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
-    : proofs.map(p => `
-      <tr>
+    : proofs.map(p => {
+        const msgs = p.messages || [];
+        const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
+        return `
+      <tr style="cursor:pointer" onclick="navigateToClientTab('${p.clientUid}','proofs')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
         <td><strong>${esc(p.clientName)}</strong></td>
-        <td>${esc(p.name||'Untitled')}</td>
+        <td>${esc(p.name||'Untitled')} ${unread > 0 ? `<span class="nav-badge" style="margin-left:4px">${unread}</span>` : ''}</td>
         <td>${fmtDate(p.createdAt)}</td>
         <td>${badge(p.status||'pending')}</td>
-        <td class="text-muted">${esc(p.comment||'—')}</td>
-      </tr>`).join('');
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`; }).join('');
 }
 function renderAllQuotes() {
   const qs = window._allQuotes || [];
   document.getElementById('all-quotes-tbody').innerHTML = qs.length === 0
     ? `<tr><td colspan="5"><div class="empty">No quotes yet.</div></td></tr>`
     : qs.map(q => `
-      <tr>
+      <tr style="cursor:pointer" onclick="navigateToClientTab('${q.clientUid}','quotes')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
         <td><strong>${esc(q.clientName)}</strong></td>
         <td>${esc(q.name||q.id.slice(0,6).toUpperCase())}</td>
         <td>${fmtDate(q.createdAt)}</td>
         <td>$${(q.total||0).toFixed(2)}</td>
         <td>${badge(q.status||'pending')}</td>
+        <td style="color:var(--mid-gray)">›</td>
       </tr>`).join('');
 }
 function renderAllInvoices() {
@@ -1486,12 +1531,49 @@ function renderAllInvoices() {
   document.getElementById('all-invoices-tbody').innerHTML = is_.length === 0
     ? `<tr><td colspan="5"><div class="empty">No invoices yet.</div></td></tr>`
     : is_.map(i => `
-      <tr>
+      <tr style="cursor:pointer" onclick="navigateToClientTab('${i.clientUid}','invoices')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
         <td><strong>${esc(i.clientName)}</strong></td>
         <td>${esc(i.name||i.id.slice(0,6).toUpperCase())}</td>
         <td>${fmtDate(i.dueDate)}</td>
         <td>$${(i.amount||0).toFixed(2)}</td>
         <td>${badge(i.status||'unpaid')}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`).join('');
+}
+
+function renderAllRequests() {
+  const reqs = (window._allRequests||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  document.getElementById('all-requests-tbody').innerHTML = reqs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No order requests yet.</div></td></tr>`
+    : reqs.map(r => `
+      <tr style="cursor:pointer" onclick="navigateToClientTab('${r.clientUid}','requests')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td><strong>${esc(r.clientName)}</strong></td>
+        <td>${esc(r.orderName||'—')}</td>
+        <td>${fmtDate(r.createdAt)}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${(r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
+        <td>${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`).join('');
+}
+
+function renderAllInProcess() {
+  const items = (window._allInvoices||[])
+    .filter(i => i.status === 'processing')
+    .sort((a,b)=>(b.processingAt||b.createdAt||'').localeCompare(a.processingAt||a.createdAt||''));
+  document.getElementById('all-inprocess-tbody').innerHTML = items.length === 0
+    ? `<tr><td colspan="6"><div class="empty">No orders currently in process.</div></td></tr>`
+    : items.map(i => `
+      <tr style="cursor:pointer" onclick="navigateToClientTab('${i.clientUid}','inprocess')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td><strong>${esc(i.clientName)}</strong></td>
+        <td style="font-weight:500">${esc(i.name||'—')}</td>
+        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
+        <td>${fmtDate(i.processingAt||i.createdAt)}</td>
+        <td style="color:var(--mid-gray)">›</td>
       </tr>`).join('');
 }
 
