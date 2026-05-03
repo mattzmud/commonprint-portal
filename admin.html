@@ -1326,6 +1326,8 @@ async function loadAllWorkItems() {
   renderAllProofs();
   renderAllQuotes();
   renderAllInvoices();
+  renderAllRequests();
+  renderAllInProcess();
 }
 
 function updateSidebarBadges() {
@@ -1634,7 +1636,7 @@ function renderAllProofs() {
       </tr>`; }).join('');
 }
 
-function openWorkProofModal(clientUid, proofId) {
+window.openWorkProofModal = function(clientUid, proofId) {
   const client = allClients.find(c => c.uid === clientUid);
   const proof  = (window._allProofs||[]).find(p => p.id === proofId && p.clientUid === clientUid);
   if (!proof) return;
@@ -1687,7 +1689,7 @@ function renderAllQuotes() {
       </tr>`).join('');
 }
 
-function openWorkQuoteModal(clientUid, quoteId) {
+window.openWorkQuoteModal = function(clientUid, quoteId) {
   const client = allClients.find(c => c.uid === clientUid);
   const q = (window._allQuotes||[]).find(x => x.id === quoteId);
   if (!q) return;
@@ -1724,7 +1726,7 @@ function renderAllInvoices() {
       </tr>`).join('');
 }
 
-function openWorkInvoiceModal(clientUid, invoiceId) {
+window.openWorkInvoiceModal = function(clientUid, invoiceId) {
   const client = allClients.find(c => c.uid === clientUid);
   const inv = (window._allInvoices||[]).find(x => x.id === invoiceId);
   if (!inv) return;
@@ -1757,7 +1759,7 @@ function renderAllRequests() {
       </tr>`).join('');
 }
 
-function openWorkRequestModal(clientUid, requestId) {
+window.openWorkRequestModal = function(clientUid, requestId) {
   const client = allClients.find(c => c.uid === clientUid);
   const r = (window._allRequests||[]).find(x => x.id === requestId);
   if (!r) return;
