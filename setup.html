@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set your password — common print co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green:      #2D5A3D;
+    --green-soft: #D6E8DC;
+    --green-pale: #EAF3EE;
+    --charcoal:   #2E2B28;
+    --linen:      #F7F6F3;
+    --linen-dark: #E8E4DF;
+    --mid-gray:   #888780;
+    --border:     #D3D1C7;
+    --near-black: #1E1C1A;
+    --white:      #FFFFFF;
+    --red:        #C0392B;
+    --font-display: 'DM Serif Display', serif;
+    --font-body:    'Outfit', sans-serif;
+    --radius:       10px;
+    --radius-lg:    16px;
+    --shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  }
+  body {
+    font-family: var(--font-body);
+    background: var(--linen);
+    color: var(--charcoal);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 48px 44px 44px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow);
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 24px;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    margin-bottom: 32px;
+  }
+  .logo .wc { color: var(--green); }
+  .logo .wp { color: var(--charcoal); font-style: italic; opacity: .45; }
+  .logo-sub { font-size: 13px; color: var(--mid-gray); margin-top: 6px; font-weight: 400; }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--near-black);
+    margin-bottom: 8px;
+  }
+  .intro {
+    font-size: 14px;
+    color: var(--mid-gray);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--mid-gray);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--charcoal);
+    background: var(--linen);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .field input:focus { border-color: var(--green); background: var(--white); }
+  .field input:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Password strength bar */
+  .strength-bar {
+    height: 3px;
+    background: var(--linen-dark);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    transition: width .3s, background .3s;
+  }
+  .strength-label {
+    font-size: 11px;
+    color: var(--mid-gray);
+    margin-top: 4px;
+    height: 16px;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: var(--green);
+    color: var(--white);
+    transition: all .15s;
+    margin-top: 8px;
+  }
+  .btn:hover { background: #245033; }
+  .btn:active { transform: scale(.99); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  .form-error {
+    font-size: 13px;
+    color: var(--red);
+    margin-top: 10px;
+    display: none;
+  }
+  .form-error.show { display: block; }
+
+  /* Success state */
+  .success-view {
+    display: none;
+    text-align: center;
+    padding: 16px 0;
+  }
+  .success-icon {
+    width: 56px; height: 56px;
+    background: var(--green-pale);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 20px;
+  }
+  .success-view h2 { margin-bottom: 8px; }
+  .success-view p { font-size: 14px; color: var(--mid-gray); margin-bottom: 24px; }
+
+  /* Loading overlay */
+  #loading-view {
+    display: none;
+    text-align: center;
+    padding: 32px 0;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error page */
+  #error-view {
+    display: none;
+    text-align: center;
+    padding: 16px 0;
+  }
+  #error-view p { font-size: 14px; color: var(--mid-gray); line-height: 1.6; }
+  .back-link {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--green);
+    text-decoration: none;
+  }
+  .back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo">
+    <span class="wc">common</span>
+    <span class="wp">print co.</span>
+    <span class="logo-sub">Client Portal</span>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-view">
+    <div class="spinner"></div>
+    <div style="font-size:14px;color:var(--mid-gray)">Setting things up…</div>
+  </div>
+
+  <!-- Set password form -->
+  <div id="setup-view">
+    <h2>Create your password.</h2>
+    <p class="intro">You're almost in. Set a password for your portal account.</p>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email-field" disabled>
+    </div>
+    <div class="field">
+      <label>Choose a password</label>
+      <input type="password" id="password-field" placeholder="At least 8 characters" oninput="checkStrength(this.value)">
+      <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+      <div class="strength-label" id="strength-label"></div>
+    </div>
+    <div class="field">
+      <label>Confirm password</label>
+      <input type="password" id="confirm-field" placeholder="Re-enter your password">
+    </div>
+
+    <div class="form-error" id="form-error"></div>
+    <button class="btn" id="submit-btn" onclick="submitPassword()">Set password &amp; sign in</button>
+  </div>
+
+  <!-- Success -->
+  <div class="success-view" id="success-view">
+    <div class="success-icon">✓</div>
+    <h2>You're all set.</h2>
+    <p>Taking you to your portal now…</p>
+  </div>
+
+  <!-- Error (bad/missing token) -->
+  <div id="error-view">
+    <h2>Link expired.</h2>
+    <p>This setup link has already been used or has expired.<br>Contact Common Print Co. to get a new invite.</p>
+    <a href="index.html" class="back-link">Go to sign in →</a>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp }           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, updatePassword }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev';
+const PORTAL_URL = 'index.html';
+
+let firebaseConfig = {};
+let app, auth;
+let clientEmail  = '';
+let tempPassword = '';
+
+// ── INIT ─────────────────────────────────────
+async function init() {
+  show('loading-view');
+
+  // Parse query params
+  const params = new URLSearchParams(window.location.search);
+  clientEmail  = params.get('email')  || '';
+  tempPassword = params.get('tmp')    || '';
+
+  if (!clientEmail || !tempPassword) {
+    show('error-view');
+    return;
+  }
+
+  // Fetch Firebase config from worker
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_config' })
+    });
+    firebaseConfig = await res.json();
+    app  = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+  } catch(e) {
+    show('error-view');
+    return;
+  }
+
+  // Pre-fill and show form
+  document.getElementById('email-field').value = clientEmail;
+  show('setup-view');
+}
+
+function show(id) {
+  ['loading-view', 'setup-view', 'success-view', 'error-view'].forEach(v => {
+    document.getElementById(v).style.display = v === id ? (id === 'setup-view' ? 'block' : id === 'success-view' || id === 'error-view' ? 'block' : 'block') : 'none';
+  });
+}
+
+// ── PASSWORD STRENGTH ─────────────────────────
+window.checkStrength = (val) => {
+  const fill  = document.getElementById('strength-fill');
+  const label = document.getElementById('strength-label');
+  if (!val) { fill.style.width = '0%'; label.textContent = ''; return; }
+
+  let score = 0;
+  if (val.length >= 8)  score++;
+  if (val.length >= 12) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = [
+    { pct: '20%', color: '#C0392B', text: 'Too short' },
+    { pct: '40%', color: '#E67E22', text: 'Weak' },
+    { pct: '60%', color: '#F1C40F', text: 'Fair' },
+    { pct: '80%', color: '#2ECC71', text: 'Good' },
+    { pct: '100%',color: '#2D5A3D', text: 'Strong' },
+  ];
+  const level = levels[Math.min(score - 1, 4)] || levels[0];
+  fill.style.width      = level.pct;
+  fill.style.background = level.color;
+  label.textContent     = level.text;
+  label.style.color     = level.color;
+};
+
+// ── SUBMIT ────────────────────────────────────
+window.submitPassword = async () => {
+  const password = document.getElementById('password-field').value;
+  const confirm  = document.getElementById('confirm-field').value;
+  const errEl    = document.getElementById('form-error');
+  const btn      = document.getElementById('submit-btn');
+
+  errEl.classList.remove('show');
+
+  if (password.length < 8) {
+    errEl.textContent = 'Password must be at least 8 characters.';
+    errEl.classList.add('show');
+    return;
+  }
+  if (password !== confirm) {
+    errEl.textContent = 'Passwords don\'t match.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Setting up…';
+
+  try {
+    // Sign in with temp password
+    const cred = await signInWithEmailAndPassword(auth, clientEmail, tempPassword);
+    // Update to their chosen password
+    await updatePassword(cred.user, password);
+    // Show success then redirect
+    show('success-view');
+    setTimeout(() => { window.location.href = PORTAL_URL; }, 1800);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Set password & sign in';
+    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+      show('error-view');
+    } else if (e.code === 'auth/weak-password') {
+      errEl.textContent = 'Please choose a stronger password.';
+      errEl.classList.add('show');
+    } else {
+      errEl.textContent = 'Something went wrong. Please try again or contact us.';
+      errEl.classList.add('show');
+    }
+  }
+};
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.submitPassword();
+});
+
+init();
+</script>
+</body>
+</html>
