@@ -425,7 +425,7 @@
     <p class="text-muted" style="margin-bottom:20px">Enter the client's details. They'll receive an email with a link to set their password and access the portal.</p>
     <div class="field"><label>Client name / company</label><input type="text" id="nc-name" placeholder="Acme Corp"></div>
     <div class="field"><label>Email address</label><input type="email" id="nc-email" placeholder="client@example.com"></div>
-    <div class="field"><label>Phone (optional)</label><input type="tel" id="nc-phone" placeholder="(734) 555-0100"></div>
+    <div class="field"><label>Phone (optional)</label><input type="tel" id="nc-phone" placeholder="(734) 555-0100" oninput="this.value=formatPhoneInput(this.value)"></div>
     <div class="form-error" id="nc-error"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-client')">Cancel</button>
@@ -641,8 +641,17 @@ window.doSignOut = async () => { await signOut(auth); };
 
 // ── LOAD DATA ─────────────────────────────────
 async function loadAllClients() {
-  const docs = await fbList('clients');
-  allClients = docs.map(d => ({ uid: docId(d), ...ff(d.fields) }));
+  // clientIndex is a flat collection readable by admin — each doc ID is a client UID
+  const docs = await fbList('clientIndex');
+  if (docs.length === 0) {
+    renderClientsGrid();
+    return;
+  }
+  // Fetch each client's full profile
+  const profiles = await Promise.all(
+    docs.map(d => fbGet(`clients/${docId(d)}`).then(p => p ? { uid: docId(d), ...ff(p.fields) } : null))
+  );
+  allClients = profiles.filter(Boolean);
   renderClientsGrid();
   await loadAllWorkItems();
 }
@@ -894,9 +903,12 @@ window.inviteClient = async () => {
     if (!data.uid) throw new Error(data.error || 'Failed');
 
     // Save client profile in Firestore
-    await fbSet(`clients/${data.uid}`, { name, email, phone, createdAt: new Date().toISOString(), status:'active' });
+    const formattedPhone = formatPhone(phone);
+    await fbSet(`clients/${data.uid}`, { name, email, phone: formattedPhone, createdAt: new Date().toISOString(), status:'active' });
+    // Write to clientIndex so admin can discover all clients
+    await fbSet(`clientIndex/${data.uid}`, { email, name, createdAt: new Date().toISOString() });
 
-    allClients.push({ uid: data.uid, name, email, phone, status:'active' });
+    allClients.push({ uid: data.uid, name, email, phone: formattedPhone, status:'active' });
     renderClientsGrid();
     closeModal('modal-new-client');
     toast(`Invite sent to ${email}`, 'success');
@@ -1105,6 +1117,21 @@ function badge(status) {
   const [cls, label] = map[status] || ['badge-pending', status||'—'];
   return `<span class="badge ${cls}">${label}</span>`;
 }
+// ── PHONE FORMATTING ──────────────────────────────
+function formatPhoneInput(val) {
+  const digits = val.replace(/\D/g, '').slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+}
+function formatPhone(val) {
+  if (!val) return '';
+  const digits = val.replace(/\D/g, '');
+  if (digits.length !== 10) return val; // return as-is if not 10 digits
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+}
+window.formatPhoneInput = formatPhoneInput;
+
 window.toast = (msg, type='') => {
   const t = document.createElement('div'); t.className='toast '+type; t.textContent=msg;
   document.body.appendChild(t); setTimeout(()=>t.remove(),3500);
