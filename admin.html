@@ -667,12 +667,20 @@
                 style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--linen);outline:none;resize:none;height:68px;transition:border-color .15s"
                 onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
                 onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'"></textarea>
-              <div style="display:flex;justify-content:flex-end;margin-top:8px">
+              <div id="admin-attach-preview" class="hidden" style="margin-top:6px;font-size:12px;color:var(--green);background:var(--green-pale);padding:6px 10px;border-radius:6px;display:flex;align-items:center;gap:6px">
+                <span id="admin-attach-name"></span>
+                <button onclick="clearAdminAttach()" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:14px;margin-left:auto">×</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:8px">
+                <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+                  📎
+                  <input type="file" id="admin-attach-file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleAdminAttach(this)">
+                </label>
                 <button class="btn btn-primary btn-sm" onclick="sendAdminMessage()">Send reply</button>
               </div>
             </div>
             <div id="admin-thread-resolved-bar" class="hidden" style="border-top:1px solid var(--border);padding:12px 16px;background:var(--linen);font-size:13px;color:var(--mid-gray);text-align:center">
-              This conversation has been marked as resolved.
+              This discussion has been resolved. If the client needs further assistance, they can start a new message.
             </div>
           </div>
         </div>
@@ -3366,27 +3374,56 @@ window.closeAdminThreadView = () => {
   document.getElementById('admin-thread-view').classList.add('hidden');
 };
 
+let adminAttachFile = null;
+
+window.handleAdminAttach = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  adminAttachFile = file;
+  document.getElementById('admin-attach-name').textContent = '📎 ' + file.name;
+  document.getElementById('admin-attach-preview').classList.remove('hidden');
+};
+
+window.clearAdminAttach = () => {
+  adminAttachFile = null;
+  document.getElementById('admin-attach-preview').classList.add('hidden');
+  document.getElementById('admin-attach-file').value = '';
+};
+
 window.sendAdminMessage = async () => {
   const text = document.getElementById('admin-msg-reply').value.trim();
-  if (!text || !activeAdminThreadId) return;
+  if (!text && !adminAttachFile) return;
+  if (!activeAdminThreadId) return;
   const uid    = selectedClient.uid;
   const thread = selectedClientData.messages?.find(t => t.id === activeAdminThreadId);
   if (!thread || thread.status === 'resolved') return;
 
-  const newMsg  = { sender:'admin', text, timestamp: new Date().toISOString() };
+  let attachUrl = null, attachName = null;
+  if (adminAttachFile) {
+    const token = await getToken();
+    const ext   = adminAttachFile.name.split('.').pop().toLowerCase();
+    const path  = `clients/${uid}/messages/${activeAdminThreadId}_${Date.now()}.${ext}`;
+    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
+    const res = await fetch(uploadUrl, {
+      method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type': adminAttachFile.type||'application/octet-stream' }, body: adminAttachFile
+    });
+    if (res.ok) {
+      attachUrl  = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(path)}?alt=media`;
+      attachName = adminAttachFile.name;
+    }
+  }
+
+  const newMsg  = { sender:'admin', text: text||'', timestamp: new Date().toISOString(), ...(attachUrl?{attachUrl,attachName}:{}) };
   const updated = [...(thread.messages||[]), newMsg];
   await fbUpdate(`clients/${uid}/messages/${activeAdminThreadId}`, { messages: updated });
   thread.messages = updated;
   document.getElementById('admin-msg-reply').value = '';
+  clearAdminAttach();
   renderAdminThreadMessages(thread);
 
-  // Notify client
   await fetch(WORKER_URL, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name,
-      type:'message_reply', itemName: thread.subject || 'your message',
-    })
+    body: JSON.stringify({ action:'notify_client', clientEmail: selectedClient.email, clientName: selectedClient.name, type:'message_reply', itemName: thread.subject||'your message' })
   }).catch(()=>{});
 };
 

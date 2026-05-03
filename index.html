@@ -878,10 +878,10 @@
       <button class="nav-tab" onclick="showPage('inprocess')" data-page="inprocess">
         In Process Orders <span class="nav-badge hidden" id="badge-inprocess"></span>
       </button>
+      <button class="nav-tab" onclick="showPage('orders')" data-page="orders">Past Orders</button>
       <button class="nav-tab" onclick="showPage('messages')" data-page="messages">
         Messages <span class="nav-badge hidden" id="badge-messages"></span>
       </button>
-      <button class="nav-tab" onclick="showPage('orders')" data-page="orders">Past Orders</button>
     </div>
     <div class="nav-right">
       <button class="btn btn-ghost btn-sm" onclick="showPage('profile')" style="font-size:13px">
@@ -1071,12 +1071,20 @@
             style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--linen);outline:none;resize:none;height:72px;transition:border-color .15s"
             onfocus="this.style.borderColor='var(--green)';this.style.background='var(--white)'"
             onblur="this.style.borderColor='var(--border)';this.style.background='var(--linen)'"></textarea>
-          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <div id="msg-attach-preview" class="hidden" style="margin-top:6px;font-size:12px;color:var(--green);background:var(--green-pale);padding:6px 10px;border-radius:6px;display:flex;align-items:center;gap:6px">
+            <span id="msg-attach-name"></span>
+            <button onclick="clearMsgAttach()" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:14px;margin-left:auto">×</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:8px">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+              📎
+              <input type="file" id="msg-attach-file" accept="image/*,.pdf,.doc,.docx" style="display:none" onchange="handleMsgAttach(this)">
+            </label>
             <button class="btn btn-primary btn-sm" onclick="sendClientMessage()">Send</button>
           </div>
         </div>
         <div id="msg-thread-resolved-bar" class="hidden" style="border-top:1px solid var(--border);padding:12px 16px;background:var(--linen);font-size:13px;color:var(--mid-gray);text-align:center">
-          This conversation has been marked as resolved.
+          This discussion has been resolved. If you still need assistance, please start a new message.
         </div>
       </div>
     </div>
@@ -1099,89 +1107,110 @@
   <!-- PROFILE -->
   <div class="page" id="page-profile">
     <div class="page-header">
-      <div><div class="page-title">My Profile</div><div class="page-sub">Update your contact information and password.</div></div>
+      <div><div class="page-title">My Profile</div><div class="page-sub">Manage your contact info, addresses, notifications, and password.</div></div>
     </div>
+    <div style="max-width:680px;display:flex;flex-direction:column;gap:12px">
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px">
-
-      <div class="card" style="grid-column:1/-1">
-        <div class="card-title">Contact information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-          <div class="field">
-            <label>Company / Organization</label>
-            <input type="text" id="prof-company" placeholder="Acme Corp">
+      <!-- Contact & Addresses card -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <button onclick="toggleProfileCard('contact')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;font-family:var(--font-body)">
+          <span style="font-size:15px;font-weight:500;color:var(--near-black)">Contact &amp; Addresses</span>
+          <span id="prof-contact-chevron" style="color:var(--mid-gray);font-size:18px;transition:transform .2s">›</span>
+        </button>
+        <div id="prof-contact-body" class="hidden" style="padding:0 20px 20px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+            <div class="field"><label>Company / Organization</label><input type="text" id="prof-company" placeholder="Acme Corp"></div>
+            <div class="field"><label>Contact name</label><input type="text" id="prof-name" placeholder="Your name"></div>
+            <div class="field"><label>Phone</label><input type="tel" id="prof-phone" placeholder="(734) 555-0100" oninput="this.value=formatPhoneClient(this.value)"></div>
+            <div class="field"><label>Email</label><input type="email" id="prof-email" disabled style="opacity:.5;cursor:not-allowed"></div>
           </div>
-          <div class="field">
-            <label>Contact name</label>
-            <input type="text" id="prof-name" placeholder="Your name">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px">Shipping address</div>
+              <div class="field"><label>Street</label><input type="text" id="prof-ship-street" placeholder="123 Main St"></div>
+              <div class="field"><label>City</label><input type="text" id="prof-ship-city" placeholder="Ann Arbor"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="field"><label>State</label><input type="text" id="prof-ship-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
+                <div class="field"><label>ZIP</label><input type="text" id="prof-ship-zip" placeholder="48104" maxlength="10"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase">Billing address</div>
+                <label style="font-size:12px;color:var(--mid-gray);cursor:pointer;display:flex;align-items:center;gap:5px">
+                  <input type="checkbox" id="prof-same-address" onchange="toggleSameAddress(this.checked)"> Same as shipping
+                </label>
+              </div>
+              <div id="billing-fields">
+                <div class="field"><label>Street</label><input type="text" id="prof-bill-street" placeholder="123 Main St"></div>
+                <div class="field"><label>City</label><input type="text" id="prof-bill-city" placeholder="Ann Arbor"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div class="field"><label>State</label><input type="text" id="prof-bill-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
+                  <div class="field"><label>ZIP</label><input type="text" id="prof-bill-zip" placeholder="48104" maxlength="10"></div>
+                </div>
+              </div>
+              <div id="billing-same-msg" class="hidden" style="font-size:13px;color:var(--mid-gray);padding:8px 0">Same as shipping address.</div>
+            </div>
           </div>
-          <div class="field">
-            <label>Phone</label>
-            <input type="tel" id="prof-phone" placeholder="(734) 555-0100" oninput="this.value=formatPhoneClient(this.value)">
-          </div>
-          <div class="field">
-            <label>Email</label>
-            <input type="email" id="prof-email" disabled style="opacity:.5;cursor:not-allowed">
-          </div>
+          <div class="form-error hidden" id="prof-error"></div>
+          <div class="form-success hidden" id="prof-success"></div>
+          <button class="btn btn-primary btn-sm" onclick="saveContactInfo()">Save changes</button>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Shipping address</div>
-        <div class="field"><label>Street address</label><input type="text" id="prof-ship-street" placeholder="123 Main St"></div>
-        <div class="field"><label>City</label><input type="text" id="prof-ship-city" placeholder="Ann Arbor"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="field"><label>State</label><input type="text" id="prof-ship-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
-          <div class="field"><label>ZIP</label><input type="text" id="prof-ship-zip" placeholder="48104" maxlength="10"></div>
+      <!-- Email Preferences card -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <button onclick="toggleProfileCard('emailprefs')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;font-family:var(--font-body)">
+          <span style="font-size:15px;font-weight:500;color:var(--near-black)">Email Preferences</span>
+          <span id="prof-emailprefs-chevron" style="color:var(--mid-gray);font-size:18px;transition:transform .2s">›</span>
+        </button>
+        <div id="prof-emailprefs-body" class="hidden" style="padding:0 20px 20px">
+          <p style="font-size:13px;color:var(--mid-gray);margin-bottom:14px;line-height:1.6">Choose which emails you'd like to receive from Common Print Co.</p>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+              <input type="checkbox" id="epref-proofs" style="margin-top:2px">
+              <div><div style="font-size:14px;font-weight:500;color:var(--near-black)">Proof ready for review</div><div style="font-size:12px;color:var(--mid-gray)">When a new proof has been uploaded for your approval</div></div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+              <input type="checkbox" id="epref-proof-reply" style="margin-top:2px">
+              <div><div style="font-size:14px;font-weight:500;color:var(--near-black)">New message on a proof</div><div style="font-size:12px;color:var(--mid-gray)">When we reply to a change request on your proof</div></div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+              <input type="checkbox" id="epref-quotes" style="margin-top:2px">
+              <div><div style="font-size:14px;font-weight:500;color:var(--near-black)">New quote ready</div><div style="font-size:12px;color:var(--mid-gray)">When a quote has been sent to you for review and approval</div></div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+              <input type="checkbox" id="epref-invoices" style="margin-top:2px">
+              <div><div style="font-size:14px;font-weight:500;color:var(--near-black)">Invoice ready</div><div style="font-size:12px;color:var(--mid-gray)">When an invoice has been sent for payment</div></div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+              <input type="checkbox" id="epref-messages" style="margin-top:2px">
+              <div><div style="font-size:14px;font-weight:500;color:var(--near-black)">New message</div><div style="font-size:12px;color:var(--mid-gray)">When you receive a new message from us</div></div>
+            </label>
+          </div>
+          <div class="form-success hidden" id="prof-epref-success" style="margin-top:12px"></div>
+          <div style="margin-top:16px"><button class="btn btn-primary btn-sm" onclick="saveEmailPrefs()">Save preferences</button></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-          Billing address
-          <label style="font-size:12px;font-weight:400;color:var(--mid-gray);cursor:pointer;display:flex;align-items:center;gap:6px">
-            <input type="checkbox" id="prof-same-address" onchange="toggleSameAddress(this.checked)">
-            Same as shipping
-          </label>
-        </div>
-        <div id="billing-fields">
-          <div class="field"><label>Street address</label><input type="text" id="prof-bill-street" placeholder="123 Main St"></div>
-          <div class="field"><label>City</label><input type="text" id="prof-bill-city" placeholder="Ann Arbor"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div class="field"><label>State</label><input type="text" id="prof-bill-state" placeholder="MI" maxlength="2" style="text-transform:uppercase"></div>
-            <div class="field"><label>ZIP</label><input type="text" id="prof-bill-zip" placeholder="48104" maxlength="10"></div>
+      <!-- Change Password card -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <button onclick="toggleProfileCard('password')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;font-family:var(--font-body)">
+          <span style="font-size:15px;font-weight:500;color:var(--near-black)">Change Password</span>
+          <span id="prof-password-chevron" style="color:var(--mid-gray);font-size:18px;transition:transform .2s">›</span>
+        </button>
+        <div id="prof-password-body" class="hidden" style="padding:0 20px 20px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+            <div class="field"><label>Current password</label><input type="password" id="prof-current-pw" placeholder="••••••••"></div>
+            <div class="field"><label>New password</label><input type="password" id="prof-new-pw" placeholder="At least 8 characters"></div>
+            <div class="field"><label>Confirm new password</label><input type="password" id="prof-confirm-pw" placeholder="Re-enter new password"></div>
           </div>
+          <div class="form-error hidden" id="prof-pw-error"></div>
+          <div class="form-success hidden" id="prof-pw-success"></div>
+          <div style="margin-top:16px"><button class="btn btn-primary btn-sm" onclick="savePassword()">Update password</button></div>
         </div>
-        <div id="billing-same-msg" class="hidden" style="font-size:13px;color:var(--mid-gray);padding:8px 0">Same as shipping address.</div>
       </div>
 
-      <div class="card" style="grid-column:1/-1">
-        <div class="card-title">Change password</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
-          <div class="field">
-            <label>Current password</label>
-            <input type="password" id="prof-current-pw" placeholder="••••••••">
-          </div>
-          <div class="field">
-            <label>New password</label>
-            <input type="password" id="prof-new-pw" placeholder="At least 8 characters">
-          </div>
-          <div class="field">
-            <label>Confirm new password</label>
-            <input type="password" id="prof-confirm-pw" placeholder="Re-enter new password">
-          </div>
-        </div>
-        <div class="form-error hidden" id="prof-pw-error"></div>
-        <div class="form-success hidden" id="prof-pw-success"></div>
-      </div>
-
-    </div>
-    <div style="max-width:760px;margin-top:8px">
-      <div class="form-error hidden" id="prof-error"></div>
-      <div class="form-success hidden" id="prof-success"></div>
-      <div style="margin-top:16px">
-        <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save changes</button>
-      </div>
     </div>
   </div>
 
@@ -2851,9 +2880,17 @@ async function populateProfilePage() {
     document.getElementById('prof-bill-zip').value    = bill.zip    || '';
   }
 
-  ['prof-error','prof-success','prof-pw-error','prof-pw-success'].forEach(id => {
+  // Email preferences
+  const prefs = p.emailPrefs || { proofs:true, proofReply:true, quotes:true, invoices:true, messages:true };
+  document.getElementById('epref-proofs').checked      = prefs.proofs     !== false;
+  document.getElementById('epref-proof-reply').checked = prefs.proofReply !== false;
+  document.getElementById('epref-quotes').checked      = prefs.quotes     !== false;
+  document.getElementById('epref-invoices').checked    = prefs.invoices   !== false;
+  document.getElementById('epref-messages').checked    = prefs.messages   !== false;
+
+  ['prof-error','prof-success','prof-pw-error','prof-pw-success','prof-epref-success'].forEach(id => {
     const el = document.getElementById(id);
-    el.classList.add('hidden'); el.textContent = '';
+    if (el) { el.classList.add('hidden'); el.textContent = ''; }
   });
   ['prof-current-pw','prof-new-pw','prof-confirm-pw'].forEach(id => {
     document.getElementById(id).value = '';
@@ -2865,7 +2902,15 @@ window.toggleSameAddress = (checked) => {
   document.getElementById('billing-same-msg').classList.toggle('hidden', !checked);
 };
 
-window.saveProfile = async () => {
+// ── PROFILE COLLAPSIBLE CARDS ─────────────────
+window.toggleProfileCard = (id) => {
+  const body    = document.getElementById(`prof-${id}-body`);
+  const chevron = document.getElementById(`prof-${id}-chevron`);
+  const open    = body.classList.toggle('hidden');
+  chevron.style.transform = open ? '' : 'rotate(90deg)';
+};
+
+window.saveContactInfo = async () => {
   const company   = document.getElementById('prof-company').value.trim();
   const name      = document.getElementById('prof-name').value.trim();
   const phone     = document.getElementById('prof-phone').value.trim();
@@ -2885,46 +2930,58 @@ window.saveProfile = async () => {
     state:  document.getElementById('prof-bill-state').value.trim().toUpperCase(),
     zip:    document.getElementById('prof-bill-zip').value.trim(),
   };
+  try {
+    await fbUpdate(`clients/${currentUser.uid}`, { company, name, phone, shippingAddress, billingAddress, profileCompleted: true });
+    clientProfile = { ...clientProfile, company, name, phone, shippingAddress, billingAddress };
+    document.getElementById('nav-user-name').textContent = company || name || currentUser.email;
+    okEl.textContent = 'Saved!'; okEl.classList.remove('hidden');
+    setTimeout(() => okEl.classList.add('hidden'), 3000);
+  } catch(e) { errEl.textContent = 'Failed to save: ' + e.message; errEl.classList.remove('hidden'); }
+};
 
-  // Handle password change if fields are filled
+window.saveEmailPrefs = async () => {
+  const prefs = {
+    proofs:     document.getElementById('epref-proofs').checked,
+    proofReply: document.getElementById('epref-proof-reply').checked,
+    quotes:     document.getElementById('epref-quotes').checked,
+    invoices:   document.getElementById('epref-invoices').checked,
+    messages:   document.getElementById('epref-messages').checked,
+  };
+  const okEl = document.getElementById('prof-epref-success');
+  try {
+    await fbUpdate(`clients/${currentUser.uid}`, { emailPrefs: prefs });
+    clientProfile = { ...clientProfile, emailPrefs: prefs };
+    okEl.textContent = 'Preferences saved!'; okEl.classList.remove('hidden');
+    setTimeout(() => okEl.classList.add('hidden'), 3000);
+  } catch(e) { toast('Failed to save preferences.', 'error'); }
+};
+
+window.savePassword = async () => {
   const currentPw = document.getElementById('prof-current-pw').value;
   const newPw     = document.getElementById('prof-new-pw').value;
   const confirmPw = document.getElementById('prof-confirm-pw').value;
   const pwErrEl   = document.getElementById('prof-pw-error');
   const pwOkEl    = document.getElementById('prof-pw-success');
   pwErrEl.classList.add('hidden'); pwOkEl.classList.add('hidden');
-
-  if (newPw || currentPw || confirmPw) {
-    if (!currentPw) { pwErrEl.textContent = 'Enter your current password.'; pwErrEl.classList.remove('hidden'); return; }
-    if (newPw.length < 8) { pwErrEl.textContent = 'New password must be at least 8 characters.'; pwErrEl.classList.remove('hidden'); return; }
-    if (newPw !== confirmPw) { pwErrEl.textContent = "Passwords don't match."; pwErrEl.classList.remove('hidden'); return; }
-    try {
-      const { signInWithEmailAndPassword: reauth, updatePassword } =
-        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-      const cred = await reauth(auth, currentUser.email, currentPw);
-      await updatePassword(cred.user, newPw);
-      pwOkEl.textContent = 'Password updated successfully.';
-      pwOkEl.classList.remove('hidden');
-      ['prof-current-pw','prof-new-pw','prof-confirm-pw'].forEach(id => document.getElementById(id).value = '');
-    } catch(e) {
-      const msg = e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
-        ? 'Current password is incorrect.' : 'Failed to update password.';
-      pwErrEl.textContent = msg; pwErrEl.classList.remove('hidden'); return;
-    }
-  }
-
+  if (!currentPw) { pwErrEl.textContent = 'Enter your current password.'; pwErrEl.classList.remove('hidden'); return; }
+  if (newPw.length < 8) { pwErrEl.textContent = 'New password must be at least 8 characters.'; pwErrEl.classList.remove('hidden'); return; }
+  if (newPw !== confirmPw) { pwErrEl.textContent = "Passwords don't match."; pwErrEl.classList.remove('hidden'); return; }
   try {
-    await fbUpdate(`clients/${currentUser.uid}`, {
-      company, name, phone, shippingAddress, billingAddress, profileCompleted: true,
-    });
-    clientProfile = { ...clientProfile, company, name, phone, shippingAddress, billingAddress };
-    document.getElementById('nav-user-name').textContent = company || name || currentUser.email;
-    okEl.textContent = 'Profile saved!'; okEl.classList.remove('hidden');
-    setTimeout(() => okEl.classList.add('hidden'), 3000);
+    const { signInWithEmailAndPassword: reauth, updatePassword } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    const cred = await reauth(auth, currentUser.email, currentPw);
+    await updatePassword(cred.user, newPw);
+    pwOkEl.textContent = 'Password updated!'; pwOkEl.classList.remove('hidden');
+    ['prof-current-pw','prof-new-pw','prof-confirm-pw'].forEach(id => document.getElementById(id).value = '');
   } catch(e) {
-    errEl.textContent = 'Failed to save: ' + e.message; errEl.classList.remove('hidden');
+    const msg = e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
+      ? 'Current password is incorrect.' : 'Failed to update password.';
+    pwErrEl.textContent = msg; pwErrEl.classList.remove('hidden');
   }
 };
+
+// Legacy alias used by first-login modal save flow
+window.saveProfile = window.saveContactInfo;
 
 // ── MESSAGES ─────────────────────────────────
 let activeThreadId = null;
@@ -3072,27 +3129,57 @@ window.startNewThread = async () => {
   openThread(threadId);
 };
 
+let msgAttachFile = null;
+
+window.handleMsgAttach = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  msgAttachFile = file;
+  document.getElementById('msg-attach-name').textContent = '📎 ' + file.name;
+  document.getElementById('msg-attach-preview').classList.remove('hidden');
+};
+
+window.clearMsgAttach = () => {
+  msgAttachFile = null;
+  document.getElementById('msg-attach-preview').classList.add('hidden');
+  document.getElementById('msg-attach-file').value = '';
+};
+
 window.sendClientMessage = async () => {
   const text = document.getElementById('msg-reply-text').value.trim();
-  if (!text || !activeThreadId) return;
+  if (!text && !msgAttachFile) return;
+  if (!activeThreadId) return;
   const uid    = currentUser.uid;
   const thread = cache.messages.find(t => t.id === activeThreadId);
   if (!thread || thread.status === 'resolved') return;
 
-  const newMsg = { sender:'client', text, timestamp: new Date().toISOString() };
+  let attachUrl = null;
+  let attachName = null;
+  if (msgAttachFile) {
+    const token = await getToken();
+    const ext   = msgAttachFile.name.split('.').pop().toLowerCase();
+    const path  = `clients/${uid}/messages/${activeThreadId}_${Date.now()}.${ext}`;
+    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
+    const res = await fetch(uploadUrl, {
+      method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type': msgAttachFile.type||'application/octet-stream' }, body: msgAttachFile
+    });
+    if (res.ok) {
+      attachUrl  = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(path)}?alt=media`;
+      attachName = msgAttachFile.name;
+    }
+  }
+
+  const newMsg = { sender:'client', text: text||'', timestamp: new Date().toISOString(), ...(attachUrl?{attachUrl,attachName}:{}) };
   const updated = [...(thread.messages||[]), newMsg];
   await fbUpdate(`clients/${uid}/messages/${activeThreadId}`, { messages: updated });
   thread.messages = updated;
   document.getElementById('msg-reply-text').value = '';
+  clearMsgAttach();
   renderThreadMessages(thread);
 
   await fetch(WORKER_URL, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      action: 'notify_admin', type: 'new_message',
-      clientEmail: currentUser.email,
-      itemName: thread.subject||'Message', comment: text,
-    })
+    body: JSON.stringify({ action:'notify_admin', type:'new_message', clientEmail: currentUser.email, itemName: thread.subject||'Message', comment: text })
   }).catch(()=>{});
 };
 
