@@ -1137,7 +1137,10 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-invoice-detail')">Close</button>
-      <div id="invd-pay-btn"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a id="invd-square-link" href="#" target="_blank" class="btn btn-ghost btn-sm hidden">View in Square →</a>
+        <div id="invd-pay-btn"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2071,6 +2074,15 @@ window.openInvoiceModal = (id) => {
     linesSection.classList.remove('hidden');
   } else {
     linesSection.classList.add('hidden');
+  }
+
+  // Square link
+  const sqLink = document.getElementById('invd-square-link');
+  if (inv.paymentUrl) {
+    sqLink.href = inv.paymentUrl;
+    sqLink.classList.remove('hidden');
+  } else {
+    sqLink.classList.add('hidden');
   }
 
   // Pay button
