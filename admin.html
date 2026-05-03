@@ -488,12 +488,22 @@
       <button class="modal-close" onclick="closeModal('modal-new-invoice')">×</button>
     </div>
     <p class="text-muted" style="margin-bottom:20px">Client: <strong id="ni-client-label"></strong></p>
+
+    <div style="background:var(--green-pale);border:1px solid var(--green-soft);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px">
+      <div style="font-size:12px;font-weight:600;color:var(--green);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">Look up from Square</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="ni-sq-lookup" placeholder="Square invoice number (e.g. 0001)" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:14px;background:var(--white);outline:none;">
+        <button class="btn btn-primary btn-sm" onclick="lookupSquareInvoice()" style="white-space:nowrap">Look up</button>
+      </div>
+      <div id="ni-lookup-status" style="font-size:12px;margin-top:6px;color:var(--mid-gray)"></div>
+    </div>
+
     <div class="field"><label>Invoice name / description</label><input type="text" id="ni-name" placeholder="e.g. Business Cards — 500 units"></div>
     <div class="field"><label>Invoice # (from Square)</label><input type="text" id="ni-number" placeholder="INV-001"></div>
     <div class="field"><label>Amount ($)</label><input type="number" id="ni-amount" placeholder="0.00" step="0.01" min="0"></div>
     <div class="field"><label>Due date</label><input type="date" id="ni-due"></div>
-    <div class="field"><label>Square invoice ID (optional)</label><input type="text" id="ni-square-id" placeholder="Square invoice ID for payment link"></div>
-    <div class="field"><label>Direct payment URL (optional)</label><input type="url" id="ni-pay-url" placeholder="https://squareup.com/pay/..."></div>
+    <div class="field" style="display:none"><label>Square invoice ID</label><input type="text" id="ni-square-id" placeholder="Auto-filled from lookup"></div>
+    <div class="field" style="display:none"><label>Payment URL</label><input type="url" id="ni-pay-url" placeholder="Auto-filled from lookup"></div>
     <div class="form-error" id="ni-error"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-invoice')">Cancel</button>
@@ -1069,9 +1079,50 @@ window.createQuote = async () => {
 window.openNewInvoiceModal = () => {
   if (!selectedClient) return;
   document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
-  ['ni-name','ni-number','ni-amount','ni-due','ni-square-id','ni-pay-url'].forEach(id => document.getElementById(id).value='');
+  ['ni-name','ni-number','ni-amount','ni-due','ni-square-id','ni-pay-url','ni-sq-lookup'].forEach(id => document.getElementById(id).value='');
   document.getElementById('ni-error').classList.remove('show');
+  document.getElementById('ni-lookup-status').textContent = '';
   openModal('modal-new-invoice');
+};
+
+window.lookupSquareInvoice = async () => {
+  const number = document.getElementById('ni-sq-lookup').value.trim();
+  const status = document.getElementById('ni-lookup-status');
+  if (!number) { status.textContent = 'Enter a Square invoice number first.'; return; }
+
+  status.textContent = 'Looking up…';
+  status.style.color = 'var(--mid-gray)';
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: number })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      status.textContent = data.error === 'Invoice not found'
+        ? 'No invoice found with that number.'
+        : 'Lookup failed: ' + data.error;
+      status.style.color = 'var(--red)';
+      return;
+    }
+
+    // Auto-fill the form fields
+    if (data.title)       document.getElementById('ni-name').value      = data.title;
+    if (data.invoiceNum)  document.getElementById('ni-number').value    = data.invoiceNum;
+    if (data.amountDue)   document.getElementById('ni-amount').value    = (data.amountDue / 100).toFixed(2);
+    if (data.dueDate)     document.getElementById('ni-due').value       = data.dueDate;
+    if (data.invoiceId)   document.getElementById('ni-square-id').value = data.invoiceId;
+    if (data.paymentUrl)  document.getElementById('ni-pay-url').value   = data.paymentUrl;
+
+    status.textContent = '✓ Invoice details filled in below.';
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.textContent = 'Lookup failed. Check your connection.';
+    status.style.color = 'var(--red)';
+  }
 };
 
 window.createInvoice = async () => {
@@ -1109,11 +1160,19 @@ window.resendInvite = async (uid) => {
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'resend_invite', email: client.email, name: client.name })
+      body: JSON.stringify({ action: 'resend_invite', email: client.email, name: client.name, uid })
     });
     const data = await res.json();
-    if (data.ok) toast('Invite resent to ' + client.email, 'success');
-    else toast('Failed: ' + (data.error || 'Unknown error'), 'error');
+    if (data.ok) {
+      toast('Invite resent to ' + client.email, 'success');
+    } else if (data.error === 'CLIENT_NEEDS_REINVITE') {
+      // Client already set their password — offer to delete and re-invite
+      if (confirm(`${client.email} has already set their password. To send a fresh invite, you would need to delete and re-invite them. Contact support if needed.`)) {
+        // placeholder — full re-invite flow can be added later
+      }
+    } else {
+      toast('Failed: ' + (data.error || 'Unknown error'), 'error');
+    }
   } catch(e) {
     toast('Failed to resend invite.', 'error');
   }
