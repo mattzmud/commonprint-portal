@@ -563,8 +563,10 @@ async function fbCreate(path, data) {
 }
 async function fbList(path) {
   const token = await getToken();
-  const res = await fetch(`${getFS_BASE()}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  const url = `${getFS_BASE()}/${path}`;
+  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
   const d = await res.json();
+  console.log('[fbList]', path, '→ status:', res.status, 'docs:', (d.documents||[]).length, d.error || '');
   return d.documents || [];
 }
 function toFS(obj) {
@@ -641,17 +643,30 @@ window.doSignOut = async () => { await signOut(auth); };
 
 // ── LOAD DATA ─────────────────────────────────
 async function loadAllClients() {
-  // clientIndex is a flat collection readable by admin — each doc ID is a client UID
+  console.log('[loadAllClients] starting...');
+  console.log('[loadAllClients] FS_BASE:', getFS_BASE());
+  const token = await getToken();
+  console.log('[loadAllClients] token present:', !!token);
+
   const docs = await fbList('clientIndex');
+  console.log('[loadAllClients] clientIndex docs:', docs.length, docs);
+
   if (docs.length === 0) {
+    console.log('[loadAllClients] no docs in clientIndex');
     renderClientsGrid();
     return;
   }
-  // Fetch each client's full profile
   const profiles = await Promise.all(
-    docs.map(d => fbGet(`clients/${docId(d)}`).then(p => p ? { uid: docId(d), ...ff(p.fields) } : null))
+    docs.map(async d => {
+      const uid = docId(d);
+      console.log('[loadAllClients] fetching client:', uid);
+      const p = await fbGet(`clients/${uid}`);
+      console.log('[loadAllClients] client data:', uid, p);
+      return p ? { uid, ...ff(p.fields) } : null;
+    })
   );
   allClients = profiles.filter(Boolean);
+  console.log('[loadAllClients] allClients:', allClients);
   renderClientsGrid();
   await loadAllWorkItems();
 }
