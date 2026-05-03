@@ -1313,6 +1313,19 @@ window.respondToProof = async (action) => {
   renderDashboard();
   closeModal('modal-proof');
   toast(action === 'approved' ? 'Proof approved!' : 'Change request submitted.', 'success');
+
+  // Notify admin
+  fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'notify_admin',
+      type: action === 'approved' ? 'proof_approved' : 'proof_changes',
+      clientEmail: currentUser.email,
+      itemName: activeProof.name || 'Untitled proof',
+      comment,
+    })
+  }).catch(() => {});
 };
 
 // ── QUOTES ───────────────────────────────────
@@ -1465,6 +1478,19 @@ window.submitQuoteApproval = async () => {
     renderDashboard();
     closeModal('modal-quote');
     toast('Quote approved and signed!', 'success');
+
+    // Notify admin
+    fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'notify_admin',
+        type: 'quote_approved',
+        clientEmail: currentUser.email,
+        itemName: activeQuote.name || 'Untitled quote',
+        amount: activeQuote.total,
+      })
+    }).catch(() => {});
   } catch(err) {
     console.error(err);
     toast('Something went wrong. Please try again.', 'error');
