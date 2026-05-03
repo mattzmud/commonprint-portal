@@ -1240,7 +1240,7 @@ async function loadClientDetail(uid) {
         <td style="font-weight:500;cursor:pointer" onclick="openAdminInProcessModal('${i.id}')">${esc(i.name||'—')}</td>
         <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
         <td>$${(i.amount||0).toFixed(2)}</td>
-        <td>${badge(i.status === 'paid' ? 'paid' : 'unpaid')}</td>
+        <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
         <td>${fmtDate(i.processingAt||i.createdAt)}</td>
         <td>
           <button class="btn btn-primary btn-sm" onclick="markAsCompletedOrder('${i.id}')">Mark complete</button>
@@ -1723,9 +1723,11 @@ window.convertQuoteToInvoice = (quoteId) => {
 // ── MARK INVOICE AS COMPLETED ORDER ───────────
 window.markInProcess = async (invoiceId) => {
   const uid = selectedClient.uid;
+  const inv = selectedClientData.invoices?.find(x => x.id === invoiceId);
   try {
     await fbUpdate(`clients/${uid}/invoices/${invoiceId}`, {
       status: 'processing',
+      paymentStatus: inv?.status || 'unpaid', // preserve payment status separately
       processingAt: new Date().toISOString(),
     });
     toast('Order marked as in process!', 'success');
@@ -1850,7 +1852,7 @@ window.openAdminInProcessModal = (invoiceId) => {
   document.getElementById('aip-since').textContent   = fmtDate(inv.processingAt || inv.createdAt);
   document.getElementById('aip-invoice').textContent = inv.number || inv.id.slice(0,6).toUpperCase();
   document.getElementById('aip-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
-  document.getElementById('aip-payment').innerHTML   = badge(inv.status === 'paid' ? 'paid' : 'unpaid');
+  document.getElementById('aip-payment').innerHTML   = badge(inv.paymentStatus === 'paid' ? 'paid' : 'unpaid');
   document.getElementById('aip-due').textContent     = fmtDate(inv.dueDate);
 
   const linesEl = document.getElementById('aip-lines');

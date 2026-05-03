@@ -1435,9 +1435,7 @@ function renderDashboard() {
   (cache.invoices|| []).filter(i => i.status === 'unpaid' || i.status === 'overdue').forEach(inv => {
     actions.push({ icon: '💳', label: inv.name || 'Invoice due', sub: `$${(inv.amount || 0).toFixed(2)} — tap to pay`, page: 'invoices', id: inv.id });
   });
-  (cache.invoices|| []).filter(i => i.status === 'processing').forEach(inv => {
-    actions.push({ icon: '🖨', label: inv.name || 'Order in process', sub: 'Currently in production', page: 'inprocess', id: inv.id });
-  });
+  // Processing orders intentionally excluded from Action Needed — no action required from client
 
   if (actions.length === 0) {
     actionsEl.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">You're all caught up!</div><div class="empty-sub">No pending items right now.</div></div>`;
@@ -1927,7 +1925,7 @@ function renderInProcess() {
       <td style="font-weight:500">${esc(i.name||'—')}</td>
       <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
       <td class="amount">$${(i.amount||0).toFixed(2)}</td>
-      <td>${badge(i.status === 'paid' ? 'paid' : 'unpaid')}</td>
+      <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
       <td>${fmtDate(i.processingAt||i.createdAt)}</td>
       <td style="color:var(--mid-gray);font-size:18px">›</td>
     </tr>`).join('');
@@ -1947,7 +1945,7 @@ window.openInProcessModal = (invoiceId) => {
   document.getElementById('ip-title').textContent   = inv.name || 'Order in process';
   document.getElementById('ip-invoice').textContent = inv.number || inv.id.slice(0,6).toUpperCase();
   document.getElementById('ip-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
-  document.getElementById('ip-payment').innerHTML   = badge(inv.status === 'paid' ? 'paid' : 'unpaid');
+  document.getElementById('ip-payment').innerHTML   = badge(inv.paymentStatus === 'paid' ? 'paid' : 'unpaid');
   document.getElementById('ip-since').textContent   = fmtDate(inv.processingAt || inv.createdAt);
   document.getElementById('ip-due').textContent     = fmtDate(inv.dueDate);
 
