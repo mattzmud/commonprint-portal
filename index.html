@@ -1591,8 +1591,10 @@ function friendlyAuthError(code) {
 window.showPage = (id) => {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  document.querySelector(`[data-page="${id}"]`).classList.add('active');
+  const pageEl = document.getElementById('page-' + id);
+  if (pageEl) pageEl.classList.add('active');
+  const tabEl = document.querySelector(`[data-page="${id}"]`);
+  if (tabEl) tabEl.classList.add('active');
   if (id === 'proofs'    && !cache.proofs)   renderProofs();
   if (id === 'quotes'    && !cache.quotes)   renderQuotes();
   if (id === 'invoices'  && !cache.invoices) renderInvoices();
