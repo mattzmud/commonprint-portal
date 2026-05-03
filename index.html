@@ -911,6 +911,32 @@
   </div>
 </div>
 
+<!-- Re-order Modal -->
+<div class="modal-overlay" id="modal-reorder">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="reorder-title">Re-order</div>
+      <button class="modal-close" onclick="closeModal('modal-reorder')">×</button>
+    </div>
+
+    <div style="background:var(--green-pale);border:1px solid var(--green-soft);border-radius:var(--radius);padding:12px 14px;margin-bottom:20px;font-size:13px;color:var(--green);line-height:1.6">
+      Review the items below and adjust quantities as needed. Remove any items you don't want to re-order. Leave a note if you'd like to request any other changes, then submit and we'll be in touch with a new quote.
+    </div>
+
+    <div id="reorder-items"></div>
+
+    <div class="field" style="margin-top:16px">
+      <label>Notes / changes (optional)</label>
+      <textarea class="comment-field" id="reorder-note" placeholder="e.g. Same as last time but on glossy stock, or increase quantity to 1000..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-reorder')">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="reorder-submit-btn" onclick="submitReorder()">Submit re-order request</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════
      FIREBASE + APP LOGIC
 ══════════════════════════════════════════ -->
@@ -1556,34 +1582,99 @@ function renderOrders() {
     return;
   }
   list.innerHTML = cache.orders.map(o => `
-    <div class="order-row">
-      <div class="order-meta">
-        <div class="order-name">${esc(o.name || 'Order')}</div>
-        <div class="order-date">${fmtDate(o.completedAt || o.createdAt)}</div>
+    <div class="order-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div class="order-meta">
+          <div class="order-name">${esc(o.name || 'Order')}</div>
+          <div class="order-date">${fmtDate(o.completedAt || o.createdAt)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="order-amount">$${(o.total || 0).toFixed(2)}</div>
+          <button class="btn btn-ghost btn-sm" onclick="openReorderModal('${o.id}')">Re-order</button>
+        </div>
       </div>
-      <div class="order-amount">$${(o.total || 0).toFixed(2)}</div>
-      <button class="btn btn-ghost btn-sm" onclick="requestReorder('${o.id}')">Re-order</button>
+      ${(o.lineItems||[]).length > 0 ? `
+        <div style="width:100%;border-top:1px solid var(--linen-dark);padding-top:10px">
+          ${(o.lineItems||[]).map(li => `
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mid-gray);padding:3px 0">
+              <span>${esc(li.description||li.desc||'')} <span style="color:var(--border)">×${li.qty||1}</span></span>
+              <span>$${((li.price||0)*(li.qty||1)).toFixed(2)}</span>
+            </div>`).join('')}
+        </div>` : ''}
     </div>`).join('');
 }
 
-window.requestReorder = async (id) => {
+let activeReorder = null;
+let reorderItems  = [];
+
+window.openReorderModal = (id) => {
   const o = cache.orders.find(x => x.id === id);
   if (!o) return;
-  // Send re-order request to worker → email to admin
+  activeReorder = o;
+  reorderItems  = (o.lineItems || []).map(li => ({ ...li })); // shallow copy
+
+  document.getElementById('reorder-title').textContent   = o.name || 'Re-order';
+  document.getElementById('reorder-note').value          = '';
+  renderReorderItems();
+  openModal('modal-reorder');
+};
+
+function renderReorderItems() {
+  const el = document.getElementById('reorder-items');
+  el.innerHTML = reorderItems.map((li, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--linen-dark)" id="reorder-item-${i}">
+      <div style="flex:1;font-size:14px;color:var(--charcoal)">${esc(li.description||li.desc||'Item')}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <label style="font-size:12px;color:var(--mid-gray)">Qty</label>
+        <input type="number" min="1" value="${li.qty||1}"
+          oninput="reorderItems[${i}].qty=Math.max(1,parseInt(this.value)||1)"
+          style="width:60px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-family:var(--font-body);font-size:14px;text-align:center">
+        <button onclick="removeReorderItem(${i})"
+          style="width:28px;height:28px;border:1px solid var(--border);background:var(--linen);border-radius:6px;cursor:pointer;font-size:16px;color:var(--mid-gray);display:flex;align-items:center;justify-content:center;flex-shrink:0"
+          onmouseover="this.style.background='#FDECEA';this.style.color='var(--red)'"
+          onmouseout="this.style.background='var(--linen)';this.style.color='var(--mid-gray)'">×</button>
+      </div>
+    </div>`).join('');
+}
+
+window.removeReorderItem = (i) => {
+  reorderItems.splice(i, 1);
+  renderReorderItems();
+};
+
+window.submitReorder = async () => {
+  if (!activeReorder) return;
+  const note = document.getElementById('reorder-note').value.trim();
+  const remaining = reorderItems.filter(li => li.description || li.desc);
+  if (remaining.length === 0) {
+    toast('Please keep at least one item.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('reorder-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
   try {
     await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'send_reorder',
+        action:      'send_reorder',
         clientEmail: currentUser.email,
-        orderName: o.name,
-        orderId: o.id,
+        orderName:   activeReorder.name,
+        orderId:     activeReorder.id,
+        lineItems:   remaining,
+        note,
       })
     });
-    toast(`Re-order request sent for "${o.name}"!`, 'success');
+    closeModal('modal-reorder');
+    toast('Re-order request sent!', 'success');
   } catch(e) {
-    toast('Request sent! We\'ll be in touch soon.', 'success');
+    toast('Something went wrong. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit re-order request';
   }
 };
 

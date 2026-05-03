@@ -356,7 +356,7 @@
       <div class="detail-panel" id="dtab-invoices">
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>Invoice #</th><th>Name</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead>
+            <thead><tr><th>Invoice #</th><th>Name</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr></thead>
             <tbody id="detail-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
         </div>
@@ -364,7 +364,7 @@
       <div class="detail-panel" id="dtab-orders">
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>Order name</th><th>Completed</th><th>Total</th></tr></thead>
+            <thead><tr><th>Order name</th><th>Completed</th><th>Total</th><th>Items</th></tr></thead>
             <tbody id="detail-orders-tbody"><tr><td colspan="3"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
           </table>
         </div>
@@ -890,15 +890,17 @@ async function loadClientDetail(uid) {
         <td>$${(q.total||0).toFixed(2)}</td>
         <td>${badge(q.status||'pending')}</td>
         <td>${q.signatureUrl ? `<img class="sig-thumb" src="${esc(q.signatureUrl)}" alt="Signature">` : '—'}</td>
-        <td style="display:flex;gap:6px">
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="openEditQuoteModal('${q.id}')">Edit</button>
           ${q.status === 'approved' ? `<button class="btn btn-ghost btn-sm" onclick="openViewQuoteModal('${q.id}')">View</button>` : ''}
+          ${q.status === 'approved' && !q.convertedToInvoice ? `<button class="btn btn-primary btn-sm" onclick="convertQuoteToInvoice('${q.id}')">Convert to invoice</button>` : ''}
+          ${q.convertedToInvoice ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Invoiced</span>` : ''}
         </td>
       </tr>`).join('');
 
   // Invoices tab
   document.getElementById('detail-invoices-tbody').innerHTML = invoices.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No invoices yet.</div></td></tr>`
+    ? `<tr><td colspan="6"><div class="empty">No invoices yet.</div></td></tr>`
     : invoices.map(i => `
       <tr>
         <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
@@ -906,16 +908,22 @@ async function loadClientDetail(uid) {
         <td>${fmtDate(i.dueDate)}</td>
         <td>$${(i.amount||0).toFixed(2)}</td>
         <td>${badge(i.status||'unpaid')}</td>
+        <td>
+          ${i.status === 'paid' && !i.completedAsOrder
+            ? `<button class="btn btn-primary btn-sm" onclick="markAsCompletedOrder('${i.id}')">Mark complete</button>`
+            : i.completedAsOrder ? `<span class="text-muted" style="font-size:12px">Order created</span>` : ''}
+        </td>
       </tr>`).join('');
 
   // Orders tab
   document.getElementById('detail-orders-tbody').innerHTML = orders.length === 0
-    ? `<tr><td colspan="3"><div class="empty">No orders yet.</div></td></tr>`
+    ? `<tr><td colspan="4"><div class="empty">No orders yet.</div></td></tr>`
     : orders.map(o => `
       <tr>
-        <td>${esc(o.name||'Order')}</td>
+        <td style="font-weight:500">${esc(o.name||'Order')}</td>
         <td>${fmtDate(o.completedAt||o.createdAt)}</td>
         <td>$${(o.total||0).toFixed(2)}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${(o.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
       </tr>`).join('');
 }
 
@@ -1201,6 +1209,7 @@ window.saveQuote = async () => {
 // ── INVOICE ───────────────────────────────────
 window.openNewInvoiceModal = () => {
   if (!selectedClient) return;
+  window._convertingFromQuoteId = null;
   document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
   ['ni-name','ni-number','ni-amount','ni-due','ni-square-id','ni-pay-url','ni-sq-lookup'].forEach(id => document.getElementById(id).value='');
   document.getElementById('ni-error').classList.remove('show');
@@ -1261,10 +1270,17 @@ window.createInvoice = async () => {
   const uid = selectedClient.uid;
   const invId = genId();
   try {
+    const sourceQuoteId = window._convertingFromQuoteId || null;
     await fbSet(`clients/${uid}/invoices/${invId}`, {
       name, number, amount, dueDate, squareInvoiceId: sqId, paymentUrl: payUrl,
-      status:'unpaid', createdAt: new Date().toISOString()
+      status:'unpaid', createdAt: new Date().toISOString(),
+      ...(sourceQuoteId ? { sourceQuoteId } : {})
     });
+    // Mark the source quote as converted
+    if (sourceQuoteId) {
+      await fbUpdate(`clients/${uid}/quotes/${sourceQuoteId}`, { convertedToInvoice: true });
+    }
+    window._convertingFromQuoteId = null;
   } catch(e) {
     err.textContent = 'Failed to save invoice: ' + e.message;
     err.classList.add('show');
@@ -1279,6 +1295,61 @@ window.createInvoice = async () => {
   closeModal('modal-new-invoice');
   toast('Invoice saved and client notified!', 'success');
   await loadClientDetail(uid);
+};
+
+// ── CONVERT QUOTE TO INVOICE ──────────────────
+window.convertQuoteToInvoice = (quoteId) => {
+  const q = selectedClientData.quotes?.find(x => x.id === quoteId);
+  if (!q) return;
+  // Pre-fill invoice modal with quote data
+  document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
+  document.getElementById('ni-name').value    = q.name || '';
+  document.getElementById('ni-number').value  = '';
+  document.getElementById('ni-amount').value  = (q.total || 0).toFixed(2);
+  document.getElementById('ni-due').value     = '';
+  document.getElementById('ni-square-id').value = '';
+  document.getElementById('ni-pay-url').value   = '';
+  document.getElementById('ni-sq-lookup').value = '';
+  document.getElementById('ni-error').classList.remove('show');
+  document.getElementById('ni-lookup-status').textContent = '';
+  // Store the source quote ID so createInvoice can link them
+  window._convertingFromQuoteId = quoteId;
+  openModal('modal-new-invoice');
+};
+
+// ── MARK INVOICE AS COMPLETED ORDER ───────────
+window.markAsCompletedOrder = async (invoiceId) => {
+  const inv = selectedClientData.invoices?.find(x => x.id === invoiceId);
+  if (!inv) return;
+
+  const uid = selectedClient.uid;
+
+  // Find the linked quote for line items (if any)
+  const linkedQuote = inv.sourceQuoteId
+    ? selectedClientData.quotes?.find(q => q.id === inv.sourceQuoteId)
+    : null;
+
+  const orderId = genId();
+  const orderData = {
+    name:        inv.name || 'Order',
+    total:       inv.amount || 0,
+    lineItems:   linkedQuote?.lineItems || [],
+    invoiceId:   invoiceId,
+    sourceQuoteId: inv.sourceQuoteId || null,
+    completedAt: new Date().toISOString(),
+    createdAt:   new Date().toISOString(),
+  };
+
+  try {
+    await fbSet(`clients/${uid}/orders/${orderId}`, orderData);
+    // Mark invoice as having generated an order
+    await fbUpdate(`clients/${uid}/invoices/${invoiceId}`, { completedAsOrder: true });
+    toast('Order created from invoice!', 'success');
+    await loadClientDetail(uid);
+    showDetailTab('orders');
+  } catch(e) {
+    toast('Failed to create order: ' + e.message, 'error');
+  }
 };
 
 // ── VIEW APPROVED QUOTE ───────────────────────
