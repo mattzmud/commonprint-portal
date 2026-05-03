@@ -508,36 +508,45 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBaWzMQhge7idTeuFK5873thetQ30I6lTI",
-  authDomain: "common-print-portal.firebaseapp.com",
-  projectId: "common-print-portal",
-  storageBucket: "common-print-portal.firebasestorage.app",
-  messagingSenderId: "631291732179",
-  appId: "1:631291732179:web:a389c5763c08b22ff43426"
-};
+const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev';
+const ADMIN_EMAIL = 'matt@commonprintco.com';
 
-const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev'; // ← update after deploy
-const ADMIN_EMAIL = 'matt@commonprintco.com'; // ← your admin email
+let firebaseConfig = {};
+let app, auth;
 
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-window._auth = auth;
+async function initFirebase() {
+  const res = await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_config' })
+  });
+  firebaseConfig = await res.json();
+  app  = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  window._auth = auth;
+  setupAuth();
+}
 
-const FS_BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
+function getFS_BASE() {
+  return `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
+}
+
+initFirebase().catch(() => {
+  document.getElementById('login-screen').innerHTML = '<div style="text-align:center;padding:64px;font-family:sans-serif;color:#888">Unable to connect. Please try again later.</div>';
+});
 
 // ── FIRESTORE HELPERS ────────────────────────
 async function getToken() { return auth.currentUser ? auth.currentUser.getIdToken() : null; }
 
 async function fbGet(path) {
   const token = await getToken();
-  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  const res = await fetch(`${getFS_BASE()}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
   if (!res.ok) return null;
   return res.json();
 }
 async function fbSet(path, data) {
   const token = await getToken();
-  await fetch(`${FS_BASE}/${path}`, {
+  await fetch(`${getFS_BASE()}/${path}`, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: toFS(data) })
@@ -545,7 +554,7 @@ async function fbSet(path, data) {
 }
 async function fbCreate(path, data) {
   const token = await getToken();
-  const res = await fetch(`${FS_BASE}/${path}`, {
+  const res = await fetch(`${getFS_BASE()}/${path}`, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: toFS(data) })
@@ -554,7 +563,7 @@ async function fbCreate(path, data) {
 }
 async function fbList(path) {
   const token = await getToken();
-  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  const res = await fetch(`${getFS_BASE()}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
   const d = await res.json();
   return d.documents || [];
 }
@@ -591,6 +600,7 @@ let lineItems = [];
 let uploadFile = null;
 
 // ── AUTH ──────────────────────────────────────
+function setupAuth() {
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     // Check admin
@@ -613,6 +623,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('app').style.display = 'none';
   }
 });
+} // end setupAuth
 
 window.doLogin = async () => {
   const email = document.getElementById('login-email').value.trim();

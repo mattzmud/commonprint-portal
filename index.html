@@ -918,21 +918,33 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 // ── CONFIG ──────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyBaWzMQhge7idTeuFK5873thetQ30I6lTI",
-  authDomain: "common-print-portal.firebaseapp.com",
-  projectId: "common-print-portal",
-  storageBucket: "common-print-portal.firebasestorage.app",
-  messagingSenderId: "631291732179",
-  appId: "1:631291732179:web:a389c5763c08b22ff43426"
-};
+const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev';
 
-const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev'; // ← update after worker deploy
+// Fetch Firebase config from worker (keeps API key out of HTML source)
+let firebaseConfig = {};
+let app, auth;
 
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+async function initFirebase() {
+  const res = await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_config' })
+  });
+  firebaseConfig = await res.json();
+  app  = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  window.firebaseConfig = firebaseConfig;
+  setupAuth();
+}
 
-const FS_BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
+
+function getFS_BASE() {
+  return `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
+}
+
+initFirebase().catch(err => {
+  document.getElementById('login-screen').innerHTML = '<div style="text-align:center;padding:64px;font-family:sans-serif;color:#888">Unable to connect. Please try again later.</div>';
+});
 
 // ── FIRESTORE HELPERS ────────────────────────
 async function getToken() {
@@ -940,13 +952,13 @@ async function getToken() {
 }
 async function fbGet(path) {
   const token = await getToken();
-  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  const res = await fetch(`${getFS_BASE()}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
   if (!res.ok) return null;
   return res.json();
 }
 async function fbSet(path, data) {
   const token = await getToken();
-  await fetch(`${FS_BASE}/${path}`, {
+  await fetch(`${getFS_BASE()}/${path}`, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: toFS(data) })
@@ -954,7 +966,7 @@ async function fbSet(path, data) {
 }
 async function fbList(path) {
   const token = await getToken();
-  const res = await fetch(`${FS_BASE}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
+  const res = await fetch(`${getFS_BASE()}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
   const data = await res.json();
   return data.documents || [];
 }
@@ -988,6 +1000,7 @@ let activeProof = null;
 let activeQuote = null;
 
 // ── AUTH FLOW ────────────────────────────────
+function setupAuth() {
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -1002,6 +1015,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('app').style.display = 'none';
   }
 });
+} // end setupAuth
 
 function setGreeting() {
   const h = new Date().getHours();
