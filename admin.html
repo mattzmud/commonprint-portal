@@ -571,6 +571,10 @@ const ADMIN_EMAIL = 'matthew@commonprintco.com';
 let firebaseConfig = {};
 let app, auth;
 
+let _firebaseReady = false;
+let _firebaseReadyResolve;
+const firebaseReady = new Promise(resolve => { _firebaseReadyResolve = resolve; });
+
 async function initFirebase() {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
@@ -581,6 +585,8 @@ async function initFirebase() {
   app  = initializeApp(firebaseConfig);
   auth = getAuth(app);
   window._auth = auth;
+  _firebaseReady = true;
+  _firebaseReadyResolve();
   setupAuth();
 }
 
@@ -711,7 +717,22 @@ window.doLogin = async () => {
   const email = document.getElementById('login-email').value.trim();
   const pwd   = document.getElementById('login-password').value;
   const err   = document.getElementById('login-error');
+  const btn   = document.querySelector('#login-screen .btn-primary');
   err.classList.remove('show');
+
+  // Wait for Firebase to initialize if it hasn't yet
+  if (!_firebaseReady) {
+    if (btn) { btn.textContent = 'Connecting…'; btn.disabled = true; }
+    try { await firebaseReady; }
+    catch(e) {
+      err.textContent = 'Unable to connect. Please refresh and try again.';
+      err.classList.add('show');
+      if (btn) { btn.textContent = 'Sign in'; btn.disabled = false; }
+      return;
+    }
+    if (btn) { btn.textContent = 'Sign in'; btn.disabled = false; }
+  }
+
   try { await signInWithEmailAndPassword(auth, email, pwd); }
   catch(e) {
     const map = { 'auth/invalid-credential':'Incorrect email or password.', 'auth/too-many-requests':'Too many attempts.' };
@@ -947,16 +968,16 @@ async function loadClientDetail(uid) {
       </tr>`).join('');
 
   // Requests tab
-  const requests = selectedClientData.requests || [];
-  const pendingReqs = requests.filter(r => r.requestStatus === 'pending').length;
+  const requestsList = selectedClientData.requests || [];
+  const pendingReqs = requestsList.filter(r => r.requestStatus === 'pending').length;
   const badge_el = document.getElementById('badge-requests');
   if (badge_el) {
     if (pendingReqs > 0) { badge_el.textContent = pendingReqs; badge_el.classList.remove('hidden'); }
     else { badge_el.classList.add('hidden'); }
   }
-  document.getElementById('detail-requests-tbody').innerHTML = requests.length === 0
+  document.getElementById('detail-requests-tbody').innerHTML = requestsList.length === 0
     ? `<tr><td colspan="6"><div class="empty">No re-order requests yet.</div></td></tr>`
-    : requests.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(r => `
+    : requestsList.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(r => `
       <tr>
         <td style="font-weight:500">${esc(r.orderName||'—')}</td>
         <td>${fmtDate(r.createdAt)}</td>
