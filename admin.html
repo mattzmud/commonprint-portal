@@ -658,14 +658,16 @@ window.doSignOut = async () => { await signOut(auth); };
 
 // ── LOAD DATA ─────────────────────────────────
 async function loadAllClients() {
-  const docs = await fbList('clientIndex');
-  if (docs.length === 0) {
+  // Client UIDs are stored as an array on the admin's own document
+  const adminDoc = await fbGet(`admins/${currentUser.uid}`);
+  const clientUids = adminDoc ? (ff(adminDoc.fields).clientUids || []) : [];
+
+  if (clientUids.length === 0) {
     renderClientsGrid();
     return;
   }
   const profiles = await Promise.all(
-    docs.map(async d => {
-      const uid = docId(d);
+    clientUids.map(async uid => {
       const p = await fbGet(`clients/${uid}`);
       return p ? { uid, ...ff(p.fields) } : null;
     })
@@ -673,6 +675,18 @@ async function loadAllClients() {
   allClients = profiles.filter(Boolean);
   renderClientsGrid();
   await loadAllWorkItems();
+}
+
+async function addClientUidToAdmin(uid) {
+  // Read current list, append new uid, write back
+  const adminDoc = await fbGet(`admins/${currentUser.uid}`);
+  const existing = adminDoc ? (ff(adminDoc.fields).clientUids || []) : [];
+  if (!existing.includes(uid)) {
+    await fbSet(`admins/${currentUser.uid}`, {
+      role: 'admin',
+      clientUids: [...existing, uid]
+    });
+  }
 }
 
 async function loadAllWorkItems() {
@@ -924,8 +938,8 @@ window.inviteClient = async () => {
     // Save client profile in Firestore
     const formattedPhone = formatPhone(phone);
     await fbSet(`clients/${data.uid}`, { name, email, phone: formattedPhone, createdAt: new Date().toISOString(), status:'active' });
-    // Write to clientIndex so admin can discover all clients
-    await fbSet(`clientIndex/${data.uid}`, { email, name, createdAt: new Date().toISOString() });
+    // Add client UID to admin's clientUids array
+    await addClientUidToAdmin(data.uid);
 
     allClients.push({ uid: data.uid, name, email, phone: formattedPhone, status:'active' });
     renderClientsGrid();
