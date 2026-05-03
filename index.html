@@ -914,7 +914,7 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-         signOut, sendPasswordResetEmail }
+         signOut }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 // ── CONFIG ──────────────────────────────────
@@ -1056,12 +1056,23 @@ window.doReset = async () => {
   const err   = document.getElementById('forgot-error');
   const ok    = document.getElementById('forgot-success');
   err.classList.remove('show'); ok.classList.remove('show');
+  if (!email) { err.textContent = 'Please enter your email address.'; err.classList.add('show'); return; }
   try {
-    await sendPasswordResetEmail(auth, email);
-    ok.textContent = 'Reset link sent! Check your inbox.';
-    ok.classList.add('show');
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send_password_reset', email })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      ok.textContent = 'Reset link sent! Check your inbox.';
+      ok.classList.add('show');
+    } else {
+      err.textContent = data.error || 'Something went wrong. Please try again.';
+      err.classList.add('show');
+    }
   } catch(e) {
-    err.textContent = friendlyAuthError(e.code);
+    err.textContent = 'Something went wrong. Please try again.';
     err.classList.add('show');
   }
 };
