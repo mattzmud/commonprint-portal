@@ -556,10 +556,13 @@ async function fbGet(path) {
 }
 async function fbSet(path, data) {
   const token = await getToken();
+  // toFS on an object returns { mapValue: { fields: {...} } }
+  // Firestore REST expects { fields: {...} } at the top level
+  const fields = toFS(data).mapValue?.fields || toFS(data);
   const res = await fetch(`${getFS_BASE()}/${path}`, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fields: toFS(data) })
+    body: JSON.stringify({ fields })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -681,11 +684,32 @@ async function addClientUidToAdmin(uid) {
   // Read current list, append new uid, write back
   const adminDoc = await fbGet(`admins/${currentUser.uid}`);
   const existing = adminDoc ? (ff(adminDoc.fields).clientUids || []) : [];
-  if (!existing.includes(uid)) {
-    await fbSet(`admins/${currentUser.uid}`, {
-      role: 'admin',
-      clientUids: [...existing, uid]
-    });
+  if (existing.includes(uid)) return;
+
+  const updated = [...existing, uid];
+  const token = await getToken();
+
+  // Build Firestore REST payload manually to ensure correct array encoding
+  const payload = {
+    fields: {
+      role: { stringValue: 'admin' },
+      clientUids: {
+        arrayValue: {
+          values: updated.map(u => ({ stringValue: u }))
+        }
+      }
+    }
+  };
+
+  const res = await fetch(`${getFS_BASE()}/admins/${currentUser.uid}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error('Failed to update client list: ' + (err?.error?.message || res.status));
   }
 }
 

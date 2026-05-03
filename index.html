@@ -958,10 +958,11 @@ async function fbGet(path) {
 }
 async function fbSet(path, data) {
   const token = await getToken();
+  const fields = toFS(data).mapValue?.fields || toFS(data);
   const res = await fetch(`${getFS_BASE()}/${path}`, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fields: toFS(data) })
+    body: JSON.stringify({ fields })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
