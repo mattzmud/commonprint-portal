@@ -958,11 +958,16 @@ async function fbGet(path) {
 }
 async function fbSet(path, data) {
   const token = await getToken();
-  await fetch(`${getFS_BASE()}/${path}`, {
+  const res = await fetch(`${getFS_BASE()}/${path}`, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: toFS(data) })
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Firestore write failed (${res.status})`);
+  }
+  return res.json();
 }
 async function fbList(path) {
   const token = await getToken();
