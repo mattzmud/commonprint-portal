@@ -1582,6 +1582,9 @@ const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev';
 // Fetch Firebase config from worker (keeps API key out of HTML source)
 let firebaseConfig = {};
 let app, auth;
+let _firebaseReady = false;
+let _firebaseReadyResolve;
+const firebaseReady = new Promise(resolve => { _firebaseReadyResolve = resolve; });
 
 async function initFirebase() {
   const res = await fetch(WORKER_URL, {
@@ -1593,6 +1596,8 @@ async function initFirebase() {
   app  = initializeApp(firebaseConfig);
   auth = getAuth(app);
   window.firebaseConfig = firebaseConfig;
+  _firebaseReady = true;
+  _firebaseReadyResolve();
   setupAuth();
 }
 
