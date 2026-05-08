@@ -810,9 +810,81 @@
     gap: 6px;
   }
 
+  /* ── HAMBURGER MENU ── */
+  .hamburger-btn {
+    display: none;
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--linen);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .hamburger-btn:hover { background: var(--linen-dark); }
+  .hamburger-btn span {
+    display: block;
+    width: 16px; height: 2px;
+    background: var(--charcoal);
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .hamburger-btn.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .hamburger-btn.open span:nth-child(2) { opacity: 0; }
+  .hamburger-btn.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  .mobile-drawer {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    z-index: 99;
+    padding: 8px 0 16px;
+    transform: translateY(-8px);
+    opacity: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .mobile-drawer.open {
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .mobile-drawer-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--charcoal);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-body);
+    transition: background 0.12s;
+  }
+  .mobile-drawer-item:hover { background: var(--linen); }
+  .mobile-drawer-item.active { color: var(--green); background: var(--green-pale); }
+  .mobile-drawer-divider {
+    height: 1px;
+    background: var(--linen-dark);
+    margin: 8px 20px;
+  }
+  .mobile-drawer-item.danger { color: var(--mid-gray); font-size: 14px; font-weight: 400; }
+
   @media (max-width: 700px) {
     .nav { padding: 0 16px; }
     .nav-tabs { display: none; }
+    .nav-right .btn-ghost { display: none; }
+    .hamburger-btn { display: flex; }
     .page { padding: 24px 16px; }
     .dash-grid { grid-template-columns: 1fr 1fr; }
     .modal { padding: 24px 20px; }
@@ -873,7 +945,7 @@
 
   <!-- NAV -->
   <nav class="nav">
-    <div class="nav-logo">
+    <div class="nav-logo" onclick="showPage('dashboard')" style="cursor:pointer" title="Dashboard">
       <span class="word-common">common</span><span class="word-printco">print co.</span>
     </div>
     <div class="nav-tabs">
@@ -900,8 +972,37 @@
         <span id="nav-user-name" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
       </button>
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">Sign out</button>
+      <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMobileDrawer()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
+
+  <!-- MOBILE DRAWER -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <button class="mobile-drawer-item" onclick="drawerNav('dashboard')" data-drawer-page="dashboard">Dashboard</button>
+    <button class="mobile-drawer-item" onclick="drawerNav('proofs')" data-drawer-page="proofs">
+      Proofs <span class="nav-badge hidden" id="drawer-badge-proofs" style="margin-left:auto"></span>
+    </button>
+    <button class="mobile-drawer-item" onclick="drawerNav('quotes')" data-drawer-page="quotes">
+      Quotes <span class="nav-badge hidden" id="drawer-badge-quotes" style="margin-left:auto"></span>
+    </button>
+    <button class="mobile-drawer-item" onclick="drawerNav('invoices')" data-drawer-page="invoices">
+      Invoices <span class="nav-badge hidden" id="drawer-badge-invoices" style="margin-left:auto"></span>
+    </button>
+    <button class="mobile-drawer-item" onclick="drawerNav('inprocess')" data-drawer-page="inprocess">
+      In Process <span class="nav-badge hidden" id="drawer-badge-inprocess" style="margin-left:auto"></span>
+    </button>
+    <button class="mobile-drawer-item" onclick="drawerNav('orders')" data-drawer-page="orders">Past Orders</button>
+    <button class="mobile-drawer-item" onclick="drawerNav('messages')" data-drawer-page="messages">
+      Messages <span class="nav-badge hidden" id="drawer-badge-messages" style="margin-left:auto"></span>
+    </button>
+    <div class="mobile-drawer-divider"></div>
+    <button class="mobile-drawer-item" onclick="drawerNav('profile')" data-drawer-page="profile">
+      <span id="drawer-user-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px"></span>
+    </button>
+    <button class="mobile-drawer-item danger" onclick="closeMobileDrawer();doSignOut()">Sign out</button>
+  </div>
 
   <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
@@ -1672,6 +1773,8 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('app').style.display = 'block';
     document.getElementById('portal-footer').style.display = 'flex';
     document.getElementById('nav-user-name').textContent = user.email;
+    const dun = document.getElementById('drawer-user-name');
+    if (dun) dun.textContent = user.email;
     setGreeting();
     await loadAll();
     await loadProfile();
@@ -1776,10 +1879,13 @@ function friendlyAuthError(code) {
 window.showPage = (id) => {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mobile-drawer-item').forEach(t => t.classList.remove('active'));
   const pageEl = document.getElementById('page-' + id);
   if (pageEl) pageEl.classList.add('active');
   const tabEl = document.querySelector(`[data-page="${id}"]`);
   if (tabEl) tabEl.classList.add('active');
+  const drawerEl = document.querySelector(`[data-drawer-page="${id}"]`);
+  if (drawerEl) drawerEl.classList.add('active');
   if (id === 'proofs'    && !cache.proofs)   renderProofs();
   if (id === 'quotes'    && !cache.quotes)   renderQuotes();
   if (id === 'invoices'  && !cache.invoices) renderInvoices();
@@ -1857,6 +1963,22 @@ function setBadge(id, count) {
   const el = document.getElementById(id);
   if (count > 0) { el.textContent = count; el.classList.remove('hidden'); }
   else           { el.classList.add('hidden'); }
+  // Sync to mobile drawer badge
+  const drawerMap = {
+    'badge-proofs':    'drawer-badge-proofs',
+    'badge-quotes':    'drawer-badge-quotes',
+    'badge-invoices':  'drawer-badge-invoices',
+    'badge-inprocess': 'drawer-badge-inprocess',
+    'badge-messages':  'drawer-badge-messages',
+  };
+  const drawerId = drawerMap[id];
+  if (drawerId) {
+    const del = document.getElementById(drawerId);
+    if (del) {
+      if (count > 0) { del.textContent = count; del.classList.remove('hidden'); }
+      else           { del.classList.add('hidden'); }
+    }
+  }
 }
 
 // ── DASHBOARD ────────────────────────────────
@@ -2767,6 +2889,8 @@ async function loadProfile() {
   // Update nav name display
   const displayName = clientProfile.company || clientProfile.name || currentUser.email;
   document.getElementById('nav-user-name').textContent = displayName;
+  const dun2 = document.getElementById('drawer-user-name');
+  if (dun2) dun2.textContent = displayName;
 
   // Check if profile is complete (has shipping address)
   const ship = clientProfile.shippingAddress || {};
@@ -3171,6 +3295,35 @@ window.sendClientMessage = async () => {
     body: JSON.stringify({ action:'notify_admin', type:'new_message', clientEmail: currentUser.email, itemName: thread.subject||'Message', comment: text })
   }).catch(()=>{});
 };
+
+// ── MOBILE DRAWER ────────────────────────────
+window.toggleMobileDrawer = () => {
+  const drawer = document.getElementById('mobile-drawer');
+  const btn    = document.getElementById('hamburger-btn');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    closeMobileDrawer();
+  } else {
+    drawer.classList.add('open');
+    btn.classList.add('open');
+  }
+};
+window.closeMobileDrawer = () => {
+  document.getElementById('mobile-drawer').classList.remove('open');
+  document.getElementById('hamburger-btn').classList.remove('open');
+};
+window.drawerNav = (page) => {
+  closeMobileDrawer();
+  showPage(page);
+};
+// Close drawer on outside click
+document.addEventListener('click', (e) => {
+  const drawer = document.getElementById('mobile-drawer');
+  const btn    = document.getElementById('hamburger-btn');
+  if (drawer && drawer.classList.contains('open') && !drawer.contains(e.target) && !btn.contains(e.target)) {
+    closeMobileDrawer();
+  }
+});
 
 // ── KEYBOARD ─────────────────────────────────
 document.addEventListener('keydown', e => {
