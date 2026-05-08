@@ -587,15 +587,27 @@
     border-top: 2px solid var(--border);
   }
 
-  /* ── ORDERS ── */
-  .order-row {
+  /* ── ITEM CARDS (replaces data-tables for quotes, invoices, in-process, orders) ── */
+  .item-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px;
+    gap: 12px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--linen-dark);
+    transition: background 0.12s;
+    cursor: default;
   }
-  .order-row:last-child { border-bottom: none; }
+  .item-card:last-child { border-bottom: none; }
+  .item-card:hover { background: var(--linen); }
+  .item-card-main { flex: 1; min-width: 0; }
+  .item-card-title { font-size: 14px; font-weight: 500; color: var(--near-black); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-card-sub { font-size: 12px; color: var(--mid-gray); }
+  .item-card-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .item-card-amount { font-family: var(--font-display); font-size: 18px; color: var(--near-black); }
+  .item-card-date { font-size: 12px; color: var(--mid-gray); text-align: right; }
+
+  /* ── ORDERS ── */
   .order-meta { flex: 1; }
   .order-name { font-size: 14px; font-weight: 500; color: var(--near-black); margin-bottom: 3px; }
   .order-date { font-size: 12px; color: var(--mid-gray); }
@@ -968,21 +980,9 @@
       <div class="page-sub">Review and approve quotes with your e-signature.</div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table class="data-table" id="quotes-table">
-        <thead>
-          <tr>
-            <th>Quote</th>
-            <th>Description</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="quotes-tbody">
-          <tr><td colspan="6" class="loading-center"><div class="spinner"></div></td></tr>
-        </tbody>
-      </table>
+      <div id="quotes-list">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
     </div>
   </div>
 
@@ -993,21 +993,9 @@
       <div class="page-sub">View and pay your invoices securely via Square.</div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table class="data-table" id="invoices-table">
-        <thead>
-          <tr>
-            <th>Invoice</th>
-            <th>Description</th>
-            <th>Due Date</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="invoices-tbody">
-          <tr><td colspan="6" class="loading-center"><div class="spinner"></div></td></tr>
-        </tbody>
-      </table>
+      <div id="invoices-list">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
     </div>
   </div>
 
@@ -1018,20 +1006,9 @@
       <div class="page-sub">Jobs currently in production.</div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table class="data-table" id="inprocess-table">
-        <thead>
-          <tr>
-            <th>Job</th>
-            <th>Invoice #</th>
-            <th>Amount</th>
-            <th>Payment</th>
-            <th>In process since</th>
-          </tr>
-        </thead>
-        <tbody id="inprocess-tbody">
-          <tr><td colspan="5" class="loading-center"><div class="spinner"></div></td></tr>
-        </tbody>
-      </table>
+      <div id="inprocess-list">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
     </div>
   </div>
 
@@ -2190,23 +2167,26 @@ window.sendClientProofMessage = async () => {
 
 // ── QUOTES ───────────────────────────────────
 function renderQuotes() {
-  const tbody = document.getElementById('quotes-tbody');
+  const list = document.getElementById('quotes-list');
   if (!cache.quotes) return;
   if (cache.quotes.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No quotes yet</div></div></td></tr>`;
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No quotes yet</div></div>`;
     return;
   }
-  tbody.innerHTML = cache.quotes.map(q => `
-    <tr>
-      <td><strong>${esc(q.number || q.id.slice(0,6).toUpperCase())}</strong></td>
-      <td>${esc(q.name || '—')}</td>
-      <td>${fmtDate(q.createdAt)}</td>
-      <td class="amount">$${(q.total || 0).toFixed(2)}</td>
-      <td>${badge(q.status || 'pending')}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openQuote('${q.id}')">
-        ${q.status === 'pending' ? 'Review &amp; Sign' : 'View'}
-      </button></td>
-    </tr>`).join('');
+  list.innerHTML = cache.quotes.map(q => `
+    <div class="item-card" style="cursor:pointer" onclick="openQuote('${q.id}')">
+      <div class="item-card-main">
+        <div class="item-card-title">${esc(q.name || 'Untitled quote')}</div>
+        <div class="item-card-sub">${esc(q.number || q.id.slice(0,6).toUpperCase())} &nbsp;·&nbsp; ${fmtDate(q.createdAt)}</div>
+      </div>
+      <div class="item-card-right">
+        <div class="item-card-amount">$${(q.total || 0).toFixed(2)}</div>
+        ${badge(q.status || 'pending')}
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openQuote('${q.id}')">
+          ${q.status === 'pending' ? 'Review &amp; Sign' : 'View'}
+        </button>
+      </div>
+    </div>`).join('');
 }
 
 window.openQuote = (id) => {
@@ -2362,27 +2342,28 @@ window.submitQuoteApproval = async () => {
 
 // ── INVOICES ─────────────────────────────────
 function renderInvoices() {
-  const tbody = document.getElementById('invoices-tbody');
+  const list = document.getElementById('invoices-list');
   if (!cache.invoices) return;
   if (cache.invoices.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">💳</div><div class="empty-title">No invoices yet</div></div></td></tr>`;
+    list.innerHTML = `<div class="empty"><div class="empty-icon">💳</div><div class="empty-title">No invoices yet</div></div>`;
     return;
   }
-  tbody.innerHTML = cache.invoices.map(inv => `
-    <tr>
-      <td style="cursor:pointer;font-weight:500" onclick="openInvoiceModal('${inv.id}')">${esc(inv.number || inv.id.slice(0,6).toUpperCase())}</td>
-      <td style="cursor:pointer" onclick="openInvoiceModal('${inv.id}')">${esc(inv.name || '—')}</td>
-      <td>${fmtDate(inv.dueDate)}</td>
-      <td class="amount">$${(inv.amount || 0).toFixed(2)}</td>
-      <td>${badge(inv.status || 'unpaid')}</td>
-      <td>
+  list.innerHTML = cache.invoices.map(inv => `
+    <div class="item-card" style="cursor:pointer" onclick="openInvoiceModal('${inv.id}')">
+      <div class="item-card-main">
+        <div class="item-card-title">${esc(inv.name || 'Untitled invoice')}</div>
+        <div class="item-card-sub">${esc(inv.number || inv.id.slice(0,6).toUpperCase())} &nbsp;·&nbsp; Due ${fmtDate(inv.dueDate)}</div>
+      </div>
+      <div class="item-card-right">
+        <div class="item-card-amount">$${(inv.amount || 0).toFixed(2)}</div>
+        ${badge(inv.status || 'unpaid')}
         ${inv.status === 'unpaid' || inv.status === 'overdue'
-          ? `<button class="btn btn-primary btn-sm" onclick="payInvoice('${inv.id}')">Pay now</button>`
+          ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();payInvoice('${inv.id}')">Pay now</button>`
           : inv.status === 'cancelled'
           ? `<span class="text-muted">Cancelled</span>`
-          : `<span class="text-muted">Paid</span>`}
-      </td>
-    </tr>`).join('');
+          : `<span class="text-muted" style="font-size:13px">Paid</span>`}
+      </div>
+    </div>`).join('');
 }
 
 window.payInvoice = async (id) => {
@@ -2414,24 +2395,25 @@ window.payInvoice = async (id) => {
 
 // ── IN PROCESS ───────────────────────────────
 function renderInProcess() {
-  const tbody = document.getElementById('inprocess-tbody');
+  const list = document.getElementById('inprocess-list');
   if (!cache.invoices) return;
   const items = (cache.invoices || []).filter(i => i.status === 'processing');
   if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🖨</div><div class="empty-title">Nothing in process yet</div><div class="empty-sub">Orders currently in production will appear here.</div></div></td></tr>`;
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🖨</div><div class="empty-title">Nothing in process yet</div><div class="empty-sub">Orders currently in production will appear here.</div></div>`;
     return;
   }
-  tbody.innerHTML = items.map(i => `
-    <tr style="cursor:pointer" onclick="openInProcessModal('${i.id}')"
-      onmouseover="this.querySelectorAll('td').forEach(td=>td.style.background='var(--green-pale)')"
-      onmouseout="this.querySelectorAll('td').forEach(td=>td.style.background='')">
-      <td style="font-weight:500">${esc(i.name||'—')}</td>
-      <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
-      <td class="amount">$${(i.amount||0).toFixed(2)}</td>
-      <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
-      <td>${fmtDate(i.processingAt||i.createdAt)}</td>
-      <td style="color:var(--mid-gray);font-size:18px">›</td>
-    </tr>`).join('');
+  list.innerHTML = items.map(i => `
+    <div class="item-card" style="cursor:pointer" onclick="openInProcessModal('${i.id}')">
+      <div class="item-card-main">
+        <div class="item-card-title">${esc(i.name || '—')}</div>
+        <div class="item-card-sub">Invoice ${esc(i.number || i.id.slice(0,6).toUpperCase())} &nbsp;·&nbsp; Since ${fmtDate(i.processingAt || i.createdAt)}</div>
+      </div>
+      <div class="item-card-right">
+        <div class="item-card-amount">$${(i.amount || 0).toFixed(2)}</div>
+        ${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}
+        <span style="color:var(--mid-gray);font-size:18px">›</span>
+      </div>
+    </div>`).join('');
 }
 
 // ── IN PROCESS MODAL (CLIENT) ────────────────
@@ -2571,20 +2553,20 @@ function renderOrders() {
     return;
   }
   list.innerHTML = cache.orders.map(o => `
-    <div class="order-row" style="flex-direction:column;align-items:flex-start;gap:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer" onclick="openOrderModal('${o.id}')">
-        <div class="order-meta">
-          <div class="order-name">${esc(o.name || 'Order')}</div>
-          <div class="order-date">${fmtDate(o.completedAt || o.createdAt)}</div>
+    <div class="item-card" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="openOrderModal('${o.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(o.name || 'Order')}</div>
+          <div class="item-card-sub">${fmtDate(o.completedAt || o.createdAt)}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="order-amount">$${(o.total || 0).toFixed(2)}</div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(o.total || 0).toFixed(2)}</div>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openReorderModal('${o.id}')">Re-order</button>
           <span style="color:var(--mid-gray);font-size:18px">›</span>
         </div>
       </div>
       ${(o.lineItems||[]).length > 0 ? `
-        <div style="width:100%;border-top:1px solid var(--linen-dark);padding-top:10px">
+        <div style="border-top:1px solid var(--linen-dark);padding-top:10px">
           ${(o.lineItems||[]).map(li => `
             <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mid-gray);padding:3px 0">
               <span>${esc(li.description||li.desc||'')} <span style="color:var(--border)">×${li.qty||1}</span></span>

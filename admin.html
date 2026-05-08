@@ -417,6 +417,25 @@
     line-height: 1;
   }
 
+  /* ── ITEM CARDS (replaces data-tables) ── */
+  .item-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--linen-dark);
+    transition: background 0.12s;
+    cursor: pointer;
+  }
+  .item-card:last-child { border-bottom: none; }
+  .item-card:hover { background: var(--linen); }
+  .item-card-main { flex: 1; min-width: 0; }
+  .item-card-title { font-size: 14px; font-weight: 500; color: var(--near-black); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-card-sub { font-size: 12px; color: var(--mid-gray); }
+  .item-card-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .item-card-amount { font-family: var(--font-display); font-size: 17px; color: var(--near-black); }
+
   /* ── MISC ── */
   .hidden { display:none!important; }
   .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
@@ -593,50 +612,32 @@
       </div>
       <div class="detail-panel" id="dtab-proofs">
         <div class="card" style="padding:0;overflow:hidden">
-          <table class="data-table" id="detail-proofs-table">
-            <thead><tr><th>Name</th><th>Uploaded</th><th>Status</th><th>Comment</th><th></th></tr></thead>
-            <tbody id="detail-proofs-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
+          <div id="detail-proofs-list"><div class="loading-center"><div class="spinner"></div></div></div>
         </div>
       </div>
       <div class="detail-panel" id="dtab-quotes">
         <div class="card" style="padding:0;overflow:hidden">
-          <table class="data-table" id="detail-quotes-table">
-            <thead><tr><th>Quote #</th><th>Name</th><th>Date</th><th>Total</th><th>Status</th><th>Signature</th><th></th></tr></thead>
-            <tbody id="detail-quotes-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
+          <div id="detail-quotes-list"><div class="loading-center"><div class="spinner"></div></div></div>
         </div>
       </div>
       <div class="detail-panel" id="dtab-invoices">
         <div class="card" style="padding:0;overflow:hidden">
-          <table class="data-table">
-            <thead><tr><th>Invoice #</th><th>Name</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-            <tbody id="detail-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
+          <div id="detail-invoices-list"><div class="loading-center"><div class="spinner"></div></div></div>
         </div>
       </div>
       <div class="detail-panel" id="dtab-orders">
         <div class="card" style="padding:0;overflow:hidden">
-          <table class="data-table">
-            <thead><tr><th>Job name</th><th>Completed</th><th>Total</th><th>Items</th></tr></thead>
-            <tbody id="detail-orders-tbody"><tr><td colspan="4"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
+          <div id="detail-orders-list"><div class="loading-center"><div class="spinner"></div></div></div>
         </div>
       </div>
       <div class="detail-panel" id="dtab-inprocess">
         <div class="card" style="padding:0;overflow:hidden">
-          <table class="data-table">
-            <thead><tr><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th><th></th></tr></thead>
-            <tbody id="detail-inprocess-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
+          <div id="detail-inprocess-list"><div class="loading-center"><div class="spinner"></div></div></div>
         </div>
       </div>
       <div class="detail-panel" id="dtab-requests">
         <div class="card" style="padding:0;overflow:hidden">
-          <table class="data-table">
-            <thead><tr><th>Order name</th><th>Submitted</th><th>Items</th><th>Note</th><th>Status</th><th></th></tr></thead>
-            <tbody id="detail-requests-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-          </table>
+          <div id="detail-requests-list"><div class="loading-center"><div class="spinner"></div></div></div>
         </div>
       </div>
       <div class="detail-panel" id="dtab-client-messages">
@@ -693,10 +694,7 @@
         <div><div class="page-title">Proofs</div><div class="page-sub">All proofs across all clients.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead><tr><th>Client</th><th>Proof name</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
-          <tbody id="all-proofs-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
+        <div id="all-proofs-list"><div class="loading-center"><div class="spinner"></div></div></div>
       </div>
     </div>
 
@@ -706,10 +704,7 @@
         <div><div class="page-title">Quotes</div><div class="page-sub">All quotes across all clients.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead><tr><th>Client</th><th>Quote</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
-          <tbody id="all-quotes-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
+        <div id="all-quotes-list"><div class="loading-center"><div class="spinner"></div></div></div>
       </div>
     </div>
 
@@ -719,10 +714,7 @@
         <div><div class="page-title">Invoices</div><div class="page-sub">All invoices across all clients.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead><tr><th>Client</th><th>Invoice</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-          <tbody id="all-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
+        <div id="all-invoices-list"><div class="loading-center"><div class="spinner"></div></div></div>
       </div>
     </div>
 
@@ -733,10 +725,7 @@
         <div><div class="page-title">Order Requests</div><div class="page-sub">Re-order requests from all clients.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead><tr><th>Client</th><th>Order name</th><th>Submitted</th><th>Items</th><th>Status</th></tr></thead>
-          <tbody id="all-requests-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
+        <div id="all-requests-list"><div class="loading-center"><div class="spinner"></div></div></div>
       </div>
     </div>
 
@@ -763,10 +752,7 @@
         <div><div class="page-title">In Process Orders</div><div class="page-sub">All orders currently in production.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead><tr><th>Client</th><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th></tr></thead>
-          <tbody id="all-inprocess-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
-        </table>
+        <div id="all-inprocess-list"><div class="loading-center"><div class="spinner"></div></div></div>
       </div>
     </div>
 
@@ -1749,66 +1735,68 @@ async function loadClientDetail(uid) {
   `;
 
   // Proofs tab
-  document.getElementById('detail-proofs-tbody').innerHTML = proofs.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
+  document.getElementById('detail-proofs-list').innerHTML = proofs.length === 0
+    ? `<div class="empty">No proofs yet.</div>`
     : proofs.map(p => {
         const msgs = p.messages || [];
         const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
         return `
-      <tr style="cursor:pointer" onclick="openAdminProofModal('${p.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td style="font-weight:500">${esc(p.name||'Untitled')}
-          ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
-        </td>
-        <td>${fmtDate(p.createdAt)}</td>
-        <td>${badge(p.status||'pending')}</td>
-        <td style="font-size:12px;color:var(--mid-gray)">${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : '—'}</td>
-        <td style="color:var(--mid-gray)">›</td>
-      </tr>`;
-      }).join('');
+      <div class="item-card" onclick="openAdminProofModal('${p.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">
+            ${esc(p.name||'Untitled')}
+            ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
+          </div>
+          <div class="item-card-sub">${fmtDate(p.createdAt)} · ${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : 'No messages'}</div>
+        </div>
+        <div class="item-card-right">
+          ${badge(p.status||'pending')}
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`; }).join('');
 
   // Quotes tab
-  document.getElementById('detail-quotes-tbody').innerHTML = quotes.length === 0
-    ? `<tr><td colspan="6"><div class="empty">No quotes yet.</div></td></tr>`
+  document.getElementById('detail-quotes-list').innerHTML = quotes.length === 0
+    ? `<div class="empty">No quotes yet.</div>`
     : quotes.map(q => `
-      <tr>
-        <td>${esc(q.number||q.id.slice(0,6).toUpperCase())}</td>
-        <td>${esc(q.name||'—')}</td>
-        <td>${fmtDate(q.createdAt)}</td>
-        <td>$${(q.total||0).toFixed(2)}</td>
-        <td>${badge(q.status||'pending')}</td>
-        <td>${q.signatureUrl ? `<img class="sig-thumb" src="${esc(q.signatureUrl)}" alt="Signature">` : '—'}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="openEditQuoteModal('${q.id}')">Edit</button>
-          <button class="btn btn-ghost btn-sm" onclick="openViewQuoteModal('${q.id}')">View</button>
-          ${q.status === 'approved' && !q.convertedToInvoice ? `<button class="btn btn-primary btn-sm" onclick="convertQuoteToInvoice('${q.id}')">Convert to invoice</button>` : ''}
-          ${q.convertedToInvoice ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Invoiced</span>` : ''}
-          ${!q.convertedToInvoice ? `<button class="btn btn-danger btn-sm" onclick="cancelQuote('${q.id}','${esc(q.name||'this quote')}')">Cancel</button>` : ''}
-        </td>
-      </tr>`).join('');
+      <div class="item-card" style="cursor:default" onclick="openViewQuoteModal('${q.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(q.name||'—')}</div>
+          <div class="item-card-sub">${esc(q.number||q.id.slice(0,6).toUpperCase())} · ${fmtDate(q.createdAt)}
+            ${q.signatureUrl ? ' · <span style="color:var(--green)">✓ Signed</span>' : ''}
+          </div>
+        </div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(q.total||0).toFixed(2)}</div>
+          ${badge(q.status||'pending')}
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEditQuoteModal('${q.id}')">Edit</button>
+          ${q.status === 'approved' && !q.convertedToInvoice ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();convertQuoteToInvoice('${q.id}')">Convert to invoice</button>` : ''}
+          ${q.convertedToInvoice ? `<span class="text-muted" style="font-size:12px">Invoiced</span>` : ''}
+          ${!q.convertedToInvoice ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();cancelQuote('${q.id}','${esc(q.name||'this quote')}')">Cancel</button>` : ''}
+        </div>
+      </div>`).join('');
 
   // Invoices tab
-  document.getElementById('detail-invoices-tbody').innerHTML = invoices.length === 0
-    ? `<tr><td colspan="6"><div class="empty">No invoices yet.</div></td></tr>`
+  document.getElementById('detail-invoices-list').innerHTML = invoices.length === 0
+    ? `<div class="empty">No invoices yet.</div>`
     : invoices.map(i => `
-      <tr>
-        <td style="cursor:pointer;font-weight:500" onclick="openAdminInvoiceModal('${i.id}')">${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
-        <td style="cursor:pointer" onclick="openAdminInvoiceModal('${i.id}')">${esc(i.name||'—')}</td>
-        <td>${fmtDate(i.dueDate)}</td>
-        <td>$${(i.amount||0).toFixed(2)}</td>
-        <td>${badge(i.status||'unpaid')}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="item-card" onclick="openAdminInvoiceModal('${i.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(i.name||'—')}</div>
+          <div class="item-card-sub">${esc(i.number||i.id.slice(0,6).toUpperCase())} · Due ${fmtDate(i.dueDate)}</div>
+        </div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
+          ${badge(i.status||'unpaid')}
           ${!i.completedAsOrder && i.status !== 'processing'
-            ? `<button class="btn btn-ghost btn-sm" onclick="markInProcess('${i.id}')">Mark in process</button>`
+            ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markInProcess('${i.id}')">Mark in process</button>`
             : ''}
-          ${i.completedAsOrder
-            ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Completed</span>`
-            : ''}
+          ${i.completedAsOrder ? `<span class="text-muted" style="font-size:12px">Completed</span>` : ''}
           ${(i.status === 'unpaid' || i.status === 'overdue') && !i.completedAsOrder
-            ? `<button class="btn btn-danger btn-sm" onclick="cancelInvoice('${i.id}','${esc(i.name||'this invoice')}')">Cancel</button>`
-            : i.status === 'cancelled' ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Cancelled in Square</span>` : ''}
-        </td>
-      </tr>`).join('');
+            ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();cancelInvoice('${i.id}','${esc(i.name||'this invoice')}')">Cancel</button>`
+            : i.status === 'cancelled' ? `<span class="text-muted" style="font-size:12px">Cancelled</span>` : ''}
+        </div>
+      </div>`).join('');
 
   // Messages tab
   const clientMsgsList = selectedClientData.messages || [];
@@ -1831,23 +1819,26 @@ async function loadClientDetail(uid) {
     if (pendingReqs > 0) { badge_el.textContent = pendingReqs; badge_el.classList.remove('hidden'); }
     else { badge_el.classList.add('hidden'); }
   }
-  document.getElementById('detail-requests-tbody').innerHTML = requestsList.length === 0
-    ? `<tr><td colspan="6"><div class="empty">No re-order requests yet.</div></td></tr>`
+  document.getElementById('detail-requests-list').innerHTML = requestsList.length === 0
+    ? `<div class="empty">No re-order requests yet.</div>`
     : requestsList.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(r => `
-      <tr style="cursor:pointer" onclick="openAdminRequestModal('${r.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td style="font-weight:500">${esc(r.orderName||'—')}</td>
-        <td>${fmtDate(r.createdAt)}</td>
-        <td style="font-size:12px;color:var(--mid-gray)">${(r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
-        <td style="font-size:13px;color:var(--mid-gray);max-width:160px">${esc(r.note||'—')}</td>
-        <td>${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
+      <div class="item-card" onclick="openAdminRequestModal('${r.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(r.orderName||'—')}</div>
+          <div class="item-card-sub">${fmtDate(r.createdAt)}
+            ${(r.lineItems||[]).length > 0 ? ' · ' + (r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ') : ''}
+            ${r.note ? ` · <em>${esc(r.note.slice(0,60))}</em>` : ''}
+          </div>
+        </div>
+        <div class="item-card-right">
+          ${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}
           ${r.requestStatus === 'pending' ? `
-            <button class="btn btn-ghost btn-sm" onclick="quoteFromRequest('${r.id}')">New quote</button>
-            <button class="btn btn-primary btn-sm" onclick="invoiceFromRequest('${r.id}')">Convert to invoice</button>
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();quoteFromRequest('${r.id}')">New quote</button>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();invoiceFromRequest('${r.id}')">Convert to invoice</button>
           ` : `<span class="text-muted" style="font-size:12px">${r.requestStatus === 'quoted' ? 'Quoted' : 'Invoiced'}</span>`}
-        </td>
-      </tr>`).join('');
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`).join('');
 
   // In Process tab
   const inProcessInvoices = invoices.filter(i => i.status === 'processing');
@@ -1856,51 +1847,62 @@ async function loadClientDetail(uid) {
     if (inProcessInvoices.length > 0) { ipBadge.textContent = inProcessInvoices.length; ipBadge.classList.remove('hidden'); }
     else { ipBadge.classList.add('hidden'); }
   }
-  document.getElementById('detail-inprocess-tbody').innerHTML = inProcessInvoices.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No orders currently in process.</div></td></tr>`
+  document.getElementById('detail-inprocess-list').innerHTML = inProcessInvoices.length === 0
+    ? `<div class="empty">No orders currently in process.</div>`
     : inProcessInvoices.map(i => `
-      <tr style="cursor:pointer" onclick="openAdminInProcessModal('${i.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td style="font-weight:500">${esc(i.name||'—')}</td>
-        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
-        <td>$${(i.amount||0).toFixed(2)}</td>
-        <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
-        <td>${fmtDate(i.processingAt||i.createdAt)}</td>
-        <td>
-          <button class="btn btn-primary btn-sm" onclick="markAsCompletedOrder('${i.id}')">Mark complete</button>
-        </td>
-      </tr>`).join('');
+      <div class="item-card" onclick="openAdminInProcessModal('${i.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(i.name||'—')}</div>
+          <div class="item-card-sub">Invoice ${esc(i.number||i.id.slice(0,6).toUpperCase())} · Since ${fmtDate(i.processingAt||i.createdAt)}</div>
+        </div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
+          ${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();markAsCompletedOrder('${i.id}')">Mark complete</button>
+        </div>
+      </div>`).join('');
 
   // Orders tab
-  document.getElementById('detail-orders-tbody').innerHTML = orders.length === 0
-    ? `<tr><td colspan="4"><div class="empty">No orders yet.</div></td></tr>`
+  document.getElementById('detail-orders-list').innerHTML = orders.length === 0
+    ? `<div class="empty">No orders yet.</div>`
     : orders.map(o => `
-      <tr style="cursor:pointer" onclick="openAdminOrderModal('${o.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td style="font-weight:500">${esc(o.name||'Order')}</td>
-        <td>${fmtDate(o.completedAt||o.createdAt)}</td>
-        <td>$${(o.total||0).toFixed(2)}</td>
-        <td style="font-size:12px;color:var(--mid-gray)">${(o.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
-      </tr>`).join('');
+      <div class="item-card" onclick="openAdminOrderModal('${o.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(o.name||'Order')}</div>
+          <div class="item-card-sub">${fmtDate(o.completedAt||o.createdAt)}
+            ${(o.lineItems||[]).length > 0 ? ' · ' + (o.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ') : ''}
+          </div>
+        </div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(o.total||0).toFixed(2)}</div>
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`).join('');
 }
 
 // ── ALL WORK ITEMS ────────────────────────────
 function renderAllProofs() {
   const proofs = window._allProofs || [];
-  document.getElementById('all-proofs-tbody').innerHTML = proofs.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
+  const list = document.getElementById('all-proofs-list');
+  list.innerHTML = proofs.length === 0
+    ? `<div class="empty">No proofs yet.</div>`
     : proofs.map(p => {
         const msgs = p.messages || [];
         const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
         return `
-      <tr style="cursor:pointer" onclick="openWorkProofModal('${p.clientUid}','${p.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td><strong>${esc(p.clientName)}</strong></td>
-        <td>${esc(p.name||'Untitled')} ${unread > 0 ? `<span class="nav-badge" style="margin-left:4px">${unread}</span>` : ''}</td>
-        <td>${fmtDate(p.createdAt)}</td>
-        <td>${badge(p.status||'pending')}</td>
-        <td style="color:var(--mid-gray)">›</td>
-      </tr>`; }).join('');
+      <div class="item-card" onclick="openWorkProofModal('${p.clientUid}','${p.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">
+            ${esc(p.name||'Untitled')}
+            ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
+          </div>
+          <div class="item-card-sub"><strong>${esc(p.clientName)}</strong> &nbsp;·&nbsp; ${fmtDate(p.createdAt)}</div>
+        </div>
+        <div class="item-card-right">
+          ${badge(p.status||'pending')}
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`; }).join('');
 }
 
 window.openWorkProofModal = function(clientUid, proofId) {
@@ -1942,18 +1944,21 @@ window.openWorkProofModal = function(clientUid, proofId) {
 }
 function renderAllQuotes() {
   const qs = window._allQuotes || [];
-  document.getElementById('all-quotes-tbody').innerHTML = qs.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No quotes yet.</div></td></tr>`
+  const list = document.getElementById('all-quotes-list');
+  list.innerHTML = qs.length === 0
+    ? `<div class="empty">No quotes yet.</div>`
     : qs.map(q => `
-      <tr style="cursor:pointer" onclick="openWorkQuoteModal('${q.clientUid}','${q.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td><strong>${esc(q.clientName)}</strong></td>
-        <td>${esc(q.name||q.id.slice(0,6).toUpperCase())}</td>
-        <td>${fmtDate(q.createdAt)}</td>
-        <td>$${(q.total||0).toFixed(2)}</td>
-        <td>${badge(q.status||'pending')}</td>
-        <td style="color:var(--mid-gray)">›</td>
-      </tr>`).join('');
+      <div class="item-card" onclick="openWorkQuoteModal('${q.clientUid}','${q.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(q.name||q.id.slice(0,6).toUpperCase())}</div>
+          <div class="item-card-sub"><strong>${esc(q.clientName)}</strong> &nbsp;·&nbsp; ${fmtDate(q.createdAt)}</div>
+        </div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(q.total||0).toFixed(2)}</div>
+          ${badge(q.status||'pending')}
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`).join('');
 }
 
 window.openWorkQuoteModal = function(clientUid, quoteId) {
@@ -1979,18 +1984,21 @@ window.openWorkQuoteModal = function(clientUid, quoteId) {
 }
 function renderAllInvoices() {
   const is_ = window._allInvoices || [];
-  document.getElementById('all-invoices-tbody').innerHTML = is_.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No invoices yet.</div></td></tr>`
+  const list = document.getElementById('all-invoices-list');
+  list.innerHTML = is_.length === 0
+    ? `<div class="empty">No invoices yet.</div>`
     : is_.map(i => `
-      <tr style="cursor:pointer" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td><strong>${esc(i.clientName)}</strong></td>
-        <td>${esc(i.name||i.id.slice(0,6).toUpperCase())}</td>
-        <td>${fmtDate(i.dueDate)}</td>
-        <td>$${(i.amount||0).toFixed(2)}</td>
-        <td>${badge(i.status||'unpaid')}</td>
-        <td style="color:var(--mid-gray)">›</td>
-      </tr>`).join('');
+      <div class="item-card" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(i.name||i.id.slice(0,6).toUpperCase())}</div>
+          <div class="item-card-sub"><strong>${esc(i.clientName)}</strong> &nbsp;·&nbsp; Due ${fmtDate(i.dueDate)}</div>
+        </div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
+          ${badge(i.status||'unpaid')}
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`).join('');
 }
 
 window.openWorkInvoiceModal = function(clientUid, invoiceId) {
@@ -2012,18 +2020,23 @@ window.openWorkInvoiceModal = function(clientUid, invoiceId) {
 
 function renderAllRequests() {
   const reqs = (window._allRequests||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
-  document.getElementById('all-requests-tbody').innerHTML = reqs.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No order requests yet.</div></td></tr>`
+  const list = document.getElementById('all-requests-list');
+  list.innerHTML = reqs.length === 0
+    ? `<div class="empty">No order requests yet.</div>`
     : reqs.map(r => `
-      <tr style="cursor:pointer" onclick="openWorkRequestModal('${r.clientUid}','${r.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td><strong>${esc(r.clientName)}</strong></td>
-        <td>${esc(r.orderName||'—')}</td>
-        <td>${fmtDate(r.createdAt)}</td>
-        <td style="font-size:12px;color:var(--mid-gray)">${(r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
-        <td>${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}</td>
-        <td style="color:var(--mid-gray)">›</td>
-      </tr>`).join('');
+      <div class="item-card" onclick="openWorkRequestModal('${r.clientUid}','${r.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(r.orderName||'—')}</div>
+          <div class="item-card-sub">
+            <strong>${esc(r.clientName)}</strong> &nbsp;·&nbsp; ${fmtDate(r.createdAt)}
+            ${(r.lineItems||[]).length > 0 ? ' &nbsp;·&nbsp; ' + (r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ') : ''}
+          </div>
+        </div>
+        <div class="item-card-right">
+          ${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`).join('');
 }
 
 window.openWorkRequestModal = function(clientUid, requestId) {
@@ -2048,19 +2061,23 @@ function renderAllInProcess() {
   const items = (window._allInvoices||[])
     .filter(i => i.status === 'processing')
     .sort((a,b)=>(b.processingAt||b.createdAt||'').localeCompare(a.processingAt||a.createdAt||''));
-  document.getElementById('all-inprocess-tbody').innerHTML = items.length === 0
-    ? `<tr><td colspan="6"><div class="empty">No orders currently in process.</div></td></tr>`
+  const list = document.getElementById('all-inprocess-list');
+  list.innerHTML = items.length === 0
+    ? `<div class="empty">No orders currently in process.</div>`
     : items.map(i => `
-      <tr style="cursor:pointer" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td><strong>${esc(i.clientName)}</strong></td>
-        <td style="font-weight:500">${esc(i.name||'—')}</td>
-        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
-        <td>$${(i.amount||0).toFixed(2)}</td>
-        <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
-        <td>${fmtDate(i.processingAt||i.createdAt)}</td>
-        <td style="color:var(--mid-gray)">›</td>
-      </tr>`).join('');
+      <div class="item-card" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">${esc(i.name||'—')}</div>
+          <div class="item-card-sub">
+            <strong>${esc(i.clientName)}</strong> &nbsp;·&nbsp; Invoice ${esc(i.number||i.id.slice(0,6).toUpperCase())} &nbsp;·&nbsp; Since ${fmtDate(i.processingAt||i.createdAt)}
+          </div>
+        </div>
+        <div class="item-card-right">
+          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
+          ${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`).join('');
 }
 
 function renderAllMessages() {
@@ -3171,24 +3188,26 @@ window.sendAdminProofReply = async () => {
 };
 
 function renderProofsInDetail() {
-  // Re-render just the proofs tbody without reloading everything
   const proofs = selectedClientData.proofs || [];
-  document.getElementById('detail-proofs-tbody').innerHTML = proofs.length === 0
-    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
+  document.getElementById('detail-proofs-list').innerHTML = proofs.length === 0
+    ? `<div class="empty">No proofs yet.</div>`
     : proofs.map(p => {
         const msgs = p.messages || [];
         const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
         return `
-      <tr style="cursor:pointer" onclick="openAdminProofModal('${p.id}')"
-        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td style="font-weight:500">${esc(p.name||'Untitled')}
-          ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
-        </td>
-        <td>${fmtDate(p.createdAt)}</td>
-        <td>${badge(p.status||'pending')}</td>
-        <td style="font-size:12px;color:var(--mid-gray)">${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : '—'}</td>
-        <td style="color:var(--mid-gray)">›</td>
-      </tr>`;
+      <div class="item-card" onclick="openAdminProofModal('${p.id}')">
+        <div class="item-card-main">
+          <div class="item-card-title">
+            ${esc(p.name||'Untitled')}
+            ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
+          </div>
+          <div class="item-card-sub">${fmtDate(p.createdAt)} · ${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : 'No messages'}</div>
+        </div>
+        <div class="item-card-right">
+          ${badge(p.status||'pending')}
+          <span style="color:var(--mid-gray);font-size:18px">›</span>
+        </div>
+      </div>`;
       }).join('');
 }
 
