@@ -640,6 +640,14 @@
         <div><div class="page-title">Clients</div><div class="page-sub">Click a client to manage their work.</div></div>
         <button class="btn btn-primary" onclick="openNewClientModal()">+ Invite client</button>
       </div>
+      <div style="position:relative;margin-bottom:16px">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--mid-gray);font-size:16px;pointer-events:none">🔍</span>
+        <input type="text" id="client-search" placeholder="Search by name, company, or email…"
+          oninput="filterClients(this.value)"
+          style="width:100%;padding:10px 14px 10px 40px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--white);outline:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--green)'"
+          onblur="this.style.borderColor='var(--border)'">
+      </div>
       <div class="client-grid" id="clients-grid">
         <div class="loading-center" style="grid-column:1/-1"><div class="spinner"></div></div>
       </div>
@@ -782,6 +790,7 @@
     <div class="page" id="page-invoices">
       <div class="page-header">
         <div><div class="page-title">Invoices</div><div class="page-sub">All invoices across all clients.</div></div>
+        <button class="btn btn-ghost btn-sm" id="sync-all-btn" onclick="syncAllInvoicesFromSquare()" title="Sync payment status for all Square-linked invoices">↻ Sync all from Square</button>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
         <div id="all-invoices-list"><div class="loading-center"><div class="spinner"></div></div></div>
@@ -990,7 +999,10 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-invoice')">Close</button>
-      <a id="ainv-payurl" href="#" target="_blank" class="btn btn-ghost btn-sm hidden">View in Square →</a>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="ainv-sync-btn" class="btn btn-ghost btn-sm hidden" onclick="syncInvoiceFromSquareModal()" title="Re-fetch payment status from Square">↻ Sync from Square</button>
+        <a id="ainv-payurl" href="#" target="_blank" class="btn btn-ghost btn-sm hidden">View in Square →</a>
+      </div>
     </div>
   </div>
 </div>
@@ -1708,13 +1720,18 @@ async function restoreAdminFromHash() {
 }
 
 // ── CLIENTS ───────────────────────────────────
-function renderClientsGrid() {
+function renderClientsGrid(clients) {
+  const list = clients || allClients;
   const grid = document.getElementById('clients-grid');
   if (allClients.length === 0) {
     grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">👤</div><div>No clients yet. Invite one above.</div></div>`;
     return;
   }
-  grid.innerHTML = allClients.map(c => `
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div>No clients match your search.</div></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(c => `
     <div class="client-card" onclick="openClientDetail('${c.uid}')">
       ${c.company ? `<div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px">${esc(c.company)}</div>` : ''}
       <div class="client-name">${esc(c.name || c.email)}</div>
@@ -1724,6 +1741,18 @@ function renderClientsGrid() {
       </div>
     </div>`).join('');
 }
+
+window.filterClients = (query) => {
+  const q = query.toLowerCase().trim();
+  if (!q) { renderClientsGrid(); return; }
+  const filtered = allClients.filter(c =>
+    (c.name    || '').toLowerCase().includes(q) ||
+    (c.company || '').toLowerCase().includes(q) ||
+    (c.email   || '').toLowerCase().includes(q) ||
+    (c.phone   || '').toLowerCase().includes(q)
+  );
+  renderClientsGrid(filtered);
+};
 
 window.openClientDetail = async (uid) => {
   selectedClient = allClients.find(c => c.uid === uid);
@@ -1858,6 +1887,7 @@ async function loadClientDetail(uid) {
         <div class="item-card-right">
           <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
           ${badge(i.status||'unpaid')}
+          ${i.squareInvoiceId ? `<button class="btn btn-ghost btn-sm" id="sync-btn-${i.id}" onclick="event.stopPropagation();syncInvoiceFromSquare('${i.id}')" title="Sync payment status from Square">↻ Sync</button>` : ''}
           ${!i.completedAsOrder && i.status !== 'processing'
             ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markInProcess('${i.id}')">Mark in process</button>`
             : ''}
@@ -2663,6 +2693,7 @@ window.openNewInvoiceModal = () => {
   if (!selectedClient) return;
   window._convertingFromQuoteId   = null;
   window._invoicingFromRequestId  = null;
+  window._lookupSquareStatus      = null;
   document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
   ['ni-name','ni-number','ni-amount','ni-due','ni-square-id','ni-pay-url','ni-sq-lookup'].forEach(id => document.getElementById(id).value='');
   document.getElementById('ni-error').classList.remove('show');
@@ -2702,7 +2733,11 @@ window.lookupSquareInvoice = async () => {
     if (data.invoiceId)   document.getElementById('ni-square-id').value = data.invoiceId;
     if (data.paymentUrl)  document.getElementById('ni-pay-url').value   = data.paymentUrl;
 
-    status.textContent = '✓ Invoice details filled in below.';
+    // Map Square status to portal status and show it
+    const squareStatus = data.squareStatus || '';
+    window._lookupSquareStatus = squareToPortalStatus(squareStatus);
+    const statusLabel = squareStatus ? ` · Square status: ${squareStatus}` : '';
+    status.textContent = '✓ Invoice details filled in below.' + statusLabel;
     status.style.color = 'var(--green)';
   } catch(e) {
     status.textContent = 'Lookup failed. Check your connection.';
@@ -2726,7 +2761,8 @@ window.createInvoice = async () => {
     const sourceQuoteId = window._convertingFromQuoteId || null;
     await fbSet(`clients/${uid}/invoices/${invId}`, {
       name, number, amount, dueDate, squareInvoiceId: sqId, paymentUrl: payUrl,
-      status:'unpaid', createdAt: new Date().toISOString(),
+      status: window._lookupSquareStatus || 'unpaid',
+      createdAt: new Date().toISOString(),
       ...(sourceQuoteId ? { sourceQuoteId } : {})
     });
     // Mark the source quote as converted
@@ -3293,7 +3329,8 @@ window.openAdminInvoiceModal = (invoiceId) => {
 
   document.getElementById('ainv-title').textContent   = inv.name || 'Invoice';
   document.getElementById('ainv-client').textContent  = selectedClient?.name || selectedClient?.email || '';
-  document.getElementById('ainv-status').innerHTML    = badge(inv.status || 'unpaid');
+  document.getElementById('ainv-status').innerHTML    = badge(inv.status || 'unpaid') +
+    (inv.squareInvoiceId ? ` <span style="font-size:11px;color:var(--mid-gray);margin-left:4px">Square-linked</span>` : '');
   document.getElementById('ainv-number').textContent  = inv.number || inv.id.slice(0,6).toUpperCase();
   document.getElementById('ainv-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
   document.getElementById('ainv-due').textContent     = fmtDate(inv.dueDate);
@@ -3325,7 +3362,24 @@ window.openAdminInvoiceModal = (invoiceId) => {
     sqLinkEl.classList.add('hidden');
   }
 
+  // Show sync button if Square invoice ID is linked
+  const syncBtnEl = document.getElementById('ainv-sync-btn');
+  if (inv.squareInvoiceId) {
+    syncBtnEl.classList.remove('hidden');
+    window._ainvModalInvoiceId = invoiceId;
+  } else {
+    syncBtnEl.classList.add('hidden');
+    window._ainvModalInvoiceId = null;
+  }
+
   openModal('modal-admin-invoice');
+};
+
+window.syncInvoiceFromSquareModal = async () => {
+  const invoiceId = window._ainvModalInvoiceId;
+  if (!invoiceId) return;
+  closeModal('modal-admin-invoice');
+  await syncInvoiceFromSquare(invoiceId);
 };
 
 // ── ADMIN COMPLETED ORDER DETAIL MODAL ────────
@@ -3715,6 +3769,112 @@ window.resendInvite = async (uid) => {
   } catch(e) {
     toast('Failed to resend invite.', 'error');
   }
+};
+
+// ── SQUARE STATUS HELPERS ────────────────────
+function squareToPortalStatus(squareStatus) {
+  // Square statuses: DRAFT, UNPAID, SCHEDULED, PARTIALLY_PAID, PAID, PARTIALLY_REFUNDED, REFUNDED, CANCELED
+  const map = {
+    'PAID':              'paid',
+    'PARTIALLY_PAID':    'unpaid',
+    'UNPAID':            'unpaid',
+    'SCHEDULED':         'unpaid',
+    'DRAFT':             'unpaid',
+    'PARTIALLY_REFUNDED':'paid',
+    'REFUNDED':          'paid',
+    'CANCELED':          'cancelled',
+  };
+  return map[squareStatus] || 'unpaid';
+}
+
+window.syncInvoiceFromSquare = async (invoiceId) => {
+  const uid = selectedClient?.uid;
+  const inv = selectedClientData.invoices?.find(x => x.id === invoiceId);
+  if (!inv || !inv.squareInvoiceId) {
+    toast('No Square invoice ID linked — enter it via the lookup when creating the invoice.', 'error');
+    return;
+  }
+
+  const syncBtn = document.getElementById(`sync-btn-${invoiceId}`);
+  if (syncBtn) { syncBtn.textContent = 'Syncing…'; syncBtn.disabled = true; }
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: inv.number || '', invoiceId: inv.squareInvoiceId })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      toast('Square sync failed: ' + data.error, 'error');
+      return;
+    }
+
+    const newStatus = squareToPortalStatus(data.squareStatus || '');
+    const updates = { status: newStatus };
+    if (data.amountDue !== undefined) updates.amount = data.amountDue / 100;
+    if (data.paymentUrl) updates.paymentUrl = data.paymentUrl;
+
+    await fbUpdate(`clients/${uid}/invoices/${invoiceId}`, updates);
+
+    // Update local cache
+    const idx = selectedClientData.invoices.findIndex(x => x.id === invoiceId);
+    if (idx >= 0) Object.assign(selectedClientData.invoices[idx], updates);
+
+    const globalIdx = (window._allInvoices||[]).findIndex(x => x.id === invoiceId);
+    if (globalIdx >= 0) Object.assign(window._allInvoices[globalIdx], updates);
+
+    toast(`Status synced: ${newStatus} (Square: ${data.squareStatus || 'unknown'})`, 'success');
+    await loadClientDetail(uid);
+    updateSidebarBadges();
+    renderAllInvoices();
+  } catch(e) {
+    toast('Sync failed: ' + e.message, 'error');
+  } finally {
+    if (syncBtn) { syncBtn.textContent = '↻ Sync from Square'; syncBtn.disabled = false; }
+  }
+};
+
+window.syncAllInvoicesFromSquare = async () => {
+  const btn = document.getElementById('sync-all-btn');
+  if (btn) { btn.textContent = 'Syncing…'; btn.disabled = true; }
+
+  const linkedInvoices = (window._allInvoices || []).filter(i => i.squareInvoiceId && i.status !== 'paid' && i.status !== 'cancelled');
+  if (linkedInvoices.length === 0) {
+    toast('No Square-linked unpaid invoices to sync.', '');
+    if (btn) { btn.textContent = '↻ Sync all from Square'; btn.disabled = false; }
+    return;
+  }
+
+  let updated = 0, failed = 0;
+  for (const inv of linkedInvoices) {
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: inv.number || '', invoiceId: inv.squareInvoiceId })
+      });
+      const data = await res.json();
+      if (data.error) { failed++; continue; }
+
+      const newStatus = squareToPortalStatus(data.squareStatus || '');
+      if (newStatus !== inv.status) {
+        await fbUpdate(`clients/${inv.clientUid}/invoices/${inv.id}`, { status: newStatus });
+        const idx = (window._allInvoices||[]).findIndex(x => x.id === inv.id);
+        if (idx >= 0) window._allInvoices[idx].status = newStatus;
+        updated++;
+      }
+    } catch(e) { failed++; }
+  }
+
+  updateSidebarBadges();
+  renderAllInvoices();
+  const msg = updated > 0
+    ? `Synced ${updated} invoice${updated > 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}.`
+    : failed > 0 ? `Sync failed for ${failed} invoice${failed > 1 ? 's' : ''}.` : 'All invoices already up to date.';
+  toast(msg, updated > 0 ? 'success' : '');
+  if (btn) { btn.textContent = '↻ Sync all from Square'; btn.disabled = false; }
 };
 
 // ── MODALS ────────────────────────────────────
