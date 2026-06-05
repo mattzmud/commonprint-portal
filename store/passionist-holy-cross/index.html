@@ -421,10 +421,7 @@
   </div>
 
 <script type="module">
-  import { VERSION }  from '../../shared/version.js';
-  import { initAuth, signIn, register, redirectIfAuthed, authError }
-    from `../../shared/auth.js?v=${VERSION}`;
-  import { WORKER_URL, callWorker } from `../../shared/utils.js?v=${VERSION}`;
+  import { VERSION } from '../../shared/version.js';
 
   const STOREFRONT_ID = 'passionist-holy-cross';
 
@@ -592,6 +589,11 @@
   });
 
   // ── INIT — after all handlers defined so buttons work during load ───────
+  const { initAuth, signIn, register, redirectIfAuthed, authError } =
+    await import(`../../shared/auth.js?v=${VERSION}`);
+  const { WORKER_URL, callWorker } =
+    await import(`../../shared/utils.js?v=${VERSION}`);
+
   await initAuth(WORKER_URL);
   await redirectIfAuthed('catalog.html');
 </script>
