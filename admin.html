@@ -1006,8 +1006,8 @@
       <label>Location name</label>
       <input type="text" id="loc-name" placeholder="e.g. St. Michael's Parish — Chicago, IL">
     </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+    <div style="margin-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--charcoal)">
         <input type="checkbox" id="loc-active" checked>
         Location is active
       </label>
@@ -1041,8 +1041,8 @@
       <label>Expiry date (optional — leave blank for no expiry)</label>
       <input type="date" id="code-expires">
     </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+    <div style="margin-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--charcoal)">
         <input type="checkbox" id="code-active" checked>
         Code is active
       </label>
@@ -4015,7 +4015,7 @@ let activeSFOrderId     = null;
 
 async function loadStorefronts() {
   const docs = await fbList('storefronts');
-  allStorefronts = docs.map(d => ({ id: d.id, ...d }));
+  allStorefronts = docs.map(d => ({ id: docId(d), ...ff(d.fields) }));
   renderStorefrontsGrid();
 }
 
@@ -4044,7 +4044,7 @@ window.openStorefrontDetail = async (sfId) => {
   activeSF = allStorefronts.find(s => s.id === sfId) || { id: sfId };
   if (!activeSF.name) {
     const doc = await fbGet(`storefronts/${sfId}`);
-    if (doc) { activeSF = { ...activeSF, ...doc }; }
+    if (doc?.fields) { activeSF = { ...activeSF, ...ff(doc.fields) }; }
   }
   document.getElementById('sf-detail-name').textContent = activeSF.name || 'Storefront';
   document.getElementById('sf-detail-url').textContent  = `portal.commonprintco.com/store/?s=${activeSF.slug||sfId}`;
@@ -4069,7 +4069,7 @@ window.showSFTab = (tab) => {
 
 async function loadSFProducts() {
   const docs = await fbList(`storefronts/${activeSF.id}/products`);
-  activeSFProducts = docs.sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0));
+  activeSFProducts = docs.map(d => ({ id: docId(d), ...ff(d.fields) })).sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0));
   renderSFProducts();
 }
 
@@ -4211,7 +4211,7 @@ window.deleteProduct = async (productId) => {
 
 async function loadSFLocations() {
   const docs = await fbList(`storefronts/${activeSF.id}/locations`);
-  activeSFLocations = docs.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  activeSFLocations = docs.map(d => ({ id: docId(d), ...ff(d.fields) })).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   renderSFLocations();
 }
 
@@ -4277,7 +4277,7 @@ window.deleteLocation = async (locationId) => {
 
 async function loadSFCodes() {
   const docs = await fbList(`storefronts/${activeSF.id}/accessCodes`);
-  activeSFCodes = docs; renderSFCodes();
+  activeSFCodes = docs.map(d => ({ id: docId(d), ...ff(d.fields) })); renderSFCodes();
 }
 
 function renderSFCodes() {
@@ -4334,7 +4334,7 @@ window.saveAccessCode = async () => {
   await fbSet(`storefronts/${activeSF.id}/accessCodes/${codeId}`,{
     code, label, active, storefrontId:activeSF.id,
     expiresAt: expires ? new Date(expires+'T23:59:59').toISOString() : null,
-    registrationCount: editingCodeId?(activeSFCodes.find(c=>c.id===codeId)?.registrationCount||0):0,
+    registrationCount: editingCodeId?(activeSFCodes.find(c=>c.id===editingCodeId)?.registrationCount||0):0,
     ...(editingCodeId?{}:{createdAt:new Date().toISOString()}),
     updatedAt:new Date().toISOString(),
   });
@@ -4349,7 +4349,7 @@ window.copyCode = (code) => {
 
 async function loadSFOrders() {
   const docs = await fbList(`storefronts/${activeSF.id}/orders`);
-  activeSFOrders = docs.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  activeSFOrders = docs.map(d => ({ id: docId(d), ...ff(d.fields) })).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
   renderSFOrders();
 }
 
