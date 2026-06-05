@@ -380,10 +380,13 @@
   function applyBranding(sf) {
     const brand = sf.brand || {};
     const root  = document.documentElement.style;
-    if (brand.primary)        root.setProperty('--primary',      brand.primary);
-    if (brand['primary-dark'])root.setProperty('--primary-dark', brand['primary-dark']);
-    if (brand.bg)             root.setProperty('--page-bg',      brand.bg);
-    if (brand.accent)         root.setProperty('--accent',       brand.accent);
+    if (brand.nav)             root.setProperty('--nav-bg',        brand.nav);
+    if (brand.primary)         root.setProperty('--primary',       brand.primary);
+    if (brand['primary-dark']) root.setProperty('--primary-dark',  brand['primary-dark']);
+    if (brand.accent)          root.setProperty('--accent',        brand.accent);
+    if (brand.bg)              root.setProperty('--bg',            brand.bg);
+    if (brand.card)            root.setProperty('--card',          brand.card);
+    if (brand.border)          root.setProperty('--border',        brand.border);
   }
 
   // ── ALL HANDLERS DEFINED BEFORE AWAITS ───────────────────────────────
