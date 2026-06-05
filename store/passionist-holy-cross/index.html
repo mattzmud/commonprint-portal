@@ -339,8 +339,7 @@
           </div>
           <div class="err" id="si-error"></div>
           <button class="btn btn-primary" id="si-btn" onclick="doSignIn()">Sign in</button>
-          <div class="or-divider">or</div>
-          <button class="btn btn-ghost" onclick="switchTab('register')">Create an account →</button>
+
         </div>
 
         <!-- ── REGISTER ── -->
@@ -441,11 +440,7 @@
   let validatedCode   = null;
   let selectedLoc     = null;
 
-  // Init
-  await initAuth(WORKER_URL);
-  await redirectIfAuthed('catalog.html');
-
-  // ── TAB SWITCHING ──────────────────────────────────────────────────────
+  // ── TAB SWITCHING — defined immediately so tab clicks work during init ──
   window.switchTab = (tab) => {
     document.getElementById('panel-signin').style.display   = tab === 'signin'   ? 'block' : 'none';
     document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
@@ -595,6 +590,10 @@
     else if (currentStep===2) validateStep2();
     else if (currentStep===3) doRegister();
   });
+
+  // ── INIT — after all handlers defined so buttons work during load ───────
+  await initAuth(WORKER_URL);
+  await redirectIfAuthed('catalog.html');
 </script>
 
 </body>
