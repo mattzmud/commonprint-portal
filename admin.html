@@ -4465,14 +4465,15 @@ window.updateSFOrderStatus = async (status) => {
 
 async function loadSFUsers() {
   const token = await getToken();
-  const res = await fetch(`${getFS_BASE()}:runQuery`,{
-    method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify({ structuredQuery:{ from:[{collectionId:'storefrontUsers'}],
-      where:{fieldFilter:{field:{fieldPath:'storefrontId'},op:'EQUAL',value:{stringValue:activeSF.id}}},
-      orderBy:[{field:{fieldPath:'createdAt'},direction:'DESCENDING'}] }})
+  // List all storefrontUsers and filter client-side to avoid index requirements
+  const res = await fetch(`${getFS_BASE()}/storefrontUsers`,{
+    headers:{Authorization:'Bearer '+token}
   });
-  const data=await res.json();
-  activeSFUsers=(data||[]).filter(r=>r.document).map(r=>({id:r.document.name.split('/').pop(),...ff(r.document.fields)}));
+  const data = await res.json();
+  const all  = (data.documents||[]).map(d=>({id:d.name.split('/').pop(),...ff(d.fields)}));
+  activeSFUsers = all
+    .filter(u => u.storefrontId === activeSF.id)
+    .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
   renderSFUsers();
 }
 
