@@ -4619,7 +4619,10 @@ let sfLogoFile = null;
 
 window.syncColor = (key, hex) => {
   if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
-    document.getElementById(`sf-color-${key}`).value = hex;
+    const picker = document.getElementById(`sf-color-${key}`);
+    const text   = document.getElementById(`sf-color-${key}-hex`);
+    if (picker) picker.value = hex;
+    if (text)   text.value   = hex;
   }
 };
 
