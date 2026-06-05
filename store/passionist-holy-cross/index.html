@@ -3,452 +3,596 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Passionists of Holy Cross Province — Branded Merchandise</title>
+  <title>Passionists of Holy Cross Province — Branded Merchandise</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../shared/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
   <style>
-    /* ── PAGE-SPECIFIC OVERRIDES ── */
-    .sf-login-wrap {
-      background: linear-gradient(160deg, #002B46 0%, #001a2e 60%, #5C1D21 100%);
+    :root {
+      --primary:      #5C1D21;
+      --primary-dark: #3d1216;
+      --primary-mid:  #7B272C;
+      --gold:         #A07400;
+      --gold-light:   #F2E2BE;
+      --ink:          #2D2926;
+      --gray:         #575451;
+      --mid-gray:     #888780;
+      --border:       #E8DEC8;
+      --bg:           #F7EED8;
+      --card:         #FFFFFF;
+      --pale:         #FBF9ED;
+      --navy:         #002B46;
+      --red:          #A4343A;
+      --radius:       10px;
+      --font:         'Jost', Georgia, serif;
     }
-    .sf-login-card {
-      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
-    }
-    .sf-login-logo {
-      filter: brightness(0) invert(0);
-      width: 100px;
-      height: 100px;
-    }
-    .sf-step { display: none; }
-    .sf-step.active { display: block; }
-    .step-indicator {
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      margin-bottom: 20px;
+      padding: 24px 16px;
+      background-color: var(--navy);
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(92,29,33,0.6) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(0,43,70,0.8) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 80%, rgba(92,29,33,0.3) 0%, transparent 40%);
     }
-    .step-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--border);
-      transition: background .2s;
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 2px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
     }
-    .step-dot.active { background: var(--primary); }
-    .sf-location-search {
+
+    /* ── HEADER BAND ── */
+    .card-header {
+      background: var(--primary);
+      padding: 28px 32px 24px;
+      text-align: center;
       position: relative;
     }
-    .sf-location-dropdown {
+    .card-header::after {
+      content: '';
       position: absolute;
-      top: 100%;
+      bottom: -1px;
       left: 0;
       right: 0;
-      background: var(--white);
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .logo-wrap {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 14px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .logo-wrap img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+    .card-header-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 4px;
+    }
+    .card-header-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .card-header-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* ── BODY ── */
+    .card-body { padding: 28px 32px 32px; }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      max-height: 200px;
+      padding: 3px;
+      gap: 3px;
+      margin-bottom: 24px;
+      background: var(--pale);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: transparent;
+      border-radius: 7px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--mid-gray);
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(92,29,33,0.3);
+    }
+
+    /* ── FIELDS ── */
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray);
+      margin-bottom: 5px;
+      letter-spacing: .02em;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--pale);
+      outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+      letter-spacing: .01em;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-ghost {
+      background: var(--pale);
+      color: var(--gray);
+      border: 1.5px solid var(--border);
+      padding: 11px;
+      font-size: 14px;
+    }
+    .btn-ghost:hover { background: var(--gold-light); color: var(--ink); }
+
+    /* ── ERROR ── */
+    .err {
+      font-size: 13px;
+      color: var(--red);
+      background: #FDF0F0;
+      border: 1px solid #F5C6C6;
+      border-radius: var(--radius);
+      padding: 10px 13px;
+      margin-bottom: 12px;
+      display: none;
+      line-height: 1.5;
+    }
+    .err.show { display: block; }
+
+    /* ── STEP DOTS ── */
+    .step-dots {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 20px;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background .2s, transform .2s;
+    }
+    .dot.active { background: var(--primary); transform: scale(1.2); }
+    .dot.done   { background: var(--gold); }
+
+    /* ── STEPS ── */
+    .step { display: none; }
+    .step.active { display: block; }
+    .step-hint {
+      font-size: 13px;
+      color: var(--mid-gray);
+      text-align: center;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    /* ── LOCATION SEARCH ── */
+    .location-wrap { position: relative; }
+    .location-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: #fff;
+      border: 1.5px solid var(--primary);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      max-height: 210px;
       overflow-y: auto;
-      z-index: 10;
+      z-index: 50;
       display: none;
     }
-    .sf-location-dropdown.open { display: block; }
-    .sf-location-option {
-      padding: 10px 14px;
-      font-size: 14px;
-      cursor: pointer;
+    .location-dropdown.open { display: block; }
+    .loc-option {
+      padding: 11px 14px;
+      font-size: 13px;
       color: var(--ink);
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
       transition: background .1s;
+      line-height: 1.4;
     }
-    .sf-location-option:hover { background: var(--primary-light); }
-    .sf-location-option.selected { background: var(--primary-light); font-weight: 500; }
-    .sf-powered {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.4);
-    }
-    .sf-powered a { color: rgba(255,255,255,0.5); }
-    .sf-powered a:hover { color: rgba(255,255,255,0.8); }
-    .sf-divider-text {
+    .loc-option:last-child { border-bottom: none; }
+    .loc-option:hover,
+    .loc-option.selected { background: #FDF5F5; color: var(--primary); font-weight: 500; }
+
+    /* ── NAV BETWEEN STEPS ── */
+    .step-nav { display: flex; gap: 10px; margin-top: 6px; }
+    .step-nav .btn { flex: 1; }
+    .step-nav .btn-ghost { flex: 0 0 90px; }
+
+    /* ── DIVIDER ── */
+    .or-divider {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin: 16px 0;
-      font-size: 12px;
+      margin: 14px 0;
       color: var(--mid-gray);
+      font-size: 12px;
     }
-    .sf-divider-text::before,
-    .sf-divider-text::after {
+    .or-divider::before, .or-divider::after {
       content: '';
       flex: 1;
       border-top: 1px solid var(--border);
+    }
+
+    /* ── POWERED BY ── */
+    .powered {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+    }
+    .powered a { color: rgba(255,255,255,0.45); text-decoration: none; }
+    .powered a:hover { color: rgba(255,255,255,0.7); }
+
+    @media (max-width: 480px) {
+      .card-body { padding: 22px 20px 28px; }
+      .card-header { padding: 24px 20px 20px; }
     }
   </style>
 </head>
 <body>
 
-<div class="sf-login-wrap">
-  <div class="sf-login-card">
+  <div style="width:100%;max-width:420px">
+    <div class="card">
 
-    <!-- Logo + Org name -->
-    <img src="assets/passionist-sign.png" alt="Passionist Logo" class="sf-login-logo">
-    <div class="sf-login-title">Branded Merchandise</div>
-    <div class="sf-login-org">Passionists of Holy Cross Province</div>
-
-    <!-- Tabs -->
-    <div class="sf-login-tabs">
-      <button class="sf-login-tab active" id="tab-signin" onclick="switchTab('signin')">Sign in</button>
-      <button class="sf-login-tab" id="tab-register" onclick="switchTab('register')">Register</button>
-    </div>
-
-    <!-- ── SIGN IN PANEL ── -->
-    <div id="panel-signin">
-      <div class="sf-field">
-        <label>Email address</label>
-        <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
-      </div>
-      <div class="sf-field">
-        <label>Password</label>
-        <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <div class="sf-error" id="si-error"></div>
-      <button class="sf-btn sf-btn-primary sf-btn-block sf-btn-lg" id="si-btn" onclick="doSignIn()" style="margin-top:8px">
-        Sign in
-      </button>
-      <div class="sf-divider-text">or</div>
-      <button class="sf-btn sf-btn-ghost sf-btn-block" onclick="switchTab('register')">
-        Create an account
-      </button>
-    </div>
-
-    <!-- ── REGISTER PANEL ── -->
-    <div id="panel-register" style="display:none">
-
-      <!-- Step indicators -->
-      <div class="step-indicator" id="step-dots">
-        <div class="step-dot active" id="dot-1"></div>
-        <div class="step-dot" id="dot-2"></div>
-        <div class="step-dot" id="dot-3"></div>
-      </div>
-
-      <!-- Step 1: Access code -->
-      <div class="sf-step active" id="step-1">
-        <p style="font-size:14px;color:var(--gray);margin-bottom:16px;text-align:center">
-          Enter the access code provided by your organization to create an account.
-        </p>
-        <div class="sf-field">
-          <label>Access code</label>
-          <input type="text" id="reg-code" placeholder="e.g. ASSEMBLY26"
-            style="text-transform:uppercase;letter-spacing:.1em;font-size:16px;font-weight:600;text-align:center"
-            oninput="this.value=this.value.toUpperCase()">
+      <!-- Header -->
+      <div class="card-header">
+        <div class="logo-wrap">
+          <img src="assets/passionist-sign.png" alt="Passionist crest">
         </div>
-        <div class="sf-error" id="code-error"></div>
-        <button class="sf-btn sf-btn-primary sf-btn-block sf-btn-lg" id="code-btn" onclick="validateCode()" style="margin-top:8px">
-          Continue
-        </button>
+        <div class="card-header-label">Branded Merchandise</div>
+        <div class="card-header-title">Passionists of Holy Cross Province</div>
+        <div class="card-header-sub">Location Ordering Portal</div>
       </div>
 
-      <!-- Step 2: Location + Name -->
-      <div class="sf-step" id="step-2">
-        <p style="font-size:13px;color:var(--gray);margin-bottom:16px;text-align:center">
-          Tell us who you are and which location you're ordering for.
-        </p>
-        <div class="sf-field">
-          <label>Your name</label>
-          <input type="text" id="reg-name" placeholder="First and last name" autocomplete="name">
+      <!-- Body -->
+      <div class="card-body">
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" id="tab-signin"   onclick="switchTab('signin')">Sign in</button>
+          <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Register</button>
         </div>
-        <div class="sf-field">
-          <label>Location</label>
-          <div class="sf-location-search">
-            <input type="text" id="reg-location-input" placeholder="Type to search locations…"
-              oninput="filterLocations(this.value)"
-              onfocus="openLocationDropdown()"
-              autocomplete="off">
-            <div class="sf-location-dropdown" id="location-dropdown"></div>
+
+        <!-- ── SIGN IN ── -->
+        <div id="panel-signin">
+          <div class="field">
+            <label>Email address</label>
+            <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
           </div>
-          <input type="hidden" id="reg-location-id">
-          <input type="hidden" id="reg-location-name">
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div class="err" id="si-error"></div>
+          <button class="btn btn-primary" id="si-btn" onclick="doSignIn()">Sign in</button>
+          <div class="or-divider">or</div>
+          <button class="btn btn-ghost" onclick="switchTab('register')">Create an account →</button>
         </div>
-        <div class="sf-error" id="step2-error"></div>
-        <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="sf-btn sf-btn-ghost" onclick="goToStep(1)">Back</button>
-          <button class="sf-btn sf-btn-primary" style="flex:1" onclick="validateStep2()">Continue</button>
-        </div>
-      </div>
 
-      <!-- Step 3: Email + Password -->
-      <div class="sf-step" id="step-3">
-        <p style="font-size:13px;color:var(--gray);margin-bottom:16px;text-align:center">
-          Create your account credentials.
-        </p>
-        <div class="sf-field">
-          <label>Email address</label>
-          <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="sf-field">
-          <label>Password</label>
-          <input type="password" id="reg-password" placeholder="At least 8 characters" autocomplete="new-password">
-        </div>
-        <div class="sf-field">
-          <label>Confirm password</label>
-          <input type="password" id="reg-confirm" placeholder="Re-enter password" autocomplete="new-password">
-        </div>
-        <div class="sf-error" id="step3-error"></div>
-        <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="sf-btn sf-btn-ghost" onclick="goToStep(2)">Back</button>
-          <button class="sf-btn sf-btn-primary" style="flex:1" id="reg-btn" onclick="doRegister()">Create account</button>
-        </div>
-      </div>
+        <!-- ── REGISTER ── -->
+        <div id="panel-register" style="display:none">
 
-    </div><!-- /panel-register -->
+          <div class="step-dots">
+            <div class="dot active" id="dot-1"></div>
+            <div class="dot"        id="dot-2"></div>
+            <div class="dot"        id="dot-3"></div>
+          </div>
 
-  </div><!-- /sf-login-card -->
+          <!-- Step 1: Access code -->
+          <div class="step active" id="step-1">
+            <p class="step-hint">Enter the access code provided by your organization.</p>
+            <div class="field">
+              <label>Access code</label>
+              <input type="text" id="reg-code" placeholder="e.g. ASSEMBLY26"
+                style="text-transform:uppercase;letter-spacing:.12em;font-weight:600;font-size:15px;text-align:center"
+                oninput="this.value=this.value.toUpperCase().trim()">
+            </div>
+            <div class="err" id="code-error"></div>
+            <button class="btn btn-primary" id="code-btn" onclick="validateCode()">Continue →</button>
+          </div>
 
-  <div class="sf-powered">
-    Powered by <a href="https://commonprintco.com" target="_blank">Common Print Co.</a>
+          <!-- Step 2: Name + Location -->
+          <div class="step" id="step-2">
+            <p class="step-hint">Who are you and which location are you ordering for?</p>
+            <div class="field">
+              <label>Your name</label>
+              <input type="text" id="reg-name" placeholder="First and last name" autocomplete="name">
+            </div>
+            <div class="field">
+              <label>Your location</label>
+              <div class="location-wrap">
+                <input type="text" id="reg-loc-input" placeholder="Type to search…"
+                  oninput="filterLocs(this.value)"
+                  onfocus="openLocs()"
+                  autocomplete="off">
+                <div class="location-dropdown" id="loc-dropdown"></div>
+              </div>
+              <input type="hidden" id="reg-loc-id">
+              <input type="hidden" id="reg-loc-name">
+            </div>
+            <div class="err" id="step2-error"></div>
+            <div class="step-nav">
+              <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+              <button class="btn btn-primary" onclick="validateStep2()">Continue →</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Credentials -->
+          <div class="step" id="step-3">
+            <p class="step-hint">Create your login credentials.</p>
+            <div class="field">
+              <label>Email address</label>
+              <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="reg-pw" placeholder="At least 8 characters" autocomplete="new-password">
+            </div>
+            <div class="field">
+              <label>Confirm password</label>
+              <input type="password" id="reg-confirm" placeholder="Re-enter password" autocomplete="new-password">
+            </div>
+            <div class="err" id="step3-error"></div>
+            <div class="step-nav">
+              <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+              <button class="btn btn-primary" id="reg-btn" onclick="doRegister()">Create account</button>
+            </div>
+          </div>
+
+        </div><!-- /panel-register -->
+
+      </div><!-- /card-body -->
+    </div><!-- /card -->
+
+    <div class="powered">Powered by <a href="https://commonprintco.com" target="_blank">Common Print Co.</a></div>
   </div>
 
-</div><!-- /sf-login-wrap -->
-
 <script type="module">
-  import { VERSION }    from '../../shared/version.js';
-  import { initAuth, signIn, register, redirectIfAuthed, authError } from `../../shared/auth.js?v=${VERSION}`;
-  import { WORKER_URL, callWorker, toast } from `../../shared/utils.js?v=${VERSION}`;
+  import { VERSION }  from '../../shared/version.js';
+  import { initAuth, signIn, register, redirectIfAuthed, authError }
+    from `../../shared/auth.js?v=${VERSION}`;
+  import { WORKER_URL, callWorker } from `../../shared/utils.js?v=${VERSION}`;
 
-  // ── CONFIG ──────────────────────────────────────────────────────────────
-  const STOREFRONT_ID   = 'passionist-holy-cross';
-  const STOREFRONT_NAME = 'The Passionists of Holy Cross Province Branded Merchandise Storefront';
+  const STOREFRONT_ID = 'passionist-holy-cross';
 
-  // Locations — pre-loaded, sorted alphabetically
   const LOCATIONS = [
-    { id: 'christ-the-king',  name: 'Christ the King Passionist Retreat Center (Citrus Heights, CA)' },
-    { id: 'holy-name',        name: 'Holy Name Passionist Retreat Center (Houston, TX)' },
-    { id: 'mater-dolorosa',   name: 'Mater Dolorosa Passionist Retreat Center (Sierra Madre, CA)' },
-    { id: 'st-paul-cross',    name: 'St. Paul of the Cross Passionist Retreat & Conference Center (Detroit, MI)' },
-    { id: 'other',            name: 'Other / Not listed' },
+    { id: 'christ-the-king', name: 'Christ the King Passionist Retreat Center (Citrus Heights, CA)' },
+    { id: 'holy-name',       name: 'Holy Name Passionist Retreat Center (Houston, TX)' },
+    { id: 'mater-dolorosa',  name: 'Mater Dolorosa Passionist Retreat Center (Sierra Madre, CA)' },
+    { id: 'st-paul-cross',   name: 'St. Paul of the Cross Passionist Retreat & Conference Center (Detroit, MI)' },
+    { id: 'other',           name: 'Other / Not listed' },
   ];
 
-  // ── STATE ────────────────────────────────────────────────────────────────
-  let currentStep    = 1;
-  let validatedCode  = null; // { codeId, codeLabel }
-  let selectedLocation = null; // { id, name }
+  let currentStep     = 1;
+  let validatedCode   = null;
+  let selectedLoc     = null;
 
-  // ── INIT ─────────────────────────────────────────────────────────────────
+  // Init
   await initAuth(WORKER_URL);
   await redirectIfAuthed('catalog.html');
 
-  // ── TAB SWITCHING ────────────────────────────────────────────────────────
+  // ── TAB SWITCHING ──────────────────────────────────────────────────────
   window.switchTab = (tab) => {
     document.getElementById('panel-signin').style.display   = tab === 'signin'   ? 'block' : 'none';
     document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
     document.getElementById('tab-signin').classList.toggle('active',   tab === 'signin');
     document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-    clearErrors();
+    document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
   };
 
-  // ── SIGN IN ──────────────────────────────────────────────────────────────
+  // ── SIGN IN ────────────────────────────────────────────────────────────
   window.doSignIn = async () => {
-    const email    = document.getElementById('si-email').value.trim();
-    const password = document.getElementById('si-password').value;
-    const errEl    = document.getElementById('si-error');
-    const btn      = document.getElementById('si-btn');
-    errEl.classList.remove('show');
+    const email = document.getElementById('si-email').value.trim();
+    const pw    = document.getElementById('si-password').value;
+    const err   = document.getElementById('si-error');
+    const btn   = document.getElementById('si-btn');
+    err.classList.remove('show');
 
-    if (!email || !password) {
-      errEl.textContent = 'Please enter your email and password.';
-      errEl.classList.add('show');
-      return;
+    if (!email || !pw) {
+      err.textContent = 'Please enter your email and password.';
+      err.classList.add('show'); return;
     }
-
-    btn.disabled    = true;
-    btn.textContent = 'Signing in…';
-
+    btn.disabled = true; btn.textContent = 'Signing in…';
     try {
-      const cred = await signIn(email, password);
-      // Update last login
+      const cred = await signIn(email, pw);
       callWorker('update_last_login', { uid: cred.user.uid }).catch(() => {});
       window.location.href = 'catalog.html';
     } catch(e) {
-      errEl.textContent = authError(e.code);
-      errEl.classList.add('show');
-      btn.disabled    = false;
-      btn.textContent = 'Sign in';
+      err.textContent = authError(e.code);
+      err.classList.add('show');
+      btn.disabled = false; btn.textContent = 'Sign in';
     }
   };
 
-  // ── STEP NAVIGATION ──────────────────────────────────────────────────────
-  window.goToStep = (step) => {
-    document.querySelectorAll('.sf-step').forEach((el, i) => {
-      el.classList.toggle('active', i + 1 === step);
+  // ── STEP NAV ───────────────────────────────────────────────────────────
+  window.goStep = (n) => {
+    document.querySelectorAll('.step').forEach((el, i) => el.classList.toggle('active', i+1 === n));
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i+1 === n);
+      d.classList.toggle('done',   i+1 < n);
     });
-    document.querySelectorAll('.step-dot').forEach((dot, i) => {
-      dot.classList.toggle('active', i + 1 <= step);
-    });
-    currentStep = step;
-    clearErrors();
+    document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
+    currentStep = n;
   };
 
-  // ── STEP 1: VALIDATE ACCESS CODE ─────────────────────────────────────────
+  // ── STEP 1: ACCESS CODE ────────────────────────────────────────────────
   window.validateCode = async () => {
-    const code  = document.getElementById('reg-code').value.trim().toUpperCase();
-    const errEl = document.getElementById('code-error');
-    const btn   = document.getElementById('code-btn');
-    errEl.classList.remove('show');
-
-    if (!code) {
-      errEl.textContent = 'Please enter your access code.';
-      errEl.classList.add('show');
-      return;
-    }
-
-    btn.disabled    = true;
-    btn.textContent = 'Checking…';
-
+    const code = document.getElementById('reg-code').value.trim().toUpperCase();
+    const err  = document.getElementById('code-error');
+    const btn  = document.getElementById('code-btn');
+    err.classList.remove('show');
+    if (!code) { err.textContent = 'Please enter your access code.'; err.classList.add('show'); return; }
+    btn.disabled = true; btn.textContent = 'Checking…';
     try {
-      const result = await callWorker('validate_code', { code, storefrontId: STOREFRONT_ID });
-      if (!result.valid) {
-        errEl.textContent = result.error || 'Invalid access code.';
-        errEl.classList.add('show');
-        btn.disabled    = false;
-        btn.textContent = 'Continue';
-        return;
+      const res = await callWorker('validate_code', { code, storefrontId: STOREFRONT_ID });
+      if (!res.valid) {
+        err.textContent = res.error || 'Invalid access code. Please check with your organization.';
+        err.classList.add('show');
+      } else {
+        validatedCode = { codeId: res.codeId, codeLabel: res.codeLabel };
+        goStep(2);
       }
-      validatedCode = { codeId: result.codeId, codeLabel: result.codeLabel };
-      goToStep(2);
     } catch(e) {
-      errEl.textContent = 'Unable to verify code. Please try again.';
-      errEl.classList.add('show');
+      err.textContent = 'Unable to verify. Please try again.';
+      err.classList.add('show');
     }
-    btn.disabled    = false;
-    btn.textContent = 'Continue';
+    btn.disabled = false; btn.textContent = 'Continue →';
   };
 
-  // ── LOCATION DROPDOWN ─────────────────────────────────────────────────────
-  window.filterLocations = (query) => {
-    const dropdown = document.getElementById('location-dropdown');
-    const filtered = query.trim()
-      ? LOCATIONS.filter(l => l.name.toLowerCase().includes(query.toLowerCase()))
-      : LOCATIONS;
+  // ── LOCATION DROPDOWN ──────────────────────────────────────────────────
+  window.filterLocs = (q) => {
+    const list = q.trim() ? LOCATIONS.filter(l => l.name.toLowerCase().includes(q.toLowerCase())) : LOCATIONS;
+    renderLocs(list);
+    document.getElementById('loc-dropdown').classList.add('open');
+  };
+  window.openLocs = () => { filterLocs(document.getElementById('reg-loc-input').value); };
 
-    dropdown.innerHTML = filtered.map(l => `
-      <div class="sf-location-option ${selectedLocation?.id === l.id ? 'selected' : ''}"
-        onclick="selectLocation('${l.id}', '${l.name.replace(/'/g, "\\'")}')">
-        ${l.name}
-      </div>`).join('');
-    dropdown.classList.add('open');
+  function renderLocs(list) {
+    document.getElementById('loc-dropdown').innerHTML = list.length === 0
+      ? '<div class="loc-option" style="color:var(--mid-gray)">No locations found</div>'
+      : list.map(l => `
+          <div class="loc-option ${selectedLoc?.id === l.id ? 'selected' : ''}"
+            onclick="pickLoc('${l.id}','${l.name.replace(/'/g,"\\'")}')">${l.name}</div>`
+        ).join('');
+  }
+
+  window.pickLoc = (id, name) => {
+    selectedLoc = { id, name };
+    document.getElementById('reg-loc-input').value = name;
+    document.getElementById('reg-loc-id').value    = id;
+    document.getElementById('reg-loc-name').value  = name;
+    document.getElementById('loc-dropdown').classList.remove('open');
   };
 
-  window.openLocationDropdown = () => {
-    filterLocations(document.getElementById('reg-location-input').value);
-  };
-
-  window.selectLocation = (id, name) => {
-    selectedLocation = { id, name };
-    document.getElementById('reg-location-input').value = name;
-    document.getElementById('reg-location-id').value   = id;
-    document.getElementById('reg-location-name').value = name;
-    document.getElementById('location-dropdown').classList.remove('open');
-  };
-
-  // Close dropdown on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.sf-location-search')) {
-      document.getElementById('location-dropdown').classList.remove('open');
-    }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.location-wrap'))
+      document.getElementById('loc-dropdown').classList.remove('open');
   });
 
-  // ── STEP 2: VALIDATE NAME + LOCATION ─────────────────────────────────────
+  // ── STEP 2: NAME + LOCATION ────────────────────────────────────────────
   window.validateStep2 = () => {
-    const name   = document.getElementById('reg-name').value.trim();
-    const errEl  = document.getElementById('step2-error');
-    errEl.classList.remove('show');
-
-    if (!name) {
-      errEl.textContent = 'Please enter your name.';
-      errEl.classList.add('show');
-      return;
-    }
-    if (!selectedLocation) {
-      errEl.textContent = 'Please select your location.';
-      errEl.classList.add('show');
-      return;
-    }
-    goToStep(3);
+    const name = document.getElementById('reg-name').value.trim();
+    const err  = document.getElementById('step2-error');
+    err.classList.remove('show');
+    if (!name)        { err.textContent = 'Please enter your name.';             err.classList.add('show'); return; }
+    if (!selectedLoc) { err.textContent = 'Please select your location.'; err.classList.add('show'); return; }
+    goStep(3);
   };
 
-  // ── STEP 3: CREATE ACCOUNT ────────────────────────────────────────────────
+  // ── STEP 3: CREATE ACCOUNT ─────────────────────────────────────────────
   window.doRegister = async () => {
-    const name      = document.getElementById('reg-name').value.trim();
-    const email     = document.getElementById('reg-email').value.trim();
-    const password  = document.getElementById('reg-password').value;
-    const confirm   = document.getElementById('reg-confirm').value;
-    const errEl     = document.getElementById('step3-error');
-    const btn       = document.getElementById('reg-btn');
-    errEl.classList.remove('show');
+    const name    = document.getElementById('reg-name').value.trim();
+    const email   = document.getElementById('reg-email').value.trim();
+    const pw      = document.getElementById('reg-pw').value;
+    const confirm = document.getElementById('reg-confirm').value;
+    const err     = document.getElementById('step3-error');
+    const btn     = document.getElementById('reg-btn');
+    err.classList.remove('show');
 
-    if (!email) {
-      errEl.textContent = 'Please enter your email address.';
-      errEl.classList.add('show'); return;
-    }
-    if (password.length < 8) {
-      errEl.textContent = 'Password must be at least 8 characters.';
-      errEl.classList.add('show'); return;
-    }
-    if (password !== confirm) {
-      errEl.textContent = "Passwords don't match.";
-      errEl.classList.add('show'); return;
-    }
+    if (!email)       { err.textContent = 'Please enter your email address.';      err.classList.add('show'); return; }
+    if (pw.length<8)  { err.textContent = 'Password must be at least 8 characters.'; err.classList.add('show'); return; }
+    if (pw !== confirm){ err.textContent = "Passwords don't match.";               err.classList.add('show'); return; }
 
-    btn.disabled    = true;
-    btn.textContent = 'Creating account…';
-
+    btn.disabled = true; btn.textContent = 'Creating account…';
     try {
-      // Create Firebase Auth account
-      const cred = await register(email, password);
-      const uid  = cred.user.uid;
-
-      // Save user profile via worker
+      const cred = await register(email, pw);
       await callWorker('register_storefront_user', {
-        uid,
-        email,
-        name,
-        locationId:      selectedLocation.id,
-        locationName:    selectedLocation.name,
+        uid: cred.user.uid, email, name,
+        locationId:      selectedLoc.id,
+        locationName:    selectedLoc.name,
         storefrontId:    STOREFRONT_ID,
         accessCodeId:    validatedCode.codeId,
         accessCodeLabel: validatedCode.codeLabel,
       });
-
       window.location.href = 'catalog.html';
     } catch(e) {
-      errEl.textContent = authError(e.code) || 'Registration failed. Please try again.';
-      errEl.classList.add('show');
-      btn.disabled    = false;
-      btn.textContent = 'Create account';
+      err.textContent = authError(e.code) || 'Registration failed. Please try again.';
+      err.classList.add('show');
+      btn.disabled = false; btn.textContent = 'Create account';
     }
   };
 
-  // ── KEYBOARD SUPPORT ─────────────────────────────────────────────────────
-  document.addEventListener('keydown', (e) => {
+  // ── ENTER KEY ──────────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
-    if (document.getElementById('panel-signin').style.display !== 'none') {
-      doSignIn();
-    } else if (currentStep === 1) {
-      validateCode();
-    } else if (currentStep === 2) {
-      validateStep2();
-    } else if (currentStep === 3) {
-      doRegister();
-    }
+    const signinVisible = document.getElementById('panel-signin').style.display !== 'none';
+    if (signinVisible)        doSignIn();
+    else if (currentStep===1) validateCode();
+    else if (currentStep===2) validateStep2();
+    else if (currentStep===3) doRegister();
   });
-
-  // ── HELPERS ───────────────────────────────────────────────────────────────
-  function clearErrors() {
-    document.querySelectorAll('.sf-error').forEach(el => el.classList.remove('show'));
-  }
 </script>
 
 </body>
