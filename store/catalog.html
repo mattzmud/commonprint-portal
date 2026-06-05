@@ -624,16 +624,27 @@
   window.selectTier = (idx) => {
     const tiers = [...(activeProduct.pricingTiers || [])].sort((a,b) => a.minQty - b.minQty);
     selectedTier = tiers[idx];
-    customQty    = selectedTier.minQty;
+    const nextTier = tiers[idx + 1];
+    const maxInTier = nextTier ? nextTier.minQty - 1 : (activeProduct.maxQty || 0);
+    customQty = selectedTier.minQty;
 
-    // Update UI
+    // Update UI — mark selected
     document.querySelectorAll('.tier-option').forEach((el, i) => {
       el.classList.toggle('selected', i === idx);
     });
-    document.getElementById('custom-qty-wrap').style.display = 'none';
-    document.getElementById('add-to-cart-btn').disabled = false;
-    document.getElementById('add-to-cart-btn').textContent =
-      `Add ${selectedTier.minQty} to cart — $${(selectedTier.minQty * selectedTier.unitPrice).toFixed(2)}`;
+
+    // Show qty input scoped to this tier's range
+    const wrap  = document.getElementById('custom-qty-wrap');
+    const input = document.getElementById('custom-qty-num');
+    const label = wrap.querySelector('.custom-qty-label');
+    if (label) label.textContent = maxInTier > 0
+      ? `Quantity (${selectedTier.minQty}–${maxInTier})`
+      : `Quantity (minimum ${selectedTier.minQty})`;
+    wrap.style.display = 'block';
+    input.value = customQty;
+    input.min   = selectedTier.minQty;
+    input.max   = maxInTier > 0 ? maxInTier : '';
+    updateCustomPrice();
   };
 
   window.selectCustom = () => {
@@ -644,12 +655,14 @@
       el.classList.toggle('selected', i === arr.length - 1);
     });
 
-    const wrap = document.getElementById('custom-qty-wrap');
+    const wrap  = document.getElementById('custom-qty-wrap');
+    const label = wrap.querySelector('.custom-qty-label');
+    if (label) label.textContent = 'Enter any quantity';
     wrap.style.display = 'block';
     const input = document.getElementById('custom-qty-num');
     input.value = customQty;
     input.min   = activeProduct.minQty || 1;
-    if (activeProduct.maxQty > 0) input.max = activeProduct.maxQty;
+    input.max   = activeProduct.maxQty > 0 ? activeProduct.maxQty : '';
     updateCustomPrice();
   };
 
