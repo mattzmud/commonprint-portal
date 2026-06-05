@@ -7,28 +7,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
   <style>
+    /* ── NEUTRAL DEFAULTS — overridden by storefront brand colors ── */
     :root {
-      --font: 'Jost', Georgia, serif;
-      --radius: 10px;
-      --shadow: 0 8px 40px rgba(0,0,0,0.25);
-
-      /* defaults — overridden by storefront branding */
-      --primary:      #5C1D21;
-      --primary-dark: #3d1216;
-      --gold:         #A07400;
-      --gold-light:   #F2E2BE;
+      --primary:      #3a3a3a;
+      --primary-dark: #1a1a1a;
+      --page-bg:      #2c2c2c;
+      --accent:       #888888;
+      --font:         'Jost', Georgia, serif;
+      --radius:       10px;
+      --shadow:       0 8px 40px rgba(0,0,0,0.25);
       --ink:          #2D2926;
       --gray:         #575451;
       --mid-gray:     #888780;
       --border:       #E8DEC8;
-      --bg:           #F7EED8;
       --card:         #FFFFFF;
-      --pale:         #FBF9ED;
-      --navy:         #002B46;
+      --pale:         #F8F8F8;
       --red:          #A4343A;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
     body {
       font-family: var(--font);
@@ -37,236 +34,186 @@
       align-items: center;
       justify-content: center;
       padding: 24px 16px;
-      background-color: var(--navy);
+      background-color: var(--page-bg);
       background-image:
-        radial-gradient(ellipse at 20% 50%, rgba(92,29,33,0.6) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 20%, rgba(0,43,70,0.8) 0%, transparent 50%),
-        radial-gradient(ellipse at 60% 80%, rgba(92,29,33,0.3) 0%, transparent 40%);
+        radial-gradient(ellipse at 20% 50%, rgba(0,0,0,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(0,0,0,0.2) 0%, transparent 50%);
+      transition: background-color .3s;
     }
 
-    /* ── LOADING STATE ── */
+    /* ── LOADING ── */
     #loading-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      color: rgba(255,255,255,0.7);
-      font-size: 14px;
+      display:flex; flex-direction:column;
+      align-items:center; gap:16px;
+      color:rgba(255,255,255,0.7); font-size:14px;
     }
     .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid rgba(255,255,255,0.2);
-      border-top-color: rgba(255,255,255,0.8);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
+      width:36px; height:36px;
+      border:3px solid rgba(255,255,255,0.2);
+      border-top-color:rgba(255,255,255,0.8);
+      border-radius:50%;
+      animation:spin .7s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
-    /* ── ERROR STATE ── */
+    /* ── ERROR ── */
     #error-screen {
-      display: none;
-      background: var(--card);
-      border-radius: 16px;
-      padding: 40px;
-      max-width: 400px;
-      text-align: center;
+      display:none; background:var(--card);
+      border-radius:16px; padding:40px;
+      max-width:400px; text-align:center;
+      box-shadow:var(--shadow);
     }
-    #error-screen h2 { color: var(--red); margin-bottom: 12px; }
-    #error-screen p  { color: var(--gray); font-size: 14px; }
+    #error-screen h2 { color:var(--red); margin-bottom:12px; font-family:var(--font); }
+    #error-screen p  { color:var(--gray); font-size:14px; line-height:1.6; }
 
     /* ── MAIN CARD ── */
-    #main-card {
-      display: none;
-      width: 100%;
-      max-width: 420px;
-    }
-    .card {
-      background: var(--card);
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
+    #main-card { display:none; width:100%; max-width:420px; }
+    .card { background:var(--card); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; }
 
     /* ── HEADER ── */
     .card-header {
-      background: var(--primary);
-      padding: 28px 32px 24px;
-      text-align: center;
-      position: relative;
+      background:var(--primary);
+      padding:28px 32px 24px;
+      text-align:center; position:relative;
     }
     .card-header::after {
-      content: '';
-      position: absolute;
-      bottom: -1px; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      content:''; position:absolute;
+      bottom:-1px; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,transparent,var(--accent),transparent);
     }
     .logo-wrap {
-      width: 90px; height: 90px;
-      margin: 0 auto 14px;
-      background: #fff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 3px solid rgba(255,255,255,0.3);
-      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
-      overflow: hidden;
-      padding: 6px;
+      width:90px; height:90px; margin:0 auto 14px;
+      background:#fff; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      border:3px solid rgba(255,255,255,0.3);
+      box-shadow:0 2px 16px rgba(0,0,0,0.3);
+      overflow:hidden; padding:6px;
     }
-    .logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
-    .logo-placeholder { font-size: 40px; }
+    .logo-wrap img { width:100%; height:100%; object-fit:contain; }
+    .logo-placeholder { font-size:40px; }
     .header-label {
-      font-size: 10px; font-weight: 600;
-      letter-spacing: .12em; text-transform: uppercase;
-      color: rgba(255,255,255,0.55); margin-bottom: 4px;
+      font-size:10px; font-weight:600;
+      letter-spacing:.12em; text-transform:uppercase;
+      color:rgba(255,255,255,0.55); margin-bottom:4px;
     }
-    .header-title {
-      font-size: 17px; font-weight: 600;
-      color: #fff; line-height: 1.3;
-    }
-    .header-sub {
-      font-size: 12px; color: rgba(255,255,255,0.5);
-      margin-top: 4px; font-style: italic;
-    }
+    .header-title { font-size:17px; font-weight:600; color:#fff; line-height:1.3; }
+    .header-sub   { font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px; font-style:italic; }
 
     /* ── BODY ── */
-    .card-body { padding: 28px 32px 32px; }
+    .card-body { padding:28px 32px 32px; }
 
     /* ── TABS ── */
     .tabs {
-      display: flex;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 3px; gap: 3px;
-      margin-bottom: 24px;
-      background: var(--pale);
+      display:flex; border:1px solid var(--border);
+      border-radius:var(--radius); padding:3px; gap:3px;
+      margin-bottom:24px; background:var(--pale);
     }
     .tab-btn {
-      flex: 1; padding: 8px; border: none;
-      background: transparent; border-radius: 7px;
-      font-family: var(--font); font-size: 13px; font-weight: 500;
-      color: var(--mid-gray); cursor: pointer; transition: all .18s;
+      flex:1; padding:8px; border:none;
+      background:transparent; border-radius:7px;
+      font-family:var(--font); font-size:13px; font-weight:500;
+      color:var(--mid-gray); cursor:pointer; transition:all .18s;
     }
     .tab-btn.active {
-      background: var(--primary); color: #fff;
-      box-shadow: 0 1px 4px rgba(92,29,33,0.3);
+      background:var(--primary); color:#fff;
+      box-shadow:0 1px 4px rgba(0,0,0,0.2);
     }
 
     /* ── FIELDS ── */
-    .field { margin-bottom: 14px; }
+    .field { margin-bottom:14px; }
     .field label {
-      display: block; font-size: 12px; font-weight: 600;
-      color: var(--gray); margin-bottom: 5px; letter-spacing: .02em;
+      display:block; font-size:12px; font-weight:600;
+      color:var(--gray); margin-bottom:5px; letter-spacing:.02em;
     }
-    .field input, .field select {
-      width: 100%; padding: 11px 14px;
-      border: 1.5px solid var(--border); border-radius: var(--radius);
-      font-family: var(--font); font-size: 14px; color: var(--ink);
-      background: var(--pale); outline: none; transition: border-color .15s;
+    .field input {
+      width:100%; padding:11px 14px;
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      font-family:var(--font); font-size:14px; color:var(--ink);
+      background:var(--pale); outline:none; transition:border-color .15s;
     }
-    .field input:focus, .field select:focus {
-      border-color: var(--primary); background: #fff;
-    }
+    .field input:focus { border-color:var(--primary); background:#fff; }
 
     /* ── BUTTONS ── */
     .btn {
-      width: 100%; padding: 13px; border: none; border-radius: var(--radius);
-      font-family: var(--font); font-size: 15px; font-weight: 600;
-      cursor: pointer; transition: all .18s;
+      width:100%; padding:13px; border:none; border-radius:var(--radius);
+      font-family:var(--font); font-size:15px; font-weight:600;
+      cursor:pointer; transition:all .18s;
     }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:var(--primary-dark); }
+    .btn-primary:disabled { opacity:.6; cursor:not-allowed; }
     .btn-ghost {
-      background: var(--pale); color: var(--gray);
-      border: 1.5px solid var(--border); padding: 11px; font-size: 14px;
+      background:var(--pale); color:var(--gray);
+      border:1.5px solid var(--border); padding:11px; font-size:14px;
     }
-    .btn-ghost:hover { background: var(--gold-light); color: var(--ink); }
+    .btn-ghost:hover { background:#eee; color:var(--ink); }
 
     /* ── ERRORS ── */
     .err {
-      font-size: 13px; color: var(--red);
-      background: #FDF0F0; border: 1px solid #F5C6C6;
-      border-radius: var(--radius); padding: 10px 13px;
-      margin-bottom: 12px; display: none; line-height: 1.5;
+      font-size:13px; color:var(--red);
+      background:#FDF0F0; border:1px solid #F5C6C6;
+      border-radius:var(--radius); padding:10px 13px;
+      margin-bottom:12px; display:none; line-height:1.5;
     }
-    .err.show { display: block; }
+    .err.show { display:block; }
 
     /* ── STEP DOTS ── */
-    .step-dots {
-      display: flex; justify-content: center;
-      gap: 7px; margin-bottom: 20px;
-    }
-    .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--border); transition: all .2s;
-    }
-    .dot.active { background: var(--primary); transform: scale(1.2); }
-    .dot.done   { background: var(--gold); }
+    .step-dots { display:flex; justify-content:center; gap:7px; margin-bottom:20px; }
+    .dot { width:7px; height:7px; border-radius:50%; background:var(--border); transition:all .2s; }
+    .dot.active { background:var(--primary); transform:scale(1.2); }
+    .dot.done   { background:var(--accent); }
 
     /* ── STEPS ── */
-    .step { display: none; }
-    .step.active { display: block; }
-    .step-hint {
-      font-size: 13px; color: var(--mid-gray);
-      text-align: center; margin-bottom: 18px; line-height: 1.6;
-    }
+    .step { display:none; }
+    .step.active { display:block; }
+    .step-hint { font-size:13px; color:var(--mid-gray); text-align:center; margin-bottom:18px; line-height:1.6; }
 
     /* ── LOCATION DROPDOWN ── */
-    .loc-wrap { position: relative; }
+    .loc-wrap { position:relative; }
     .loc-dropdown {
-      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-      background: #fff; border: 1.5px solid var(--primary);
-      border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-      max-height: 210px; overflow-y: auto; z-index: 50; display: none;
+      position:absolute; top:calc(100% + 4px); left:0; right:0;
+      background:#fff; border:1.5px solid var(--primary);
+      border-radius:var(--radius);
+      box-shadow:0 8px 24px rgba(0,0,0,0.12);
+      max-height:210px; overflow-y:auto; z-index:50; display:none;
     }
-    .loc-dropdown.open { display: block; }
+    .loc-dropdown.open { display:block; }
     .loc-opt {
-      padding: 11px 14px; font-size: 13px; color: var(--ink);
-      cursor: pointer; border-bottom: 1px solid var(--border);
-      transition: background .1s; line-height: 1.4;
+      padding:11px 14px; font-size:13px; color:var(--ink);
+      cursor:pointer; border-bottom:1px solid var(--border);
+      transition:background .1s; line-height:1.4;
     }
-    .loc-opt:last-child { border-bottom: none; }
-    .loc-opt:hover, .loc-opt.selected {
-      background: #FDF5F5; color: var(--primary); font-weight: 500;
-    }
+    .loc-opt:last-child { border-bottom:none; }
+    .loc-opt:hover { background:#f5f5f5; color:var(--primary); font-weight:500; }
 
     /* ── STEP NAV ── */
-    .step-nav { display: flex; gap: 10px; margin-top: 6px; }
-    .step-nav .btn { flex: 1; }
-    .step-nav .btn-ghost { flex: 0 0 90px; }
+    .step-nav { display:flex; gap:10px; margin-top:6px; }
+    .step-nav .btn { flex:1; }
+    .step-nav .btn-ghost { flex:0 0 90px; }
 
     /* ── POWERED BY ── */
-    .powered {
-      text-align: center; margin-top: 18px;
-      font-size: 11px; color: rgba(255,255,255,0.3);
-    }
-    .powered a { color: rgba(255,255,255,0.45); text-decoration: none; }
-    .powered a:hover { color: rgba(255,255,255,0.7); }
+    .powered { text-align:center; margin-top:18px; font-size:11px; color:rgba(255,255,255,0.3); }
+    .powered a { color:rgba(255,255,255,0.45); text-decoration:none; }
+    .powered a:hover { color:rgba(255,255,255,0.7); }
 
-    @media (max-width: 480px) {
-      .card-body  { padding: 22px 20px 28px; }
-      .card-header{ padding: 24px 20px 20px; }
+    @media (max-width:480px) {
+      .card-body  { padding:22px 20px 28px; }
+      .card-header{ padding:24px 20px 20px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Loading -->
   <div id="loading-screen">
     <div class="spinner"></div>
-    <div>Loading storefront…</div>
+    <div>Loading…</div>
   </div>
 
-  <!-- Error -->
   <div id="error-screen">
     <h2>Storefront not found</h2>
-    <p>This storefront link may be incorrect or the storefront may no longer be active. Please contact Common Print Co. for assistance.</p>
+    <p>This storefront link may be incorrect or the storefront may no longer be active. Please contact <a href="mailto:hello@commonprintco.com">Common Print Co.</a> for assistance.</p>
   </div>
 
-  <!-- Main card — populated dynamically -->
   <div id="main-card">
     <div class="card">
       <div class="card-header">
@@ -277,14 +224,13 @@
         <div class="header-title" id="header-title">Store</div>
         <div class="header-sub">Location Ordering Portal</div>
       </div>
-
       <div class="card-body">
         <div class="tabs">
           <button class="tab-btn active" id="tab-signin"   onclick="switchTab('signin')">Sign in</button>
           <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Register</button>
         </div>
 
-        <!-- ── SIGN IN ── -->
+        <!-- Sign In -->
         <div id="panel-signin">
           <div class="field">
             <label>Email address</label>
@@ -298,7 +244,7 @@
           <button class="btn btn-primary" id="si-btn" onclick="doSignIn()">Sign in</button>
         </div>
 
-        <!-- ── REGISTER ── -->
+        <!-- Register -->
         <div id="panel-register" style="display:none">
           <div class="step-dots">
             <div class="dot active" id="dot-1"></div>
@@ -306,7 +252,6 @@
             <div class="dot"        id="dot-3"></div>
           </div>
 
-          <!-- Step 1: Access code -->
           <div class="step active" id="step-1">
             <p class="step-hint">Enter the access code provided by your organization.</p>
             <div class="field">
@@ -319,7 +264,6 @@
             <button class="btn btn-primary" id="code-btn" onclick="validateCode()">Continue →</button>
           </div>
 
-          <!-- Step 2: Name + Location -->
           <div class="step" id="step-2">
             <p class="step-hint">Who are you and which location are you ordering for?</p>
             <div class="field">
@@ -330,9 +274,7 @@
               <label>Your location</label>
               <div class="loc-wrap">
                 <input type="text" id="reg-loc-input" placeholder="Type to search…"
-                  oninput="filterLocs(this.value)"
-                  onfocus="openLocs()"
-                  autocomplete="off">
+                  oninput="filterLocs(this.value)" onfocus="openLocs()" autocomplete="off">
                 <div class="loc-dropdown" id="loc-dropdown"></div>
               </div>
             </div>
@@ -343,7 +285,6 @@
             </div>
           </div>
 
-          <!-- Step 3: Credentials -->
           <div class="step" id="step-3">
             <p class="step-hint">Create your login credentials.</p>
             <div class="field">
@@ -373,19 +314,18 @@
 <script type="module">
   import { VERSION } from '../shared/version.js';
 
-  // ── STATE ────────────────────────────────────────────────────────────────
-  const WORKER_URL   = 'https://storefront-api.matt-zmud.workers.dev';
-  const FS_BASE      = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
+  const WORKER_URL = 'https://storefront-api.matt-zmud.workers.dev';
+  const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
 
-  let storefrontId   = null;
-  let storefront     = null;
-  let locations      = [];
-  let currentStep    = 1;
-  let validatedCode  = null;
-  let selectedLoc    = null;
-  let auth           = null;
+  let storefrontId  = null;
+  let storefront    = null;
+  let locations     = [];
+  let currentStep   = 1;
+  let validatedCode = null;
+  let selectedLoc   = null;
+  let auth          = null;
 
-  // ── FIRESTORE HELPERS (no-auth reads) ────────────────────────────────────
+  // ── FF HELPER ─────────────────────────────────────────────────────────
   function ff(fields = {}) {
     return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
       if (v.stringValue  !== undefined) return [k, v.stringValue];
@@ -411,8 +351,7 @@
     if (!res.ok) return [];
     const data = await res.json();
     return (data.documents || []).map(d => ({
-      id: d.name.split('/').pop(),
-      ...ff(d.fields)
+      id: d.name.split('/').pop(), ...ff(d.fields)
     }));
   }
 
@@ -425,7 +364,6 @@
     return res.json();
   }
 
-  // ── AUTH HELPERS ──────────────────────────────────────────────────────────
   function authError(code) {
     const map = {
       'auth/invalid-credential':   'Incorrect email or password.',
@@ -439,36 +377,43 @@
     return map[code] || 'Something went wrong. Please try again.';
   }
 
-  // ── TAB / STEP HANDLERS — defined before any awaits ──────────────────────
+  function applyBranding(sf) {
+    const brand = sf.brand || {};
+    const root  = document.documentElement.style;
+    if (brand.primary)        root.setProperty('--primary',      brand.primary);
+    if (brand['primary-dark'])root.setProperty('--primary-dark', brand['primary-dark']);
+    if (brand.bg)             root.setProperty('--page-bg',      brand.bg);
+    if (brand.accent)         root.setProperty('--accent',       brand.accent);
+  }
+
+  // ── ALL HANDLERS DEFINED BEFORE AWAITS ───────────────────────────────
   window.switchTab = (tab) => {
-    document.getElementById('panel-signin').style.display   = tab === 'signin'   ? 'block' : 'none';
-    document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
-    document.getElementById('tab-signin').classList.toggle('active',   tab === 'signin');
-    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    document.getElementById('panel-signin').style.display   = tab==='signin'   ? 'block' : 'none';
+    document.getElementById('panel-register').style.display = tab==='register' ? 'block' : 'none';
+    document.getElementById('tab-signin').classList.toggle('active',   tab==='signin');
+    document.getElementById('tab-register').classList.toggle('active', tab==='register');
     document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
   };
 
   window.goStep = (n) => {
-    document.querySelectorAll('.step').forEach((el, i) => el.classList.toggle('active', i + 1 === n));
-    document.querySelectorAll('.dot').forEach((d, i) => {
-      d.classList.toggle('active', i + 1 === n);
-      d.classList.toggle('done',   i + 1 < n);
+    document.querySelectorAll('.step').forEach((el,i) => el.classList.toggle('active', i+1===n));
+    document.querySelectorAll('.dot').forEach((d,i) => {
+      d.classList.toggle('active', i+1===n);
+      d.classList.toggle('done',   i+1<n);
     });
     document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
     currentStep = n;
   };
 
   window.filterLocs = (q) => {
-    const filtered = q.trim()
+    const list = q.trim()
       ? locations.filter(l => l.name.toLowerCase().includes(q.toLowerCase()))
       : locations;
-    renderLocs(filtered);
+    renderLocs(list);
     document.getElementById('loc-dropdown').classList.add('open');
   };
 
-  window.openLocs = () => {
-    window.filterLocs(document.getElementById('reg-loc-input').value);
-  };
+  window.openLocs = () => filterLocs(document.getElementById('reg-loc-input').value);
 
   window.pickLoc = (id, name) => {
     selectedLoc = { id, name };
@@ -477,11 +422,10 @@
   };
 
   function renderLocs(list) {
-    document.getElementById('loc-dropdown').innerHTML = list.length === 0
+    document.getElementById('loc-dropdown').innerHTML = list.length===0
       ? '<div class="loc-opt" style="color:var(--mid-gray)">No locations found</div>'
       : list.map(l => `
-          <div class="loc-opt ${selectedLoc?.id === l.id ? 'selected' : ''}"
-            onclick="pickLoc('${l.id}', '${l.name.replace(/'/g, "\\'")}')">
+          <div class="loc-opt" onclick="pickLoc('${l.id}','${l.name.replace(/'/g,"\\'")}')">
             ${l.name}
           </div>`).join('');
   }
@@ -496,8 +440,8 @@
     const errEl = document.getElementById('code-error');
     const btn   = document.getElementById('code-btn');
     errEl.classList.remove('show');
-    if (!code) { errEl.textContent = 'Please enter your access code.'; errEl.classList.add('show'); return; }
-    btn.disabled = true; btn.textContent = 'Checking…';
+    if (!code) { errEl.textContent='Please enter your access code.'; errEl.classList.add('show'); return; }
+    btn.disabled=true; btn.textContent='Checking…';
     try {
       const res = await callWorker('validate_code', { code, storefrontId });
       if (!res.valid) {
@@ -507,19 +451,16 @@
         validatedCode = { codeId: res.codeId, codeLabel: res.codeLabel };
         goStep(2);
       }
-    } catch(e) {
-      errEl.textContent = 'Unable to verify. Please try again.';
-      errEl.classList.add('show');
-    }
-    btn.disabled = false; btn.textContent = 'Continue →';
+    } catch { errEl.textContent='Unable to verify. Please try again.'; errEl.classList.add('show'); }
+    btn.disabled=false; btn.textContent='Continue →';
   };
 
   window.validateStep2 = () => {
     const name  = document.getElementById('reg-name').value.trim();
     const errEl = document.getElementById('step2-error');
     errEl.classList.remove('show');
-    if (!name)        { errEl.textContent = 'Please enter your name.';     errEl.classList.add('show'); return; }
-    if (!selectedLoc) { errEl.textContent = 'Please select your location.'; errEl.classList.add('show'); return; }
+    if (!name)        { errEl.textContent='Please enter your name.';      errEl.classList.add('show'); return; }
+    if (!selectedLoc) { errEl.textContent='Please select your location.'; errEl.classList.add('show'); return; }
     goStep(3);
   };
 
@@ -529,17 +470,17 @@
     const errEl = document.getElementById('si-error');
     const btn   = document.getElementById('si-btn');
     errEl.classList.remove('show');
-    if (!email || !pw) { errEl.textContent = 'Please enter your email and password.'; errEl.classList.add('show'); return; }
-    btn.disabled = true; btn.textContent = 'Signing in…';
+    if (!email||!pw) { errEl.textContent='Please enter your email and password.'; errEl.classList.add('show'); return; }
+    btn.disabled=true; btn.textContent='Signing in…';
     try {
       const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
       const cred = await signInWithEmailAndPassword(auth, email, pw);
-      callWorker('update_last_login', { uid: cred.user.uid }).catch(() => {});
+      callWorker('update_last_login', { uid: cred.user.uid }).catch(()=>{});
       window.location.href = `catalog.html?s=${storefrontId}`;
     } catch(e) {
       errEl.textContent = authError(e.code);
       errEl.classList.add('show');
-      btn.disabled = false; btn.textContent = 'Sign in';
+      btn.disabled=false; btn.textContent='Sign in';
     }
   };
 
@@ -551,10 +492,10 @@
     const errEl   = document.getElementById('step3-error');
     const btn     = document.getElementById('reg-btn');
     errEl.classList.remove('show');
-    if (!email)        { errEl.textContent = 'Please enter your email address.';       errEl.classList.add('show'); return; }
-    if (pw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.classList.add('show'); return; }
-    if (pw !== confirm) { errEl.textContent = "Passwords don't match.";                errEl.classList.add('show'); return; }
-    btn.disabled = true; btn.textContent = 'Creating account…';
+    if (!email)        { errEl.textContent='Please enter your email address.';        errEl.classList.add('show'); return; }
+    if (pw.length < 8) { errEl.textContent='Password must be at least 8 characters.'; errEl.classList.add('show'); return; }
+    if (pw !== confirm){ errEl.textContent="Passwords don't match.";                   errEl.classList.add('show'); return; }
+    btn.disabled=true; btn.textContent='Creating account…';
     try {
       const { createUserWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
       const cred = await createUserWithEmailAndPassword(auth, email, pw);
@@ -570,80 +511,71 @@
     } catch(e) {
       errEl.textContent = authError(e.code) || 'Registration failed. Please try again.';
       errEl.classList.add('show');
-      btn.disabled = false; btn.textContent = 'Create account';
+      btn.disabled=false; btn.textContent='Create account';
     }
   };
 
-  window.doKeydown = (e) => {
+  document.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
     const signinVisible = document.getElementById('panel-signin').style.display !== 'none';
     if (signinVisible)        doSignIn();
-    else if (currentStep === 1) validateCode();
-    else if (currentStep === 2) validateStep2();
-    else if (currentStep === 3) doRegister();
-  };
-  document.addEventListener('keydown', window.doKeydown);
+    else if (currentStep===1) validateCode();
+    else if (currentStep===2) validateStep2();
+    else if (currentStep===3) doRegister();
+  });
 
-  // ── INIT — all handlers defined above, now do async work ─────────────────
+  // ── INIT ─────────────────────────────────────────────────────────────
   try {
-    // 1. Get storefront slug from URL
     const params = new URLSearchParams(window.location.search);
-    storefrontId  = params.get('s');
-
+    storefrontId = params.get('s');
     if (!storefrontId) throw new Error('No storefront specified');
 
-    // 2. Load storefront data from Firestore (public read)
+    // Load storefront (public read)
     storefront = await fsGetPublic(`storefronts/${storefrontId}`);
-    if (!storefront || storefront.active === false) throw new Error('Storefront not found or inactive');
+    if (!storefront || storefront.active === false) throw new Error('Storefront not found');
 
-    // 3. Load locations (public read, sorted alphabetically)
+    // Load locations (public read)
     const locDocs = await fsListPublic(`storefronts/${storefrontId}/locations`);
     locations = locDocs
       .filter(l => l.active !== false)
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-    // Add "Other / Not listed" fallback
+      .sort((a, b) => (a.name||'').localeCompare(b.name||''));
     locations.push({ id: 'other', name: 'Other / Not listed' });
 
-    // 4. Init Firebase Auth
+    // Init Firebase Auth
     const config = await callWorker('get_config');
-    const { initializeApp }  = await import(`https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js?v=${VERSION}`);
-    const { getAuth, onAuthStateChanged } = await import(`https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js?v=${VERSION}`);
-
-    const app = initializeApp(config, 'storefront');
+    const { initializeApp }           = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    const app = initializeApp(config, `storefront-${storefrontId}`);
     auth = getAuth(app);
 
-    // 5. Redirect if already logged in
-    await new Promise((resolve) => {
-      const unsub = onAuthStateChanged(auth, (user) => {
+    // Redirect if already logged in
+    await new Promise(resolve => {
+      const unsub = onAuthStateChanged(auth, user => {
         unsub();
-        if (user) {
-          window.location.href = `catalog.html?s=${storefrontId}`;
-        } else {
-          resolve();
-        }
+        if (user) { window.location.href = `catalog.html?s=${storefrontId}`; }
+        else resolve();
       });
     });
 
-    // 6. Render storefront branding
+    // Apply branding
+    applyBranding(storefront);
     document.title = storefront.name || 'Branded Merchandise';
     document.getElementById('header-title').textContent = storefront.name || 'Branded Store';
 
     if (storefront.logoUrl) {
       document.getElementById('logo-wrap').innerHTML =
-        `<img src="${storefront.logoUrl}" alt="${storefront.name}">`;
+        `<img src="${storefront.logoUrl}" alt="${storefront.name || 'Logo'}">`;
     }
 
-    // 7. Show the card
+    // Show page
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('main-card').style.display      = 'block';
 
   } catch(e) {
-    console.error('Storefront init error:', e);
+    console.error('Init error:', e.message);
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('error-screen').style.display   = 'block';
   }
 </script>
-
 </body>
 </html>
