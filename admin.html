@@ -909,6 +909,57 @@
         <input type="number" id="sf-free-threshold" placeholder="150.00" min="0" step="0.01">
       </div>
     </div>
+
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--linen-dark)">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">Branding</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="field" style="grid-column:1/-1">
+          <label>Logo</label>
+          <div id="sf-logo-preview" class="hidden" style="margin-bottom:8px">
+            <img id="sf-logo-thumb" src="" style="height:64px;border-radius:var(--radius);border:1px solid var(--border);background:var(--linen);padding:4px;object-fit:contain">
+          </div>
+          <input type="file" id="sf-logo-file" accept="image/*" onchange="handleSFLogoSelect(this)">
+          <div style="font-size:12px;color:var(--mid-gray);margin-top:4px">PNG with transparent background recommended.</div>
+        </div>
+        <div class="field">
+          <label>Primary color</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-primary" value="#5C1D21" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-primary-hex" placeholder="#5C1D21" maxlength="7"
+              oninput="syncColor('primary',this.value)"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+        <div class="field">
+          <label>Primary dark (hover)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-primary-dark" value="#3d1216" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-primary-dark-hex" placeholder="#3d1216" maxlength="7"
+              oninput="syncColor('primary-dark',this.value)"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+        <div class="field">
+          <label>Page background</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-bg" value="#002B46" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-bg-hex" placeholder="#002B46" maxlength="7"
+              oninput="syncColor('bg',this.value)"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+        <div class="field">
+          <label>Accent color</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-accent" value="#A07400" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-accent-hex" placeholder="#A07400" maxlength="7"
+              oninput="syncColor('accent',this.value)"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div style="margin-top:12px">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--charcoal)">
         <input type="checkbox" id="sf-active" checked>
@@ -4450,8 +4501,39 @@ window.toggleSFUser = async (userId, active) => {
   renderSFUsers(); toast(active?'User reactivated.':'User deactivated.','success');
 };
 
+let sfLogoFile = null;
+
+window.syncColor = (key, hex) => {
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    document.getElementById(`sf-color-${key}`).value = hex;
+  }
+};
+
+window.handleSFLogoSelect = (input) => {
+  const file = input.files[0]; if (!file) return;
+  sfLogoFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('sf-logo-thumb').src = e.target.result;
+    document.getElementById('sf-logo-preview').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+};
+
+function setSFColors(sf) {
+  const defaults = { primary:'#5C1D21', 'primary-dark':'#3d1216', bg:'#002B46', accent:'#A07400' };
+  const brand    = sf?.brand || {};
+  for (const [key, def] of Object.entries(defaults)) {
+    const val = brand[key] || def;
+    const picker = document.getElementById(`sf-color-${key}`);
+    const hex    = document.getElementById(`sf-color-${key}-hex`);
+    if (picker) picker.value = val;
+    if (hex)    hex.value    = val;
+  }
+}
+
 window.openNewStorefrontModal = () => {
-  editingStorefrontId=null;
+  editingStorefrontId=null; sfLogoFile=null;
   document.getElementById('sf-modal-title').textContent='New storefront';
   document.getElementById('sf-name').value='';
   document.getElementById('sf-slug').value='';
@@ -4459,13 +4541,16 @@ window.openNewStorefrontModal = () => {
   document.getElementById('sf-shipping').value='12.95';
   document.getElementById('sf-free-threshold').value='150.00';
   document.getElementById('sf-active').checked=true;
+  document.getElementById('sf-logo-preview').classList.add('hidden');
+  document.getElementById('sf-logo-file').value='';
   document.getElementById('sf-error').classList.add('hidden');
+  setSFColors(null);
   openModal('modal-storefront');
 };
 
 window.openEditStorefrontModal = () => {
   if (!activeSF) return;
-  editingStorefrontId=activeSF.id;
+  editingStorefrontId=activeSF.id; sfLogoFile=null;
   document.getElementById('sf-modal-title').textContent='Edit storefront';
   document.getElementById('sf-name').value          =activeSF.name||'';
   document.getElementById('sf-slug').value          =activeSF.slug||'';
@@ -4474,6 +4559,14 @@ window.openEditStorefrontModal = () => {
   document.getElementById('sf-free-threshold').value=(activeSF.freeShippingThreshold||0).toFixed(2);
   document.getElementById('sf-active').checked      =activeSF.active!==false;
   document.getElementById('sf-error').classList.add('hidden');
+  if (activeSF.logoUrl) {
+    document.getElementById('sf-logo-thumb').src = activeSF.logoUrl;
+    document.getElementById('sf-logo-preview').classList.remove('hidden');
+  } else {
+    document.getElementById('sf-logo-preview').classList.add('hidden');
+  }
+  document.getElementById('sf-logo-file').value='';
+  setSFColors(activeSF);
   openModal('modal-storefront');
 };
 
@@ -4489,10 +4582,37 @@ window.saveStorefront = async () => {
   if (!name) { errEl.textContent='Storefront name is required.'; errEl.classList.remove('hidden'); return; }
   if (!slug) { errEl.textContent='Slug is required.';            errEl.classList.remove('hidden'); return; }
   const sfId=editingStorefrontId||slug;
+
+  // Upload logo if selected
+  let logoUrl = activeSF?.logoUrl || null;
+  if (sfLogoFile) {
+    try {
+      const token = await getToken();
+      const ext   = sfLogoFile.name.split('.').pop().toLowerCase();
+      const path  = `storefronts/${sfId}/logo.${ext}`;
+      const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
+      const res = await fetch(uploadUrl, { method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type':sfLogoFile.type }, body:sfLogoFile });
+      if (!res.ok) throw new Error('Logo upload failed');
+      logoUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(path)}?alt=media`;
+    } catch(e) { errEl.textContent='Logo upload failed: '+e.message; errEl.classList.remove('hidden'); return; }
+  }
+
+  // Collect brand colors
+  const brand = {
+    primary:        document.getElementById('sf-color-primary-hex').value.trim()      || null,
+    'primary-dark': document.getElementById('sf-color-primary-dark-hex').value.trim() || null,
+    bg:             document.getElementById('sf-color-bg-hex').value.trim()            || null,
+    accent:         document.getElementById('sf-color-accent-hex').value.trim()        || null,
+  };
+  // Remove nulls
+  Object.keys(brand).forEach(k => { if (!brand[k]) delete brand[k]; });
+
   await fbSet(`storefronts/${sfId}`,{
     name, slug, clientUid, active,
     shippingRate:          Math.round(shipping*100)/100,
     freeShippingThreshold: Math.round(threshold*100)/100,
+    ...(logoUrl ? { logoUrl } : {}),
+    ...(Object.keys(brand).length ? { brand } : {}),
     updatedAt:new Date().toISOString(),
     ...(editingStorefrontId?{}:{createdAt:new Date().toISOString()}),
   });
