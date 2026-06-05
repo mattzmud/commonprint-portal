@@ -68,50 +68,6 @@
   #app { display:none; }
 
   /* ── SIDEBAR ── */
-  /* ── ADMIN MOBILE TOPBAR ── */
-  .admin-topbar {
-    display: none;
-    position: fixed; top: 0; left: 0; right: 0;
-    height: 56px;
-    background: var(--near-black);
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    z-index: 60;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-  .admin-topbar-logo { font-family: var(--font-display); font-size: 16px; }
-  .admin-topbar-logo .wc { color: #8bc4a0; }
-  .admin-topbar-logo .wp { color: rgba(255,255,255,0.3); font-style: italic; }
-  .admin-hamburger {
-    width: 36px; height: 36px;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 4px;
-    transition: background 0.15s;
-  }
-  .admin-hamburger:hover { background: rgba(255,255,255,0.08); }
-  .admin-hamburger span {
-    display: block; width: 16px; height: 2px;
-    background: rgba(255,255,255,0.7); border-radius: 2px;
-    transition: all 0.2s;
-  }
-  .admin-hamburger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-  .admin-hamburger.open span:nth-child(2) { opacity: 0; }
-  .admin-hamburger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
-
-  /* Overlay for when sidebar is open on mobile */
-  .sidebar-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 49;
-  }
-  .sidebar-overlay.open { display: block; }
-
   .sidebar {
     position: fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
     background: var(--near-black); display:flex; flex-direction:column;
@@ -461,25 +417,6 @@
     line-height: 1;
   }
 
-  /* ── ITEM CARDS (replaces data-tables) ── */
-  .item-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--linen-dark);
-    transition: background 0.12s;
-    cursor: pointer;
-  }
-  .item-card:last-child { border-bottom: none; }
-  .item-card:hover { background: var(--linen); }
-  .item-card-main { flex: 1; min-width: 0; }
-  .item-card-title { font-size: 14px; font-weight: 500; color: var(--near-black); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .item-card-sub { font-size: 12px; color: var(--mid-gray); }
-  .item-card-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
-  .item-card-amount { font-family: var(--font-display); font-size: 17px; color: var(--near-black); }
-
   /* ── MISC ── */
   .hidden { display:none!important; }
   .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
@@ -506,17 +443,6 @@
 
   /* Signature image preview in quote table */
   .sig-thumb { max-height:32px; border:1px solid var(--border); border-radius:4px; vertical-align:middle; }
-
-  @media (max-width: 768px) {
-    .admin-topbar { display: flex; }
-    .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; top: 56px; z-index: 50; }
-    .sidebar.open { transform: translateX(0); }
-    .main { margin-left: 0; padding: 24px 16px; padding-top: calc(56px + 24px); }
-    .page-header { flex-direction: column; align-items: flex-start; }
-    .stat-grid { grid-template-columns: 1fr 1fr; }
-    .proof-modal-wrap { grid-template-columns: 1fr; height: auto; }
-    .proof-preview-pane { border-right: none; border-bottom: 1px solid var(--border); max-height: 300px; }
-  }
 </style>
 </head>
 <body>
@@ -539,65 +465,57 @@
 
 <!-- APP -->
 <div id="app">
-  <!-- MOBILE TOPBAR -->
-  <div class="admin-topbar" id="admin-topbar">
-    <div class="admin-topbar-logo">
-      <span class="wc">common</span> <span class="wp">print co.</span>
-    </div>
-    <button class="admin-hamburger" id="admin-hamburger" onclick="toggleAdminSidebar()" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-  <!-- SIDEBAR OVERLAY -->
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAdminSidebar()"></div>
-
   <!-- SIDEBAR -->
-  <aside class="sidebar" id="admin-sidebar">
-    <div class="sidebar-logo" style="display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div class="sidebar-logo-wm"><span class="wc">common</span> <span class="wp">print co.</span></div>
-        <div class="sidebar-admin-badge">Admin</div>
-      </div>
-      <button onclick="closeAdminSidebar()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:22px;line-height:1;padding:4px;display:none" id="sidebar-close-btn">×</button>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-wm"><span class="wc">common</span> <span class="wp">print co.</span></div>
+      <div class="sidebar-admin-badge">Admin</div>
     </div>
     <nav class="sidebar-nav">
       <div class="sidebar-section-label">Overview</div>
-      <button class="sidebar-item active" onclick="closeAdminSidebar();showPage('overview')" data-page="overview">
+      <button class="sidebar-item active" onclick="showPage('overview')" data-page="overview">
         <span class="sidebar-item-icon">📊</span> Overview
       </button>
 
       <div class="sidebar-section-label" style="margin-top:12px">Clients</div>
-      <button class="sidebar-item" onclick="closeAdminSidebar();showPage('clients')" data-page="clients">
+      <button class="sidebar-item" onclick="showPage('clients')" data-page="clients">
         <span class="sidebar-item-icon">👤</span> All Clients
       </button>
-      <button class="sidebar-item" onclick="closeAdminSidebar();openNewClientModal()" data-page="">
+      <button class="sidebar-item" onclick="openNewClientModal()" data-page="">
         <span class="sidebar-item-icon">➕</span> Invite Client
       </button>
 
       <div class="sidebar-section-label" style="margin-top:12px">Work</div>
-      <button class="sidebar-item" onclick="closeAdminSidebar();showPage('proofs')" data-page="proofs">
+      <button class="sidebar-item" onclick="showPage('proofs')" data-page="proofs">
         <span class="sidebar-item-icon">🖼</span> Proofs
         <span class="sidebar-badge hidden" id="sb-proofs"></span>
       </button>
-      <button class="sidebar-item" onclick="closeAdminSidebar();showPage('quotes')" data-page="quotes">
+      <button class="sidebar-item" onclick="showPage('quotes')" data-page="quotes">
         <span class="sidebar-item-icon">📋</span> Quotes
         <span class="sidebar-badge hidden" id="sb-quotes"></span>
       </button>
-      <button class="sidebar-item" onclick="closeAdminSidebar();showPage('invoices')" data-page="invoices">
+      <button class="sidebar-item" onclick="showPage('invoices')" data-page="invoices">
         <span class="sidebar-item-icon">💳</span> Invoices
         <span class="sidebar-badge hidden" id="sb-invoices"></span>
       </button>
-      <button class="sidebar-item" onclick="closeAdminSidebar();showPage('pending-orders')" data-page="pending-orders">
+      <button class="sidebar-item" onclick="showPage('pending-orders')" data-page="pending-orders">
         <span class="sidebar-item-icon">📥</span> Order Requests
         <span class="sidebar-badge hidden" id="sb-pending-orders"></span>
       </button>
-      <button class="sidebar-item" onclick="closeAdminSidebar();showPage('inprocess-orders')" data-page="inprocess-orders">
+      <button class="sidebar-item" onclick="showPage('inprocess-orders')" data-page="inprocess-orders">
         <span class="sidebar-item-icon">🖨</span> In Process
         <span class="sidebar-badge hidden" id="sb-inprocess-orders"></span>
       </button>
-      <button class="sidebar-item" onclick="closeAdminSidebar();showPage('all-messages')" data-page="all-messages">
+      <button class="sidebar-item" onclick="showPage('all-messages')" data-page="all-messages">
         <span class="sidebar-item-icon">💬</span> Messages
         <span class="sidebar-badge hidden" id="sb-all-messages"></span>
+      </button>
+      <div class="sidebar-section-label" style="margin-top:12px">Storefronts</div>
+      <button class="sidebar-item" onclick="showPage('storefronts')" data-page="storefronts">
+        <span class="sidebar-item-icon">🏪</span> All Storefronts
+      </button>
+      <button class="sidebar-item" onclick="openNewStorefrontModal()">
+        <span class="sidebar-item-icon">➕</span> New Storefront
       </button>
     </nav>
     <div class="sidebar-footer">
@@ -639,14 +557,6 @@
       <div class="page-header">
         <div><div class="page-title">Clients</div><div class="page-sub">Click a client to manage their work.</div></div>
         <button class="btn btn-primary" onclick="openNewClientModal()">+ Invite client</button>
-      </div>
-      <div style="position:relative;margin-bottom:16px">
-        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--mid-gray);font-size:16px;pointer-events:none">🔍</span>
-        <input type="text" id="client-search" placeholder="Search by name, company, or email…"
-          oninput="filterClients(this.value)"
-          style="width:100%;padding:10px 14px 10px 40px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;color:var(--charcoal);background:var(--white);outline:none;transition:border-color .15s"
-          onfocus="this.style.borderColor='var(--green)'"
-          onblur="this.style.borderColor='var(--border)'">
       </div>
       <div class="client-grid" id="clients-grid">
         <div class="loading-center" style="grid-column:1/-1"><div class="spinner"></div></div>
@@ -690,32 +600,50 @@
       </div>
       <div class="detail-panel" id="dtab-proofs">
         <div class="card" style="padding:0;overflow:hidden">
-          <div id="detail-proofs-list"><div class="loading-center"><div class="spinner"></div></div></div>
+          <table class="data-table" id="detail-proofs-table">
+            <thead><tr><th>Name</th><th>Uploaded</th><th>Status</th><th>Comment</th><th></th></tr></thead>
+            <tbody id="detail-proofs-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
         </div>
       </div>
       <div class="detail-panel" id="dtab-quotes">
         <div class="card" style="padding:0;overflow:hidden">
-          <div id="detail-quotes-list"><div class="loading-center"><div class="spinner"></div></div></div>
+          <table class="data-table" id="detail-quotes-table">
+            <thead><tr><th>Quote #</th><th>Name</th><th>Date</th><th>Total</th><th>Status</th><th>Signature</th><th></th></tr></thead>
+            <tbody id="detail-quotes-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
         </div>
       </div>
       <div class="detail-panel" id="dtab-invoices">
         <div class="card" style="padding:0;overflow:hidden">
-          <div id="detail-invoices-list"><div class="loading-center"><div class="spinner"></div></div></div>
+          <table class="data-table">
+            <thead><tr><th>Invoice #</th><th>Name</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody id="detail-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
         </div>
       </div>
       <div class="detail-panel" id="dtab-orders">
         <div class="card" style="padding:0;overflow:hidden">
-          <div id="detail-orders-list"><div class="loading-center"><div class="spinner"></div></div></div>
+          <table class="data-table">
+            <thead><tr><th>Job name</th><th>Completed</th><th>Total</th><th>Items</th></tr></thead>
+            <tbody id="detail-orders-tbody"><tr><td colspan="4"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
         </div>
       </div>
       <div class="detail-panel" id="dtab-inprocess">
         <div class="card" style="padding:0;overflow:hidden">
-          <div id="detail-inprocess-list"><div class="loading-center"><div class="spinner"></div></div></div>
+          <table class="data-table">
+            <thead><tr><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th><th></th></tr></thead>
+            <tbody id="detail-inprocess-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
         </div>
       </div>
       <div class="detail-panel" id="dtab-requests">
         <div class="card" style="padding:0;overflow:hidden">
-          <div id="detail-requests-list"><div class="loading-center"><div class="spinner"></div></div></div>
+          <table class="data-table">
+            <thead><tr><th>Order name</th><th>Submitted</th><th>Items</th><th>Note</th><th>Status</th><th></th></tr></thead>
+            <tbody id="detail-requests-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+          </table>
         </div>
       </div>
       <div class="detail-panel" id="dtab-client-messages">
@@ -772,7 +700,10 @@
         <div><div class="page-title">Proofs</div><div class="page-sub">All proofs across all clients.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div id="all-proofs-list"><div class="loading-center"><div class="spinner"></div></div></div>
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Proof name</th><th>Uploaded</th><th>Status</th><th></th></tr></thead>
+          <tbody id="all-proofs-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -782,7 +713,10 @@
         <div><div class="page-title">Quotes</div><div class="page-sub">All quotes across all clients.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div id="all-quotes-list"><div class="loading-center"><div class="spinner"></div></div></div>
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Quote</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <tbody id="all-quotes-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -790,10 +724,12 @@
     <div class="page" id="page-invoices">
       <div class="page-header">
         <div><div class="page-title">Invoices</div><div class="page-sub">All invoices across all clients.</div></div>
-        <button class="btn btn-ghost btn-sm" id="sync-all-btn" onclick="syncAllInvoicesFromSquare()" title="Sync payment status for all Square-linked invoices">↻ Sync all from Square</button>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div id="all-invoices-list"><div class="loading-center"><div class="spinner"></div></div></div>
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Invoice</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+          <tbody id="all-invoices-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -804,7 +740,10 @@
         <div><div class="page-title">Order Requests</div><div class="page-sub">Re-order requests from all clients.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div id="all-requests-list"><div class="loading-center"><div class="spinner"></div></div></div>
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Order name</th><th>Submitted</th><th>Items</th><th>Status</th></tr></thead>
+          <tbody id="all-requests-tbody"><tr><td colspan="5"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -831,7 +770,108 @@
         <div><div class="page-title">In Process Orders</div><div class="page-sub">All orders currently in production.</div></div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div id="all-inprocess-list"><div class="loading-center"><div class="spinner"></div></div></div>
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Job name</th><th>Invoice #</th><th>Amount</th><th>Payment</th><th>In process since</th></tr></thead>
+          <tbody id="all-inprocess-tbody"><tr><td colspan="6"><div class="loading-center"><div class="spinner"></div></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ── STOREFRONTS LIST PAGE ── -->
+    <div class="page" id="page-storefronts">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Storefronts</div>
+          <div class="page-sub">Manage client storefronts, products, locations and access codes.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openNewStorefrontModal()">+ New storefront</button>
+      </div>
+      <div id="storefronts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── STOREFRONT DETAIL PAGE ── -->
+    <div class="page" id="page-storefront-detail">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-ghost btn-sm" onclick="showPage('storefronts')">← Back</button>
+          <div>
+            <div class="page-title" id="sf-detail-name">Storefront</div>
+            <div class="page-sub" id="sf-detail-url"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="sf-detail-status-badge"></span>
+          <button class="btn btn-ghost btn-sm" onclick="toggleStorefrontActive()">Toggle active</button>
+          <button class="btn btn-primary btn-sm" onclick="openEditStorefrontModal()">Edit settings</button>
+        </div>
+      </div>
+
+      <!-- Detail tabs -->
+      <div class="detail-tabs" style="margin-bottom:20px">
+        <button class="detail-tab active" onclick="showSFTab('products')"  data-sftab="products">Products</button>
+        <button class="detail-tab"        onclick="showSFTab('locations')" data-sftab="locations">Locations</button>
+        <button class="detail-tab"        onclick="showSFTab('codes')"     data-sftab="codes">Access Codes</button>
+        <button class="detail-tab"        onclick="showSFTab('orders')"    data-sftab="orders">Orders</button>
+        <button class="detail-tab"        onclick="showSFTab('users')"     data-sftab="users">Users</button>
+      </div>
+
+      <!-- Products tab -->
+      <div class="detail-panel active" id="sftab-products">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-primary btn-sm" onclick="openNewProductModal()">+ Add product</button>
+        </div>
+        <div id="sf-products-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- Locations tab -->
+      <div class="detail-panel" id="sftab-locations">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-primary btn-sm" onclick="openNewLocationModal()">+ Add location</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Location name</th><th>Added</th><th>Status</th><th></th></tr></thead>
+            <tbody id="sf-locations-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Access Codes tab -->
+      <div class="detail-panel" id="sftab-codes">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-primary btn-sm" onclick="openNewCodeModal()">+ Add access code</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Code</th><th>Label</th><th>Registrations</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+            <tbody id="sf-codes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Orders tab -->
+      <div class="detail-panel" id="sftab-orders">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Order #</th><th>Location</th><th>Name</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr></thead>
+            <tbody id="sf-orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Users tab -->
+      <div class="detail-panel" id="sftab-users">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Location</th><th>Registered via</th><th>Last login</th><th>Status</th><th></th></tr></thead>
+            <tbody id="sf-users-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -839,6 +879,236 @@
 </div><!-- /app -->
 
 <!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- New / Edit Storefront -->
+<div class="modal-overlay" id="modal-storefront">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="sf-modal-title">New storefront</div>
+      <button class="modal-close" onclick="closeModal('modal-storefront')">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="field" style="grid-column:1/-1">
+        <label>Storefront name</label>
+        <input type="text" id="sf-name" placeholder="Passionists of Holy Cross Province Branded Merchandise">
+      </div>
+      <div class="field">
+        <label>Slug (URL identifier)</label>
+        <input type="text" id="sf-slug" placeholder="passionist-holy-cross" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'-')">
+      </div>
+      <div class="field">
+        <label>Linked client UID</label>
+        <input type="text" id="sf-client-uid" placeholder="Firebase UID of portal client">
+      </div>
+      <div class="field">
+        <label>Flat shipping rate ($)</label>
+        <input type="number" id="sf-shipping" placeholder="12.95" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label>Free shipping threshold ($)</label>
+        <input type="number" id="sf-free-threshold" placeholder="150.00" min="0" step="0.01">
+      </div>
+    </div>
+    <div class="field" style="margin-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="sf-active" checked>
+        Storefront is active (accepting orders)
+      </label>
+    </div>
+    <div class="form-error hidden" id="sf-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-storefront')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveStorefront()">Save storefront</button>
+    </div>
+  </div>
+</div>
+
+<!-- New / Edit Product -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <div class="modal-title" id="prod-modal-title">New product</div>
+      <button class="modal-close" onclick="closeModal('modal-product')">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="field" style="grid-column:1/-1">
+        <label>Product name</label>
+        <input type="text" id="prod-name" placeholder="e.g. 2×2 Passionist Crest Sticker">
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Description</label>
+        <textarea id="prod-desc" style="height:72px;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;resize:vertical;outline:none" placeholder="High-quality die-cut sticker, 2×2 inches…"></textarea>
+      </div>
+      <div class="field">
+        <label>Size / specs</label>
+        <input type="text" id="prod-size" placeholder="e.g. 2×2 inches">
+      </div>
+      <div class="field">
+        <label>Min order qty</label>
+        <input type="number" id="prod-min-qty" placeholder="25" min="1">
+      </div>
+      <div class="field">
+        <label>Max order qty (0 = unlimited)</label>
+        <input type="number" id="prod-max-qty" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Sort order</label>
+        <input type="number" id="prod-sort" placeholder="1" min="0">
+      </div>
+    </div>
+
+    <!-- Pricing tiers -->
+    <div style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase">Pricing tiers</div>
+        <button class="btn btn-ghost btn-sm" onclick="addPricingTier()">+ Add tier</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray)">Min quantity</div>
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray)">Unit price ($)</div>
+        <div></div>
+      </div>
+      <div id="pricing-tiers-list"></div>
+    </div>
+
+    <!-- Image upload -->
+    <div class="field" style="margin-top:16px">
+      <label>Product image</label>
+      <div id="prod-img-preview" class="hidden" style="margin-bottom:8px">
+        <img id="prod-img-thumb" src="" style="height:80px;border-radius:var(--radius);border:1px solid var(--border)">
+      </div>
+      <input type="file" id="prod-img-file" accept="image/*" onchange="handleProductImageSelect(this)">
+      <div style="font-size:12px;color:var(--mid-gray);margin-top:4px">PNG, JPG recommended. Square images work best.</div>
+    </div>
+
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="prod-active" checked>
+        Product is active (visible in storefront)
+      </label>
+    </div>
+    <div class="form-error hidden" id="prod-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-product')">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="prod-save-btn" onclick="saveProduct()">Save product</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Location -->
+<div class="modal-overlay" id="modal-location">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title" id="loc-modal-title">Add location</div>
+      <button class="modal-close" onclick="closeModal('modal-location')">×</button>
+    </div>
+    <div class="field">
+      <label>Location name</label>
+      <input type="text" id="loc-name" placeholder="e.g. St. Michael's Parish — Chicago, IL">
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="loc-active" checked>
+        Location is active
+      </label>
+    </div>
+    <div class="form-error hidden" id="loc-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-location')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveLocation()">Save location</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Access Code -->
+<div class="modal-overlay" id="modal-access-code">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title" id="code-modal-title">Add access code</div>
+      <button class="modal-close" onclick="closeModal('modal-access-code')">×</button>
+    </div>
+    <div class="field">
+      <label>Access code</label>
+      <input type="text" id="code-value" placeholder="e.g. CONFERENCE2026"
+        style="text-transform:uppercase;letter-spacing:.08em;font-weight:600"
+        oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')">
+    </div>
+    <div class="field">
+      <label>Label (internal reference)</label>
+      <input type="text" id="code-label" placeholder="e.g. 2026 Annual Conference">
+    </div>
+    <div class="field">
+      <label>Expiry date (optional — leave blank for no expiry)</label>
+      <input type="date" id="code-expires">
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="code-active" checked>
+        Code is active
+      </label>
+    </div>
+    <div class="form-error hidden" id="code-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-access-code')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveAccessCode()">Save code</button>
+    </div>
+  </div>
+</div>
+
+<!-- Storefront Order Detail -->
+<div class="modal-overlay" id="modal-sf-order">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="sford-title">Order</div>
+        <div style="font-size:13px;color:var(--mid-gray);margin-top:2px" id="sford-meta"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="sford-status-badge"></div>
+        <button class="modal-close" onclick="closeModal('modal-sf-order')">×</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Customer</div>
+        <div style="font-size:14px;font-weight:500" id="sford-customer"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Location</div>
+        <div style="font-size:14px;font-weight:500" id="sford-location"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Payment</div>
+        <div style="font-size:14px;font-weight:500" id="sford-payment"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Date</div>
+        <div style="font-size:14px;font-weight:500" id="sford-date"></div>
+      </div>
+    </div>
+    <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Ship to</div>
+      <div style="font-size:14px" id="sford-address"></div>
+    </div>
+    <div id="sford-lines"></div>
+    <div id="sford-notes-row" class="hidden" style="margin-top:12px;background:var(--green-pale);border-left:3px solid var(--green);border-radius:4px;padding:10px 14px">
+      <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Order notes</div>
+      <div style="font-size:14px;color:var(--charcoal)" id="sford-notes"></div>
+    </div>
+    <div class="field" style="margin-top:16px">
+      <label>Admin notes</label>
+      <textarea id="sford-admin-notes" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;resize:vertical;min-height:60px;outline:none" placeholder="Internal notes about this order…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-sf-order')">Close</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="sford-process-btn" onclick="updateSFOrderStatus('processing')">Mark in process</button>
+        <button class="btn btn-primary btn-sm" id="sford-complete-btn" onclick="updateSFOrderStatus('completed')">Mark complete</button>
+        <button class="btn btn-danger btn-sm" id="sford-cancel-btn" onclick="updateSFOrderStatus('cancelled')">Cancel order</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Work Page: Proof Modal -->
 <div class="modal-overlay" id="modal-work-proof" style="padding:16px">
@@ -999,10 +1269,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-admin-invoice')">Close</button>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="ainv-sync-btn" class="btn btn-ghost btn-sm hidden" onclick="syncInvoiceFromSquareModal()" title="Re-fetch payment status from Square">↻ Sync from Square</button>
-        <a id="ainv-payurl" href="#" target="_blank" class="btn btn-ghost btn-sm hidden">View in Square →</a>
-      </div>
+      <a id="ainv-payurl" href="#" target="_blank" class="btn btn-ghost btn-sm hidden">View in Square →</a>
     </div>
   </div>
 </div>
@@ -1720,18 +1987,13 @@ async function restoreAdminFromHash() {
 }
 
 // ── CLIENTS ───────────────────────────────────
-function renderClientsGrid(clients) {
-  const list = clients || allClients;
+function renderClientsGrid() {
   const grid = document.getElementById('clients-grid');
   if (allClients.length === 0) {
     grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">👤</div><div>No clients yet. Invite one above.</div></div>`;
     return;
   }
-  if (list.length === 0) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div>No clients match your search.</div></div>`;
-    return;
-  }
-  grid.innerHTML = list.map(c => `
+  grid.innerHTML = allClients.map(c => `
     <div class="client-card" onclick="openClientDetail('${c.uid}')">
       ${c.company ? `<div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px">${esc(c.company)}</div>` : ''}
       <div class="client-name">${esc(c.name || c.email)}</div>
@@ -1741,18 +2003,6 @@ function renderClientsGrid(clients) {
       </div>
     </div>`).join('');
 }
-
-window.filterClients = (query) => {
-  const q = query.toLowerCase().trim();
-  if (!q) { renderClientsGrid(); return; }
-  const filtered = allClients.filter(c =>
-    (c.name    || '').toLowerCase().includes(q) ||
-    (c.company || '').toLowerCase().includes(q) ||
-    (c.email   || '').toLowerCase().includes(q) ||
-    (c.phone   || '').toLowerCase().includes(q)
-  );
-  renderClientsGrid(filtered);
-};
 
 window.openClientDetail = async (uid) => {
   selectedClient = allClients.find(c => c.uid === uid);
@@ -1834,69 +2084,66 @@ async function loadClientDetail(uid) {
   `;
 
   // Proofs tab
-  document.getElementById('detail-proofs-list').innerHTML = proofs.length === 0
-    ? `<div class="empty">No proofs yet.</div>`
+  document.getElementById('detail-proofs-tbody').innerHTML = proofs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
     : proofs.map(p => {
         const msgs = p.messages || [];
         const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
         return `
-      <div class="item-card" onclick="openAdminProofModal('${p.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">
-            ${esc(p.name||'Untitled')}
-            ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
-          </div>
-          <div class="item-card-sub">${fmtDate(p.createdAt)} · ${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : 'No messages'}</div>
-        </div>
-        <div class="item-card-right">
-          ${badge(p.status||'pending')}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`; }).join('');
+      <tr style="cursor:pointer" onclick="openAdminProofModal('${p.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(p.name||'Untitled')}
+          ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
+        </td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td>${badge(p.status||'pending')}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : '—'}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`;
+      }).join('');
 
   // Quotes tab
-  document.getElementById('detail-quotes-list').innerHTML = quotes.length === 0
-    ? `<div class="empty">No quotes yet.</div>`
+  document.getElementById('detail-quotes-tbody').innerHTML = quotes.length === 0
+    ? `<tr><td colspan="6"><div class="empty">No quotes yet.</div></td></tr>`
     : quotes.map(q => `
-      <div class="item-card" style="cursor:default" onclick="openViewQuoteModal('${q.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(q.name||'—')}</div>
-          <div class="item-card-sub">${esc(q.number||q.id.slice(0,6).toUpperCase())} · ${fmtDate(q.createdAt)}
-            ${q.signatureUrl ? ' · <span style="color:var(--green)">✓ Signed</span>' : ''}
-          </div>
-        </div>
-        <div class="item-card-right">
-          <div class="item-card-amount">$${(q.total||0).toFixed(2)}</div>
-          ${badge(q.status||'pending')}
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEditQuoteModal('${q.id}')">Edit</button>
-          ${q.status === 'approved' && !q.convertedToInvoice ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();convertQuoteToInvoice('${q.id}')">Convert to invoice</button>` : ''}
-          ${q.convertedToInvoice ? `<span class="text-muted" style="font-size:12px">Invoiced</span>` : ''}
-          ${!q.convertedToInvoice ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();cancelQuote('${q.id}','${esc(q.name||'this quote')}')">Cancel</button>` : ''}
-        </div>
-      </div>`).join('');
+      <tr>
+        <td>${esc(q.number||q.id.slice(0,6).toUpperCase())}</td>
+        <td>${esc(q.name||'—')}</td>
+        <td>${fmtDate(q.createdAt)}</td>
+        <td>$${(q.total||0).toFixed(2)}</td>
+        <td>${badge(q.status||'pending')}</td>
+        <td>${q.signatureUrl ? `<img class="sig-thumb" src="${esc(q.signatureUrl)}" alt="Signature">` : '—'}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="openEditQuoteModal('${q.id}')">Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="openViewQuoteModal('${q.id}')">View</button>
+          ${q.status === 'approved' && !q.convertedToInvoice ? `<button class="btn btn-primary btn-sm" onclick="convertQuoteToInvoice('${q.id}')">Convert to invoice</button>` : ''}
+          ${q.convertedToInvoice ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Invoiced</span>` : ''}
+          ${!q.convertedToInvoice ? `<button class="btn btn-danger btn-sm" onclick="cancelQuote('${q.id}','${esc(q.name||'this quote')}')">Cancel</button>` : ''}
+        </td>
+      </tr>`).join('');
 
   // Invoices tab
-  document.getElementById('detail-invoices-list').innerHTML = invoices.length === 0
-    ? `<div class="empty">No invoices yet.</div>`
+  document.getElementById('detail-invoices-tbody').innerHTML = invoices.length === 0
+    ? `<tr><td colspan="6"><div class="empty">No invoices yet.</div></td></tr>`
     : invoices.map(i => `
-      <div class="item-card" onclick="openAdminInvoiceModal('${i.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(i.name||'—')}</div>
-          <div class="item-card-sub">${esc(i.number||i.id.slice(0,6).toUpperCase())} · Due ${fmtDate(i.dueDate)}</div>
-        </div>
-        <div class="item-card-right">
-          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
-          ${badge(i.status||'unpaid')}
-          ${i.squareInvoiceId ? `<button class="btn btn-ghost btn-sm" id="sync-btn-${i.id}" onclick="event.stopPropagation();syncInvoiceFromSquare('${i.id}')" title="Sync payment status from Square">↻ Sync</button>` : ''}
+      <tr>
+        <td style="cursor:pointer;font-weight:500" onclick="openAdminInvoiceModal('${i.id}')">${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+        <td style="cursor:pointer" onclick="openAdminInvoiceModal('${i.id}')">${esc(i.name||'—')}</td>
+        <td>${fmtDate(i.dueDate)}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.status||'unpaid')}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
           ${!i.completedAsOrder && i.status !== 'processing'
-            ? `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();markInProcess('${i.id}')">Mark in process</button>`
+            ? `<button class="btn btn-ghost btn-sm" onclick="markInProcess('${i.id}')">Mark in process</button>`
             : ''}
-          ${i.completedAsOrder ? `<span class="text-muted" style="font-size:12px">Completed</span>` : ''}
+          ${i.completedAsOrder
+            ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Completed</span>`
+            : ''}
           ${(i.status === 'unpaid' || i.status === 'overdue') && !i.completedAsOrder
-            ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();cancelInvoice('${i.id}','${esc(i.name||'this invoice')}')">Cancel</button>`
-            : i.status === 'cancelled' ? `<span class="text-muted" style="font-size:12px">Cancelled</span>` : ''}
-        </div>
-      </div>`).join('');
+            ? `<button class="btn btn-danger btn-sm" onclick="cancelInvoice('${i.id}','${esc(i.name||'this invoice')}')">Cancel</button>`
+            : i.status === 'cancelled' ? `<span class="text-muted" style="font-size:12px;padding:6px 0">Cancelled in Square</span>` : ''}
+        </td>
+      </tr>`).join('');
 
   // Messages tab
   const clientMsgsList = selectedClientData.messages || [];
@@ -1919,26 +2166,23 @@ async function loadClientDetail(uid) {
     if (pendingReqs > 0) { badge_el.textContent = pendingReqs; badge_el.classList.remove('hidden'); }
     else { badge_el.classList.add('hidden'); }
   }
-  document.getElementById('detail-requests-list').innerHTML = requestsList.length === 0
-    ? `<div class="empty">No re-order requests yet.</div>`
+  document.getElementById('detail-requests-tbody').innerHTML = requestsList.length === 0
+    ? `<tr><td colspan="6"><div class="empty">No re-order requests yet.</div></td></tr>`
     : requestsList.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).map(r => `
-      <div class="item-card" onclick="openAdminRequestModal('${r.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(r.orderName||'—')}</div>
-          <div class="item-card-sub">${fmtDate(r.createdAt)}
-            ${(r.lineItems||[]).length > 0 ? ' · ' + (r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ') : ''}
-            ${r.note ? ` · <em>${esc(r.note.slice(0,60))}</em>` : ''}
-          </div>
-        </div>
-        <div class="item-card-right">
-          ${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}
+      <tr style="cursor:pointer" onclick="openAdminRequestModal('${r.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(r.orderName||'—')}</td>
+        <td>${fmtDate(r.createdAt)}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${(r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
+        <td style="font-size:13px;color:var(--mid-gray);max-width:160px">${esc(r.note||'—')}</td>
+        <td>${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap" onclick="event.stopPropagation()">
           ${r.requestStatus === 'pending' ? `
-            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();quoteFromRequest('${r.id}')">New quote</button>
-            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();invoiceFromRequest('${r.id}')">Convert to invoice</button>
+            <button class="btn btn-ghost btn-sm" onclick="quoteFromRequest('${r.id}')">New quote</button>
+            <button class="btn btn-primary btn-sm" onclick="invoiceFromRequest('${r.id}')">Convert to invoice</button>
           ` : `<span class="text-muted" style="font-size:12px">${r.requestStatus === 'quoted' ? 'Quoted' : 'Invoiced'}</span>`}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`).join('');
+        </td>
+      </tr>`).join('');
 
   // In Process tab
   const inProcessInvoices = invoices.filter(i => i.status === 'processing');
@@ -1947,62 +2191,51 @@ async function loadClientDetail(uid) {
     if (inProcessInvoices.length > 0) { ipBadge.textContent = inProcessInvoices.length; ipBadge.classList.remove('hidden'); }
     else { ipBadge.classList.add('hidden'); }
   }
-  document.getElementById('detail-inprocess-list').innerHTML = inProcessInvoices.length === 0
-    ? `<div class="empty">No orders currently in process.</div>`
+  document.getElementById('detail-inprocess-tbody').innerHTML = inProcessInvoices.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No orders currently in process.</div></td></tr>`
     : inProcessInvoices.map(i => `
-      <div class="item-card" onclick="openAdminInProcessModal('${i.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(i.name||'—')}</div>
-          <div class="item-card-sub">Invoice ${esc(i.number||i.id.slice(0,6).toUpperCase())} · Since ${fmtDate(i.processingAt||i.createdAt)}</div>
-        </div>
-        <div class="item-card-right">
-          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
-          ${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}
-          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();markAsCompletedOrder('${i.id}')">Mark complete</button>
-        </div>
-      </div>`).join('');
+      <tr style="cursor:pointer" onclick="openAdminInProcessModal('${i.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(i.name||'—')}</td>
+        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
+        <td>${fmtDate(i.processingAt||i.createdAt)}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="markAsCompletedOrder('${i.id}')">Mark complete</button>
+        </td>
+      </tr>`).join('');
 
   // Orders tab
-  document.getElementById('detail-orders-list').innerHTML = orders.length === 0
-    ? `<div class="empty">No orders yet.</div>`
+  document.getElementById('detail-orders-tbody').innerHTML = orders.length === 0
+    ? `<tr><td colspan="4"><div class="empty">No orders yet.</div></td></tr>`
     : orders.map(o => `
-      <div class="item-card" onclick="openAdminOrderModal('${o.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(o.name||'Order')}</div>
-          <div class="item-card-sub">${fmtDate(o.completedAt||o.createdAt)}
-            ${(o.lineItems||[]).length > 0 ? ' · ' + (o.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ') : ''}
-          </div>
-        </div>
-        <div class="item-card-right">
-          <div class="item-card-amount">$${(o.total||0).toFixed(2)}</div>
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`).join('');
+      <tr style="cursor:pointer" onclick="openAdminOrderModal('${o.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(o.name||'Order')}</td>
+        <td>${fmtDate(o.completedAt||o.createdAt)}</td>
+        <td>$${(o.total||0).toFixed(2)}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${(o.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
+      </tr>`).join('');
 }
 
 // ── ALL WORK ITEMS ────────────────────────────
 function renderAllProofs() {
   const proofs = window._allProofs || [];
-  const list = document.getElementById('all-proofs-list');
-  list.innerHTML = proofs.length === 0
-    ? `<div class="empty">No proofs yet.</div>`
+  document.getElementById('all-proofs-tbody').innerHTML = proofs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
     : proofs.map(p => {
         const msgs = p.messages || [];
         const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
         return `
-      <div class="item-card" onclick="openWorkProofModal('${p.clientUid}','${p.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">
-            ${esc(p.name||'Untitled')}
-            ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
-          </div>
-          <div class="item-card-sub"><strong>${esc(p.clientName)}</strong> &nbsp;·&nbsp; ${fmtDate(p.createdAt)}</div>
-        </div>
-        <div class="item-card-right">
-          ${badge(p.status||'pending')}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`; }).join('');
+      <tr style="cursor:pointer" onclick="openWorkProofModal('${p.clientUid}','${p.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td><strong>${esc(p.clientName)}</strong></td>
+        <td>${esc(p.name||'Untitled')} ${unread > 0 ? `<span class="nav-badge" style="margin-left:4px">${unread}</span>` : ''}</td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td>${badge(p.status||'pending')}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`; }).join('');
 }
 
 window.openWorkProofModal = function(clientUid, proofId) {
@@ -2044,21 +2277,18 @@ window.openWorkProofModal = function(clientUid, proofId) {
 }
 function renderAllQuotes() {
   const qs = window._allQuotes || [];
-  const list = document.getElementById('all-quotes-list');
-  list.innerHTML = qs.length === 0
-    ? `<div class="empty">No quotes yet.</div>`
+  document.getElementById('all-quotes-tbody').innerHTML = qs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No quotes yet.</div></td></tr>`
     : qs.map(q => `
-      <div class="item-card" onclick="openWorkQuoteModal('${q.clientUid}','${q.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(q.name||q.id.slice(0,6).toUpperCase())}</div>
-          <div class="item-card-sub"><strong>${esc(q.clientName)}</strong> &nbsp;·&nbsp; ${fmtDate(q.createdAt)}</div>
-        </div>
-        <div class="item-card-right">
-          <div class="item-card-amount">$${(q.total||0).toFixed(2)}</div>
-          ${badge(q.status||'pending')}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`).join('');
+      <tr style="cursor:pointer" onclick="openWorkQuoteModal('${q.clientUid}','${q.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td><strong>${esc(q.clientName)}</strong></td>
+        <td>${esc(q.name||q.id.slice(0,6).toUpperCase())}</td>
+        <td>${fmtDate(q.createdAt)}</td>
+        <td>$${(q.total||0).toFixed(2)}</td>
+        <td>${badge(q.status||'pending')}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`).join('');
 }
 
 window.openWorkQuoteModal = function(clientUid, quoteId) {
@@ -2084,21 +2314,18 @@ window.openWorkQuoteModal = function(clientUid, quoteId) {
 }
 function renderAllInvoices() {
   const is_ = window._allInvoices || [];
-  const list = document.getElementById('all-invoices-list');
-  list.innerHTML = is_.length === 0
-    ? `<div class="empty">No invoices yet.</div>`
+  document.getElementById('all-invoices-tbody').innerHTML = is_.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No invoices yet.</div></td></tr>`
     : is_.map(i => `
-      <div class="item-card" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(i.name||i.id.slice(0,6).toUpperCase())}</div>
-          <div class="item-card-sub"><strong>${esc(i.clientName)}</strong> &nbsp;·&nbsp; Due ${fmtDate(i.dueDate)}</div>
-        </div>
-        <div class="item-card-right">
-          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
-          ${badge(i.status||'unpaid')}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`).join('');
+      <tr style="cursor:pointer" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td><strong>${esc(i.clientName)}</strong></td>
+        <td>${esc(i.name||i.id.slice(0,6).toUpperCase())}</td>
+        <td>${fmtDate(i.dueDate)}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.status||'unpaid')}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`).join('');
 }
 
 window.openWorkInvoiceModal = function(clientUid, invoiceId) {
@@ -2120,23 +2347,18 @@ window.openWorkInvoiceModal = function(clientUid, invoiceId) {
 
 function renderAllRequests() {
   const reqs = (window._allRequests||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
-  const list = document.getElementById('all-requests-list');
-  list.innerHTML = reqs.length === 0
-    ? `<div class="empty">No order requests yet.</div>`
+  document.getElementById('all-requests-tbody').innerHTML = reqs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No order requests yet.</div></td></tr>`
     : reqs.map(r => `
-      <div class="item-card" onclick="openWorkRequestModal('${r.clientUid}','${r.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(r.orderName||'—')}</div>
-          <div class="item-card-sub">
-            <strong>${esc(r.clientName)}</strong> &nbsp;·&nbsp; ${fmtDate(r.createdAt)}
-            ${(r.lineItems||[]).length > 0 ? ' &nbsp;·&nbsp; ' + (r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ') : ''}
-          </div>
-        </div>
-        <div class="item-card-right">
-          ${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`).join('');
+      <tr style="cursor:pointer" onclick="openWorkRequestModal('${r.clientUid}','${r.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td><strong>${esc(r.clientName)}</strong></td>
+        <td>${esc(r.orderName||'—')}</td>
+        <td>${fmtDate(r.createdAt)}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${(r.lineItems||[]).map(li=>`${li.qty||1}× ${esc(li.description||li.desc||'')}`).join(', ')||'—'}</td>
+        <td>${r.requestStatus === 'pending' ? badge('pending') : r.requestStatus === 'quoted' ? badge('approved') : badge('paid')}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`).join('');
 }
 
 window.openWorkRequestModal = function(clientUid, requestId) {
@@ -2161,23 +2383,19 @@ function renderAllInProcess() {
   const items = (window._allInvoices||[])
     .filter(i => i.status === 'processing')
     .sort((a,b)=>(b.processingAt||b.createdAt||'').localeCompare(a.processingAt||a.createdAt||''));
-  const list = document.getElementById('all-inprocess-list');
-  list.innerHTML = items.length === 0
-    ? `<div class="empty">No orders currently in process.</div>`
+  document.getElementById('all-inprocess-tbody').innerHTML = items.length === 0
+    ? `<tr><td colspan="6"><div class="empty">No orders currently in process.</div></td></tr>`
     : items.map(i => `
-      <div class="item-card" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">${esc(i.name||'—')}</div>
-          <div class="item-card-sub">
-            <strong>${esc(i.clientName)}</strong> &nbsp;·&nbsp; Invoice ${esc(i.number||i.id.slice(0,6).toUpperCase())} &nbsp;·&nbsp; Since ${fmtDate(i.processingAt||i.createdAt)}
-          </div>
-        </div>
-        <div class="item-card-right">
-          <div class="item-card-amount">$${(i.amount||0).toFixed(2)}</div>
-          ${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`).join('');
+      <tr style="cursor:pointer" onclick="openWorkInvoiceModal('${i.clientUid}','${i.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td><strong>${esc(i.clientName)}</strong></td>
+        <td style="font-weight:500">${esc(i.name||'—')}</td>
+        <td>${esc(i.number||i.id.slice(0,6).toUpperCase())}</td>
+        <td>$${(i.amount||0).toFixed(2)}</td>
+        <td>${badge(i.paymentStatus === 'paid' ? 'paid' : 'unpaid')}</td>
+        <td>${fmtDate(i.processingAt||i.createdAt)}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`).join('');
 }
 
 function renderAllMessages() {
@@ -2693,7 +2911,6 @@ window.openNewInvoiceModal = () => {
   if (!selectedClient) return;
   window._convertingFromQuoteId   = null;
   window._invoicingFromRequestId  = null;
-  window._lookupSquareStatus      = null;
   document.getElementById('ni-client-label').textContent = selectedClient.name || selectedClient.email;
   ['ni-name','ni-number','ni-amount','ni-due','ni-square-id','ni-pay-url','ni-sq-lookup'].forEach(id => document.getElementById(id).value='');
   document.getElementById('ni-error').classList.remove('show');
@@ -2733,11 +2950,7 @@ window.lookupSquareInvoice = async () => {
     if (data.invoiceId)   document.getElementById('ni-square-id').value = data.invoiceId;
     if (data.paymentUrl)  document.getElementById('ni-pay-url').value   = data.paymentUrl;
 
-    // Map Square status to portal status and show it
-    const squareStatus = data.squareStatus || '';
-    window._lookupSquareStatus = squareToPortalStatus(squareStatus);
-    const statusLabel = squareStatus ? ` · Square status: ${squareStatus}` : '';
-    status.textContent = '✓ Invoice details filled in below.' + statusLabel;
+    status.textContent = '✓ Invoice details filled in below.';
     status.style.color = 'var(--green)';
   } catch(e) {
     status.textContent = 'Lookup failed. Check your connection.';
@@ -2761,8 +2974,7 @@ window.createInvoice = async () => {
     const sourceQuoteId = window._convertingFromQuoteId || null;
     await fbSet(`clients/${uid}/invoices/${invId}`, {
       name, number, amount, dueDate, squareInvoiceId: sqId, paymentUrl: payUrl,
-      status: window._lookupSquareStatus || 'unpaid',
-      createdAt: new Date().toISOString(),
+      status:'unpaid', createdAt: new Date().toISOString(),
       ...(sourceQuoteId ? { sourceQuoteId } : {})
     });
     // Mark the source quote as converted
@@ -3294,26 +3506,24 @@ window.sendAdminProofReply = async () => {
 };
 
 function renderProofsInDetail() {
+  // Re-render just the proofs tbody without reloading everything
   const proofs = selectedClientData.proofs || [];
-  document.getElementById('detail-proofs-list').innerHTML = proofs.length === 0
-    ? `<div class="empty">No proofs yet.</div>`
+  document.getElementById('detail-proofs-tbody').innerHTML = proofs.length === 0
+    ? `<tr><td colspan="5"><div class="empty">No proofs yet.</div></td></tr>`
     : proofs.map(p => {
         const msgs = p.messages || [];
         const unread = msgs.filter(m => m.sender === 'client' && !m.readByAdmin).length;
         return `
-      <div class="item-card" onclick="openAdminProofModal('${p.id}')">
-        <div class="item-card-main">
-          <div class="item-card-title">
-            ${esc(p.name||'Untitled')}
-            ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
-          </div>
-          <div class="item-card-sub">${fmtDate(p.createdAt)} · ${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : 'No messages'}</div>
-        </div>
-        <div class="item-card-right">
-          ${badge(p.status||'pending')}
-          <span style="color:var(--mid-gray);font-size:18px">›</span>
-        </div>
-      </div>`;
+      <tr style="cursor:pointer" onclick="openAdminProofModal('${p.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500">${esc(p.name||'Untitled')}
+          ${unread > 0 ? `<span class="nav-badge" style="margin-left:6px">${unread}</span>` : ''}
+        </td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td>${badge(p.status||'pending')}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${msgs.length > 0 ? `${msgs.length} message${msgs.length>1?'s':''}` : p.comment ? esc(p.comment.slice(0,40))+'…' : '—'}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`;
       }).join('');
 }
 
@@ -3329,8 +3539,7 @@ window.openAdminInvoiceModal = (invoiceId) => {
 
   document.getElementById('ainv-title').textContent   = inv.name || 'Invoice';
   document.getElementById('ainv-client').textContent  = selectedClient?.name || selectedClient?.email || '';
-  document.getElementById('ainv-status').innerHTML    = badge(inv.status || 'unpaid') +
-    (inv.squareInvoiceId ? ` <span style="font-size:11px;color:var(--mid-gray);margin-left:4px">Square-linked</span>` : '');
+  document.getElementById('ainv-status').innerHTML    = badge(inv.status || 'unpaid');
   document.getElementById('ainv-number').textContent  = inv.number || inv.id.slice(0,6).toUpperCase();
   document.getElementById('ainv-amount').textContent  = '$' + (inv.amount || 0).toFixed(2);
   document.getElementById('ainv-due').textContent     = fmtDate(inv.dueDate);
@@ -3362,24 +3571,7 @@ window.openAdminInvoiceModal = (invoiceId) => {
     sqLinkEl.classList.add('hidden');
   }
 
-  // Show sync button if Square invoice ID is linked
-  const syncBtnEl = document.getElementById('ainv-sync-btn');
-  if (inv.squareInvoiceId) {
-    syncBtnEl.classList.remove('hidden');
-    window._ainvModalInvoiceId = invoiceId;
-  } else {
-    syncBtnEl.classList.add('hidden');
-    window._ainvModalInvoiceId = null;
-  }
-
   openModal('modal-admin-invoice');
-};
-
-window.syncInvoiceFromSquareModal = async () => {
-  const invoiceId = window._ainvModalInvoiceId;
-  if (!invoiceId) return;
-  closeModal('modal-admin-invoice');
-  await syncInvoiceFromSquare(invoiceId);
 };
 
 // ── ADMIN COMPLETED ORDER DETAIL MODAL ────────
@@ -3771,112 +3963,6 @@ window.resendInvite = async (uid) => {
   }
 };
 
-// ── SQUARE STATUS HELPERS ────────────────────
-function squareToPortalStatus(squareStatus) {
-  // Square statuses: DRAFT, UNPAID, SCHEDULED, PARTIALLY_PAID, PAID, PARTIALLY_REFUNDED, REFUNDED, CANCELED
-  const map = {
-    'PAID':              'paid',
-    'PARTIALLY_PAID':    'unpaid',
-    'UNPAID':            'unpaid',
-    'SCHEDULED':         'unpaid',
-    'DRAFT':             'unpaid',
-    'PARTIALLY_REFUNDED':'paid',
-    'REFUNDED':          'paid',
-    'CANCELED':          'cancelled',
-  };
-  return map[squareStatus] || 'unpaid';
-}
-
-window.syncInvoiceFromSquare = async (invoiceId) => {
-  const uid = selectedClient?.uid;
-  const inv = selectedClientData.invoices?.find(x => x.id === invoiceId);
-  if (!inv || !inv.squareInvoiceId) {
-    toast('No Square invoice ID linked — enter it via the lookup when creating the invoice.', 'error');
-    return;
-  }
-
-  const syncBtn = document.getElementById(`sync-btn-${invoiceId}`);
-  if (syncBtn) { syncBtn.textContent = 'Syncing…'; syncBtn.disabled = true; }
-
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: inv.number || '', invoiceId: inv.squareInvoiceId })
-    });
-    const data = await res.json();
-
-    if (data.error) {
-      toast('Square sync failed: ' + data.error, 'error');
-      return;
-    }
-
-    const newStatus = squareToPortalStatus(data.squareStatus || '');
-    const updates = { status: newStatus };
-    if (data.amountDue !== undefined) updates.amount = data.amountDue / 100;
-    if (data.paymentUrl) updates.paymentUrl = data.paymentUrl;
-
-    await fbUpdate(`clients/${uid}/invoices/${invoiceId}`, updates);
-
-    // Update local cache
-    const idx = selectedClientData.invoices.findIndex(x => x.id === invoiceId);
-    if (idx >= 0) Object.assign(selectedClientData.invoices[idx], updates);
-
-    const globalIdx = (window._allInvoices||[]).findIndex(x => x.id === invoiceId);
-    if (globalIdx >= 0) Object.assign(window._allInvoices[globalIdx], updates);
-
-    toast(`Status synced: ${newStatus} (Square: ${data.squareStatus || 'unknown'})`, 'success');
-    await loadClientDetail(uid);
-    updateSidebarBadges();
-    renderAllInvoices();
-  } catch(e) {
-    toast('Sync failed: ' + e.message, 'error');
-  } finally {
-    if (syncBtn) { syncBtn.textContent = '↻ Sync from Square'; syncBtn.disabled = false; }
-  }
-};
-
-window.syncAllInvoicesFromSquare = async () => {
-  const btn = document.getElementById('sync-all-btn');
-  if (btn) { btn.textContent = 'Syncing…'; btn.disabled = true; }
-
-  const linkedInvoices = (window._allInvoices || []).filter(i => i.squareInvoiceId && i.status !== 'paid' && i.status !== 'cancelled');
-  if (linkedInvoices.length === 0) {
-    toast('No Square-linked unpaid invoices to sync.', '');
-    if (btn) { btn.textContent = '↻ Sync all from Square'; btn.disabled = false; }
-    return;
-  }
-
-  let updated = 0, failed = 0;
-  for (const inv of linkedInvoices) {
-    try {
-      const res = await fetch(WORKER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: inv.number || '', invoiceId: inv.squareInvoiceId })
-      });
-      const data = await res.json();
-      if (data.error) { failed++; continue; }
-
-      const newStatus = squareToPortalStatus(data.squareStatus || '');
-      if (newStatus !== inv.status) {
-        await fbUpdate(`clients/${inv.clientUid}/invoices/${inv.id}`, { status: newStatus });
-        const idx = (window._allInvoices||[]).findIndex(x => x.id === inv.id);
-        if (idx >= 0) window._allInvoices[idx].status = newStatus;
-        updated++;
-      }
-    } catch(e) { failed++; }
-  }
-
-  updateSidebarBadges();
-  renderAllInvoices();
-  const msg = updated > 0
-    ? `Synced ${updated} invoice${updated > 1 ? 's' : ''}${failed > 0 ? `, ${failed} failed` : ''}.`
-    : failed > 0 ? `Sync failed for ${failed} invoice${failed > 1 ? 's' : ''}.` : 'All invoices already up to date.';
-  toast(msg, updated > 0 ? 'success' : '');
-  if (btn) { btn.textContent = '↻ Sync all from Square'; btn.disabled = false; }
-};
-
 // ── MODALS ────────────────────────────────────
 window.openModal  = (id) => document.getElementById(id).classList.add('open');
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
@@ -3909,33 +3995,6 @@ window.formatPhoneInput = formatPhoneInput;
 window.toast = (msg, type='') => {
   const t = document.createElement('div'); t.className='toast '+type; t.textContent=msg;
   document.body.appendChild(t); setTimeout(()=>t.remove(),3500);
-};
-
-// ── ADMIN MOBILE SIDEBAR ─────────────────────
-window.toggleAdminSidebar = () => {
-  const sidebar  = document.getElementById('admin-sidebar');
-  const overlay  = document.getElementById('sidebar-overlay');
-  const hamburger= document.getElementById('admin-hamburger');
-  const closeBtn = document.getElementById('sidebar-close-btn');
-  const isOpen = sidebar.classList.contains('open');
-  if (isOpen) {
-    closeAdminSidebar();
-  } else {
-    sidebar.classList.add('open');
-    overlay.classList.add('open');
-    hamburger.classList.add('open');
-    if (closeBtn) closeBtn.style.display = 'block';
-  }
-};
-window.closeAdminSidebar = () => {
-  const sidebar  = document.getElementById('admin-sidebar');
-  const overlay  = document.getElementById('sidebar-overlay');
-  const hamburger= document.getElementById('admin-hamburger');
-  const closeBtn = document.getElementById('sidebar-close-btn');
-  sidebar.classList.remove('open');
-  overlay.classList.remove('open');
-  if (hamburger) hamburger.classList.remove('open');
-  if (closeBtn) closeBtn.style.display = 'none';
 };
 
 document.addEventListener('keydown', e => {
