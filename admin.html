@@ -4578,10 +4578,13 @@ window.saveStorefront = async () => {
   const threshold=parseFloat(document.getElementById('sf-free-threshold').value)||0;
   const active   =document.getElementById('sf-active').checked;
   const errEl    =document.getElementById('sf-error');
+  const saveBtn  =document.querySelector('#modal-storefront .btn-primary');
   errEl.classList.add('hidden');
   if (!name) { errEl.textContent='Storefront name is required.'; errEl.classList.remove('hidden'); return; }
   if (!slug) { errEl.textContent='Slug is required.';            errEl.classList.remove('hidden'); return; }
   const sfId=editingStorefrontId||slug;
+  if (saveBtn) { saveBtn.disabled=true; saveBtn.textContent='Saving…'; }
+  try {
 
   // Upload logo if selected
   let logoUrl = activeSF?.logoUrl || null;
@@ -4591,10 +4594,11 @@ window.saveStorefront = async () => {
       const ext   = sfLogoFile.name.split('.').pop().toLowerCase();
       const path  = `storefronts/${sfId}/logo.${ext}`;
       const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
-      const res = await fetch(uploadUrl, { method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type':sfLogoFile.type }, body:sfLogoFile });
+      const mimeType = sfLogoFile.type || (ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : 'application/octet-stream');
+      const res = await fetch(uploadUrl, { method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type':mimeType }, body:sfLogoFile });
       if (!res.ok) throw new Error('Logo upload failed');
       logoUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(path)}?alt=media`;
-    } catch(e) { errEl.textContent='Logo upload failed: '+e.message; errEl.classList.remove('hidden'); return; }
+    } catch(e) { const msg='Logo upload failed: '+e.message; errEl.textContent=msg; errEl.classList.remove('hidden'); toast(msg,'error'); return; }
   }
 
   // Collect brand colors
@@ -4616,9 +4620,9 @@ window.saveStorefront = async () => {
     updatedAt:new Date().toISOString(),
     ...(editingStorefrontId?{}:{createdAt:new Date().toISOString()}),
   });
-  closeModal('modal-storefront');
-  toast(editingStorefrontId?'Storefront updated!':'Storefront created!','success');
-  await loadStorefronts();
+    closeModal('modal-storefront');
+    toast(editingStorefrontId?'Storefront updated!':'Storefront created!','success');
+    await loadStorefronts();
   if (!editingStorefrontId) {
     activeSF={id:sfId,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold};
     openStorefrontDetail(sfId);
@@ -4627,6 +4631,13 @@ window.saveStorefront = async () => {
     document.getElementById('sf-detail-name').textContent=name;
     document.getElementById('sf-detail-url').textContent=`portal.commonprintco.com/store/?s=${slug}`;
     document.getElementById('sf-detail-status-badge').innerHTML=active?badge('active'):badge('changes');
+  }
+  } catch(e) {
+    const msg = 'Save failed: ' + e.message;
+    toast(msg, 'error');
+    errEl.textContent = msg; errEl.classList.remove('hidden');
+  } finally {
+    if (saveBtn) { saveBtn.disabled=false; saveBtn.textContent='Save storefront'; }
   }
 };
 
