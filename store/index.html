@@ -497,9 +497,12 @@
     if (pw !== confirm){ errEl.textContent="Passwords don't match.";                   errEl.classList.add('show'); return; }
     btn.disabled=true; btn.textContent='Creating account…';
     try {
+      // Step 1: Create Firebase Auth account
       const { createUserWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
       const cred = await createUserWithEmailAndPassword(auth, email, pw);
-      await callWorker('register_storefront_user', {
+
+      // Step 2: Save profile — do not redirect until this succeeds
+      const workerRes = await callWorker('register_storefront_user', {
         uid: cred.user.uid, email, name,
         locationId:      selectedLoc.id,
         locationName:    selectedLoc.name,
@@ -507,9 +510,12 @@
         accessCodeId:    validatedCode.codeId,
         accessCodeLabel: validatedCode.codeLabel,
       });
+      if (!workerRes.ok) throw new Error('Profile save failed — please contact Common Print Co.');
+
+      // Step 3: Redirect
       window.location.href = `catalog.html?s=${storefrontId}`;
     } catch(e) {
-      errEl.textContent = authError(e.code) || 'Registration failed. Please try again.';
+      errEl.textContent = (e.code ? authError(e.code) : e.message) || 'Registration failed. Please try again.';
       errEl.classList.add('show');
       btn.disabled=false; btn.textContent='Create account';
     }
@@ -541,14 +547,21 @@
       .sort((a, b) => (a.name||'').localeCompare(b.name||''));
     locations.push({ id: 'other', name: 'Other / Not listed' });
 
-    // Init Firebase Auth
+    // Init Firebase Auth with session-only persistence so it doesn't
+    // share login state with the admin portal in the same browser
     const config = await callWorker('get_config');
-    const { initializeApp }           = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-    const app = initializeApp(config, `storefront-${storefrontId}`);
+    const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+
+    const appName = `storefront-${storefrontId}`;
+    const app = getApps().find(a => a.name === appName) || initializeApp(config, appName);
     auth = getAuth(app);
 
-    // Redirect if already logged in
+    // Use session persistence — storefront login is independent of portal login
+    await setPersistence(auth, browserSessionPersistence);
+
+    // Redirect if already logged into the storefront this session
     await new Promise(resolve => {
       const unsub = onAuthStateChanged(auth, user => {
         unsub();

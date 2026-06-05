@@ -727,14 +727,18 @@
 
     if (!storefrontId) throw new Error('No storefront specified');
 
-    // Init Firebase Auth
+    // Init Firebase Auth with session persistence (isolated from portal)
     const config = await callWorker('get_config');
-    const { initializeApp }           = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-    const app = initializeApp(config, `storefront-${storefrontId}`);
-    auth = getAuth(app);
+    const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
 
-    // Require auth
+    const appName = `storefront-${storefrontId}`;
+    const app = getApps().find(a => a.name === appName) || initializeApp(config, appName);
+    auth = getAuth(app);
+    await setPersistence(auth, browserSessionPersistence);
+
+    // Require auth — session persistence means only storefront logins count
     currentUser = await new Promise((resolve, reject) => {
       const unsub = onAuthStateChanged(auth, user => {
         unsub();
