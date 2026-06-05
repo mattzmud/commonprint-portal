@@ -182,7 +182,7 @@
       border:1.5px solid var(--border); font-size:14px;
       padding:10px; margin-top:10px;
     }
-    .btn-ghost:hover { background:var(--pale); color:var(--ink); }
+    .btn-ghost:hover { background:#fff; color:var(--ink); }
     .btn:disabled { opacity:.5; cursor:not-allowed; }
 
     /* ── TOAST ── */
@@ -209,12 +209,12 @@
 <body>
 
   <nav class="sf-nav">
-    <a class="sf-nav-brand" href="#">
+    <a class="sf-nav-brand" id="nav-brand" href="#">
       <img class="sf-nav-logo hidden" id="nav-logo" src="" alt="Logo">
       <span class="sf-nav-title" id="nav-title">Store</span>
     </a>
     <div class="sf-nav-right">
-      <a class="sf-nav-link active" href="#">Catalog</a>
+      <a class="sf-nav-link active" id="nav-catalog-link" href="#">Catalog</a>
       <a class="sf-nav-link" id="nav-orders-link" href="#">My Orders</a>
       <a class="sf-nav-link" id="nav-account-link" href="#">My Account</a>
       <a class="sf-cart-btn" id="cart-btn" href="#">
@@ -419,6 +419,9 @@
   }
 
   // ── INIT ──────────────────────────────────────────────────────────────
+  // Render cart immediately from sessionStorage — no auth needed for display
+  renderCart();
+
   try {
     const params = new URLSearchParams(window.location.search);
     storefrontId  = params.get('s');
@@ -459,6 +462,7 @@
     document.getElementById('continue-btn').href     = `catalog.html?s=${storefrontId}`;
     document.getElementById('checkout-btn').href     = `checkout.html?s=${storefrontId}`;
 
+    // Re-render with shipping data now available
     renderCart();
 
   } catch(e) {
