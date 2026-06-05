@@ -1135,8 +1135,8 @@
       <div style="font-size:12px;color:var(--mid-gray);margin-top:4px">PNG, JPG recommended. Square images work best.</div>
     </div>
 
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+    <div style="margin-top:8px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--charcoal)">
         <input type="checkbox" id="prod-active" checked>
         Product is active (visible in storefront)
       </label>
@@ -4237,7 +4237,7 @@ function renderSFProducts() {
   grid.innerHTML = activeSFProducts.map(p => `
     <div class="card" style="padding:0;overflow:hidden">
       ${p.imageUrl
-        ? `<img src="${esc(p.imageUrl)}" style="width:100%;height:160px;object-fit:cover">`
+        ? `<img src="${esc(p.imageUrl)}" style="width:100%;height:160px;object-fit:contain;background:var(--linen);padding:8px">`
         : `<div style="width:100%;height:160px;background:var(--linen-dark);display:flex;align-items:center;justify-content:center;font-size:40px">📦</div>`}
       <div style="padding:12px 14px">
         <div style="font-size:15px;font-weight:500;margin-bottom:4px">${esc(p.name||'Product')}</div>
@@ -4289,22 +4289,31 @@ window.openEditProductModal = (productId) => {
   renderPricingTiers(); openModal('modal-product');
 };
 
+function syncTiersFromDOM() {
+  // Read current input values back into the pricingTiers array before any re-render
+  const rows = document.querySelectorAll('#pricing-tiers-list .tier-row');
+  rows.forEach((row, i) => {
+    const qtyInput   = row.querySelector('.tier-qty-input');
+    const priceInput = row.querySelector('.tier-price-input');
+    if (qtyInput   && pricingTiers[i]) pricingTiers[i].minQty    = parseFloat(qtyInput.value)   || 0;
+    if (priceInput && pricingTiers[i]) pricingTiers[i].unitPrice  = parseFloat(priceInput.value) || 0;
+  });
+}
+
 function renderPricingTiers() {
   document.getElementById('pricing-tiers-list').innerHTML = pricingTiers.map((t,i) => `
-    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px">
-      <input type="number" value="${t.minQty||''}" min="1" placeholder="Min qty"
-        oninput="pricingTiers[${i}].minQty=parseInt(this.value)||0"
+    <div class="tier-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px">
+      <input type="number" class="tier-qty-input" value="${t.minQty||''}" min="1" placeholder="Min qty"
         style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;outline:none">
-      <input type="number" value="${t.unitPrice||''}" min="0" step="0.01" placeholder="Unit price ($)"
-        oninput="pricingTiers[${i}].unitPrice=parseFloat(this.value)||0"
+      <input type="number" class="tier-price-input" value="${t.unitPrice||''}" min="0" step="0.01" placeholder="Unit price ($)"
         style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;outline:none">
-      <button onclick="removePricingTier(${i})"
+      <button onclick="syncTiersFromDOM();removePricingTier(${i})"
         style="width:32px;height:36px;border:1px solid var(--border);background:var(--linen);border-radius:var(--radius);cursor:pointer;color:var(--mid-gray);font-size:16px"
         ${pricingTiers.length<=1?'disabled':''}>×</button>
     </div>`).join('');
 }
 
-window.addPricingTier    = () => { pricingTiers.push({minQty:0,unitPrice:0}); renderPricingTiers(); };
+window.addPricingTier    = () => { syncTiersFromDOM(); pricingTiers.push({minQty:0,unitPrice:0}); renderPricingTiers(); };
 window.removePricingTier = (i) => { if(pricingTiers.length>1){pricingTiers.splice(i,1);renderPricingTiers();} };
 
 window.handleProductImageSelect = (input) => {
@@ -4327,6 +4336,7 @@ window.saveProduct = async () => {
   const btn    = document.getElementById('prod-save-btn');
   errEl.classList.add('hidden');
   if (!name) { errEl.textContent='Product name is required.'; errEl.classList.remove('hidden'); return; }
+  syncTiersFromDOM();
   btn.disabled=true; btn.textContent='Saving…';
   try {
     let imageUrl = editingProductId ? (activeSFProducts.find(p=>p.id===editingProductId)?.imageUrl||null) : null;
