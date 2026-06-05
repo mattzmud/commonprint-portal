@@ -3997,6 +3997,538 @@ window.toast = (msg, type='') => {
   document.body.appendChild(t); setTimeout(()=>t.remove(),3500);
 };
 
+// ── STOREFRONTS ───────────────────────────────
+let allStorefronts      = [];
+let activeSF            = null;
+let activeSFProducts    = [];
+let activeSFLocations   = [];
+let activeSFCodes       = [];
+let activeSFOrders      = [];
+let activeSFUsers       = [];
+let editingProductId    = null;
+let editingLocationId   = null;
+let editingCodeId       = null;
+let editingStorefrontId = null;
+let pricingTiers        = [];
+let productImageFile    = null;
+let activeSFOrderId     = null;
+
+async function loadStorefronts() {
+  const docs = await fbList('storefronts');
+  allStorefronts = docs.map(d => ({ id: d.id, ...d }));
+  renderStorefrontsGrid();
+}
+
+function renderStorefrontsGrid() {
+  const grid = document.getElementById('storefronts-grid');
+  if (!grid) return;
+  if (allStorefronts.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏪</div><div class="empty-title">No storefronts yet</div><div class="empty-sub">Create your first storefront to get started.</div></div>`;
+    return;
+  }
+  grid.innerHTML = allStorefronts.map(sf => `
+    <div class="card" style="cursor:pointer;transition:box-shadow .15s"
+      onclick="openStorefrontDetail('${sf.id}')"
+      onmouseover="this.style.boxShadow='var(--shadow)'" onmouseout="this.style.boxShadow=''">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:16px;font-weight:500;color:var(--near-black);line-height:1.3;flex:1">${esc(sf.name||'Unnamed')}</div>
+        <span style="margin-left:8px;flex-shrink:0">${sf.active !== false ? badge('active') : badge('changes')}</span>
+      </div>
+      <div style="font-size:12px;color:var(--mid-gray);margin-bottom:12px">/store/?s=${esc(sf.slug||sf.id)}</div>
+      <div style="font-size:13px;color:var(--mid-gray)">Shipping: $${(sf.shippingRate||0).toFixed(2)} · Free over $${(sf.freeShippingThreshold||0).toFixed(2)}</div>
+      <div style="margin-top:12px;text-align:right;color:var(--mid-gray);font-size:16px">›</div>
+    </div>`).join('');
+}
+
+window.openStorefrontDetail = async (sfId) => {
+  activeSF = allStorefronts.find(s => s.id === sfId) || { id: sfId };
+  if (!activeSF.name) {
+    const doc = await fbGet(`storefronts/${sfId}`);
+    if (doc) { activeSF = { ...activeSF, ...doc }; }
+  }
+  document.getElementById('sf-detail-name').textContent = activeSF.name || 'Storefront';
+  document.getElementById('sf-detail-url').textContent  = `portal.commonprintco.com/store/?s=${activeSF.slug||sfId}`;
+  document.getElementById('sf-detail-status-badge').innerHTML = activeSF.active !== false ? badge('active') : badge('changes');
+  showPage('storefront-detail');
+  showSFTab('products');
+};
+
+window.showSFTab = (tab) => {
+  document.querySelectorAll('[data-sftab]').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.detail-panel[id^="sftab-"]').forEach(p => p.classList.remove('active'));
+  const tabBtn = document.querySelector(`[data-sftab="${tab}"]`);
+  const panel  = document.getElementById(`sftab-${tab}`);
+  if (tabBtn) tabBtn.classList.add('active');
+  if (panel)  panel.classList.add('active');
+  if (tab === 'products')  loadSFProducts();
+  if (tab === 'locations') loadSFLocations();
+  if (tab === 'codes')     loadSFCodes();
+  if (tab === 'orders')    loadSFOrders();
+  if (tab === 'users')     loadSFUsers();
+};
+
+async function loadSFProducts() {
+  const docs = await fbList(`storefronts/${activeSF.id}/products`);
+  activeSFProducts = docs.sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0));
+  renderSFProducts();
+}
+
+function renderSFProducts() {
+  const grid = document.getElementById('sf-products-grid');
+  if (!grid) return;
+  if (activeSFProducts.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><div class="empty-title">No products yet</div><div class="empty-sub">Add your first product to this storefront.</div></div>`;
+    return;
+  }
+  grid.innerHTML = activeSFProducts.map(p => `
+    <div class="card" style="padding:0;overflow:hidden">
+      ${p.imageUrl
+        ? `<img src="${esc(p.imageUrl)}" style="width:100%;height:160px;object-fit:cover">`
+        : `<div style="width:100%;height:160px;background:var(--linen-dark);display:flex;align-items:center;justify-content:center;font-size:40px">📦</div>`}
+      <div style="padding:12px 14px">
+        <div style="font-size:15px;font-weight:500;margin-bottom:4px">${esc(p.name||'Product')}</div>
+        <div style="font-size:12px;color:var(--mid-gray);margin-bottom:8px">${esc(p.size||'')}</div>
+        <div style="font-size:12px;color:var(--mid-gray);margin-bottom:10px">${(p.pricingTiers||[]).length} price tier${(p.pricingTiers||[]).length!==1?'s':''} · Min qty: ${p.minQty||1}</div>
+        <div style="display:flex;gap:6px;justify-content:space-between;align-items:center">
+          ${p.active !== false ? badge('active') : badge('changes')}
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="openEditProductModal('${p.id}')">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+window.openNewProductModal = () => {
+  editingProductId = null; pricingTiers = [{ minQty: 1, unitPrice: 0 }]; productImageFile = null;
+  document.getElementById('prod-modal-title').textContent = 'New product';
+  document.getElementById('prod-save-btn').textContent    = 'Save product';
+  ['prod-name','prod-desc','prod-size'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('prod-min-qty').value  = '25';
+  document.getElementById('prod-max-qty').value  = '0';
+  document.getElementById('prod-sort').value     = String(activeSFProducts.length+1);
+  document.getElementById('prod-active').checked = true;
+  document.getElementById('prod-img-preview').classList.add('hidden');
+  document.getElementById('prod-img-file').value = '';
+  document.getElementById('prod-error').classList.add('hidden');
+  renderPricingTiers(); openModal('modal-product');
+};
+
+window.openEditProductModal = (productId) => {
+  const p = activeSFProducts.find(x => x.id === productId);
+  if (!p) return;
+  editingProductId = productId; productImageFile = null;
+  document.getElementById('prod-modal-title').textContent = 'Edit product';
+  document.getElementById('prod-save-btn').textContent    = 'Save changes';
+  document.getElementById('prod-name').value    = p.name||'';
+  document.getElementById('prod-desc').value    = p.description||'';
+  document.getElementById('prod-size').value    = p.size||'';
+  document.getElementById('prod-min-qty').value = p.minQty||1;
+  document.getElementById('prod-max-qty').value = p.maxQty||0;
+  document.getElementById('prod-sort').value    = p.sortOrder||1;
+  document.getElementById('prod-active').checked= p.active!==false;
+  document.getElementById('prod-error').classList.add('hidden');
+  pricingTiers = p.pricingTiers ? [...p.pricingTiers] : [{ minQty:1, unitPrice:0 }];
+  if (p.imageUrl) { document.getElementById('prod-img-thumb').src=p.imageUrl; document.getElementById('prod-img-preview').classList.remove('hidden'); }
+  else { document.getElementById('prod-img-preview').classList.add('hidden'); }
+  renderPricingTiers(); openModal('modal-product');
+};
+
+function renderPricingTiers() {
+  document.getElementById('pricing-tiers-list').innerHTML = pricingTiers.map((t,i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px">
+      <input type="number" value="${t.minQty||''}" min="1" placeholder="Min qty"
+        oninput="pricingTiers[${i}].minQty=parseInt(this.value)||0"
+        style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;outline:none">
+      <input type="number" value="${t.unitPrice||''}" min="0" step="0.01" placeholder="Unit price ($)"
+        oninput="pricingTiers[${i}].unitPrice=parseFloat(this.value)||0"
+        style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;outline:none">
+      <button onclick="removePricingTier(${i})"
+        style="width:32px;height:36px;border:1px solid var(--border);background:var(--linen);border-radius:var(--radius);cursor:pointer;color:var(--mid-gray);font-size:16px"
+        ${pricingTiers.length<=1?'disabled':''}>×</button>
+    </div>`).join('');
+}
+
+window.addPricingTier    = () => { pricingTiers.push({minQty:0,unitPrice:0}); renderPricingTiers(); };
+window.removePricingTier = (i) => { if(pricingTiers.length>1){pricingTiers.splice(i,1);renderPricingTiers();} };
+
+window.handleProductImageSelect = (input) => {
+  const file = input.files[0]; if (!file) return;
+  productImageFile = file;
+  const reader = new FileReader();
+  reader.onload = e => { document.getElementById('prod-img-thumb').src=e.target.result; document.getElementById('prod-img-preview').classList.remove('hidden'); };
+  reader.readAsDataURL(file);
+};
+
+window.saveProduct = async () => {
+  const name   = document.getElementById('prod-name').value.trim();
+  const desc   = document.getElementById('prod-desc').value.trim();
+  const size   = document.getElementById('prod-size').value.trim();
+  const minQty = parseInt(document.getElementById('prod-min-qty').value)||1;
+  const maxQty = parseInt(document.getElementById('prod-max-qty').value)||0;
+  const sortOrd= parseInt(document.getElementById('prod-sort').value)||1;
+  const active = document.getElementById('prod-active').checked;
+  const errEl  = document.getElementById('prod-error');
+  const btn    = document.getElementById('prod-save-btn');
+  errEl.classList.add('hidden');
+  if (!name) { errEl.textContent='Product name is required.'; errEl.classList.remove('hidden'); return; }
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    let imageUrl = editingProductId ? (activeSFProducts.find(p=>p.id===editingProductId)?.imageUrl||null) : null;
+    if (productImageFile) {
+      const token = await getToken();
+      const ext   = productImageFile.name.split('.').pop().toLowerCase();
+      const pid   = editingProductId || genId();
+      const path  = `storefronts/${activeSF.id}/products/${pid}.${ext}`;
+      const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
+      const res = await fetch(uploadUrl, { method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type':productImageFile.type }, body:productImageFile });
+      if (!res.ok) throw new Error('Image upload failed');
+      imageUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(path)}?alt=media`;
+    }
+    const productId = editingProductId || genId();
+    await fbSet(`storefronts/${activeSF.id}/products/${productId}`, {
+      name, description:desc, size, minQty, maxQty, sortOrder:sortOrd, active,
+      pricingTiers: pricingTiers.sort((a,b)=>a.minQty-b.minQty),
+      ...(imageUrl?{imageUrl}:{}),
+      updatedAt: new Date().toISOString(),
+      ...(editingProductId?{}:{ createdAt:new Date().toISOString() }),
+    });
+    closeModal('modal-product');
+    toast(editingProductId?'Product updated!':'Product added!','success');
+    await loadSFProducts();
+  } catch(e) { errEl.textContent='Save failed: '+e.message; errEl.classList.remove('hidden'); }
+  btn.disabled=false; btn.textContent='Save product';
+};
+
+window.deleteProduct = async (productId) => {
+  const p = activeSFProducts.find(x=>x.id===productId);
+  if (!confirm(`Delete "${p?.name||'this product'}"? This cannot be undone.`)) return;
+  const token = await getToken();
+  await fetch(`${getFS_BASE()}/storefronts/${activeSF.id}/products/${productId}`,{ method:'DELETE', headers:{Authorization:'Bearer '+token} });
+  toast('Product deleted.','success'); await loadSFProducts();
+};
+
+async function loadSFLocations() {
+  const docs = await fbList(`storefronts/${activeSF.id}/locations`);
+  activeSFLocations = docs.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  renderSFLocations();
+}
+
+function renderSFLocations() {
+  const tbody = document.getElementById('sf-locations-tbody'); if (!tbody) return;
+  tbody.innerHTML = activeSFLocations.length===0
+    ? `<tr><td colspan="4"><div class="empty">No locations yet.</div></td></tr>`
+    : activeSFLocations.map(l => `
+      <tr>
+        <td style="font-weight:500">${esc(l.name||'—')}</td>
+        <td>${fmtDate(l.createdAt)}</td>
+        <td>${l.active!==false?badge('active'):badge('changes')}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditLocationModal('${l.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLocation('${l.id}')">Delete</button>
+        </td>
+      </tr>`).join('');
+}
+
+window.openNewLocationModal = () => {
+  editingLocationId=null;
+  document.getElementById('loc-modal-title').textContent='Add location';
+  document.getElementById('loc-name').value='';
+  document.getElementById('loc-active').checked=true;
+  document.getElementById('loc-error').classList.add('hidden');
+  openModal('modal-location');
+};
+
+window.openEditLocationModal = (locationId) => {
+  const l = activeSFLocations.find(x=>x.id===locationId); if (!l) return;
+  editingLocationId=locationId;
+  document.getElementById('loc-modal-title').textContent='Edit location';
+  document.getElementById('loc-name').value=l.name||'';
+  document.getElementById('loc-active').checked=l.active!==false;
+  document.getElementById('loc-error').classList.add('hidden');
+  openModal('modal-location');
+};
+
+window.saveLocation = async () => {
+  const name  = document.getElementById('loc-name').value.trim();
+  const active= document.getElementById('loc-active').checked;
+  const errEl = document.getElementById('loc-error');
+  errEl.classList.add('hidden');
+  if (!name) { errEl.textContent='Location name is required.'; errEl.classList.remove('hidden'); return; }
+  const locationId = editingLocationId||genId();
+  await fbSet(`storefronts/${activeSF.id}/locations/${locationId}`,{
+    name, active,
+    ...(editingLocationId?{}:{createdAt:new Date().toISOString()}),
+    updatedAt:new Date().toISOString(),
+  });
+  closeModal('modal-location');
+  toast(editingLocationId?'Location updated!':'Location added!','success');
+  await loadSFLocations();
+};
+
+window.deleteLocation = async (locationId) => {
+  const l = activeSFLocations.find(x=>x.id===locationId);
+  if (!confirm(`Delete "${l?.name||'this location'}"?`)) return;
+  const token = await getToken();
+  await fetch(`${getFS_BASE()}/storefronts/${activeSF.id}/locations/${locationId}`,{ method:'DELETE', headers:{Authorization:'Bearer '+token} });
+  toast('Location deleted.','success'); await loadSFLocations();
+};
+
+async function loadSFCodes() {
+  const docs = await fbList(`storefronts/${activeSF.id}/accessCodes`);
+  activeSFCodes = docs; renderSFCodes();
+}
+
+function renderSFCodes() {
+  const tbody = document.getElementById('sf-codes-tbody'); if (!tbody) return;
+  tbody.innerHTML = activeSFCodes.length===0
+    ? `<tr><td colspan="6"><div class="empty">No access codes yet.</div></td></tr>`
+    : activeSFCodes.map(c => `
+      <tr>
+        <td style="font-weight:600;letter-spacing:.06em;font-family:monospace">${esc(c.code||'—')}</td>
+        <td>${esc(c.label||'—')}</td>
+        <td style="text-align:center">${c.registrationCount||0}</td>
+        <td>${c.expiresAt?fmtDate(c.expiresAt):'<span class="text-muted">Never</span>'}</td>
+        <td>${c.active!==false?badge('active'):badge('changes')}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="copyCode('${esc(c.code||'')}')">Copy</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditCodeModal('${c.id}')">Edit</button>
+        </td>
+      </tr>`).join('');
+}
+
+window.openNewCodeModal = () => {
+  editingCodeId=null;
+  document.getElementById('code-modal-title').textContent='Add access code';
+  document.getElementById('code-value').value='';
+  document.getElementById('code-label').value='';
+  document.getElementById('code-expires').value='';
+  document.getElementById('code-active').checked=true;
+  document.getElementById('code-error').classList.add('hidden');
+  openModal('modal-access-code');
+};
+
+window.openEditCodeModal = (codeId) => {
+  const c = activeSFCodes.find(x=>x.id===codeId); if (!c) return;
+  editingCodeId=codeId;
+  document.getElementById('code-modal-title').textContent='Edit access code';
+  document.getElementById('code-value').value=c.code||'';
+  document.getElementById('code-label').value=c.label||'';
+  document.getElementById('code-expires').value=c.expiresAt?c.expiresAt.split('T')[0]:'';
+  document.getElementById('code-active').checked=c.active!==false;
+  document.getElementById('code-error').classList.add('hidden');
+  openModal('modal-access-code');
+};
+
+window.saveAccessCode = async () => {
+  const code   = document.getElementById('code-value').value.trim().toUpperCase();
+  const label  = document.getElementById('code-label').value.trim();
+  const expires= document.getElementById('code-expires').value;
+  const active = document.getElementById('code-active').checked;
+  const errEl  = document.getElementById('code-error');
+  errEl.classList.add('hidden');
+  if (!code)  { errEl.textContent='Access code is required.'; errEl.classList.remove('hidden'); return; }
+  if (!label) { errEl.textContent='Label is required.';       errEl.classList.remove('hidden'); return; }
+  const codeId = editingCodeId||genId();
+  await fbSet(`storefronts/${activeSF.id}/accessCodes/${codeId}`,{
+    code, label, active, storefrontId:activeSF.id,
+    expiresAt: expires ? new Date(expires+'T23:59:59').toISOString() : null,
+    registrationCount: editingCodeId?(activeSFCodes.find(c=>c.id===codeId)?.registrationCount||0):0,
+    ...(editingCodeId?{}:{createdAt:new Date().toISOString()}),
+    updatedAt:new Date().toISOString(),
+  });
+  closeModal('modal-access-code');
+  toast(editingCodeId?'Code updated!':'Access code added!','success');
+  await loadSFCodes();
+};
+
+window.copyCode = (code) => {
+  navigator.clipboard.writeText(code).then(()=>toast(`Copied: ${code}`,'success'));
+};
+
+async function loadSFOrders() {
+  const docs = await fbList(`storefronts/${activeSF.id}/orders`);
+  activeSFOrders = docs.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  renderSFOrders();
+}
+
+function renderSFOrders() {
+  const tbody = document.getElementById('sf-orders-tbody'); if (!tbody) return;
+  tbody.innerHTML = activeSFOrders.length===0
+    ? `<tr><td colspan="8"><div class="empty">No orders yet.</div></td></tr>`
+    : activeSFOrders.map(o => `
+      <tr style="cursor:pointer" onclick="openSFOrderModal('${o.id}')"
+        onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
+        <td style="font-size:12px;font-family:monospace">${esc(o.id.slice(0,8).toUpperCase())}</td>
+        <td style="font-size:13px">${esc(o.locationName||'—')}</td>
+        <td style="font-weight:500">${esc(o.name||o.email||'—')}</td>
+        <td>$${((o.orderTotal||0)/100).toFixed(2)}</td>
+        <td>${o.paymentMethod==='pay_now'?'💳 Card':'📄 Invoice'}</td>
+        <td>${badge(o.status||'pending')}</td>
+        <td>${fmtDate(o.createdAt)}</td>
+        <td style="color:var(--mid-gray)">›</td>
+      </tr>`).join('');
+}
+
+window.openSFOrderModal = (orderId) => {
+  const o = activeSFOrders.find(x=>x.id===orderId); if (!o) return;
+  activeSFOrderId=orderId;
+  document.getElementById('sford-title').textContent     = `Order ${orderId.slice(0,8).toUpperCase()}`;
+  document.getElementById('sford-meta').textContent      = fmtDateTime(o.createdAt);
+  document.getElementById('sford-status-badge').innerHTML= badge(o.status||'pending');
+  document.getElementById('sford-customer').textContent  = o.name||o.email||'—';
+  document.getElementById('sford-location').textContent  = o.locationName||'—';
+  document.getElementById('sford-payment').textContent   = o.paymentMethod==='pay_now'?'💳 Paid by card':'📄 Invoice requested';
+  document.getElementById('sford-date').textContent      = fmtDate(o.createdAt);
+  const addr=o.shippingAddress||{};
+  document.getElementById('sford-address').textContent   = [addr.street,addr.city,addr.state,addr.zip].filter(Boolean).join(', ')||'—';
+  const items=o.lineItems||[];
+  document.getElementById('sford-lines').innerHTML = items.map(li=>`
+    <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
+      <div><div style="font-weight:500">${esc(li.productName||'')}</div>
+      <div style="font-size:12px;color:var(--mid-gray)">Qty: ${li.qty} × $${(li.unitPrice/100).toFixed(2)}</div></div>
+      <div style="font-weight:500">$${(li.lineTotal/100).toFixed(2)}</div>
+    </div>`).join('')+`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--mid-gray)"><span>Subtotal</span><span>$${((o.subtotal||0)/100).toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:var(--mid-gray)"><span>Shipping</span><span>${o.shippingFee===0?'Free':'$'+((o.shippingFee||0)/100).toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:15px;font-weight:600;border-top:2px solid var(--border);margin-top:4px"><span>Total</span><span>$${((o.orderTotal||0)/100).toFixed(2)}</span></div>`;
+  if (o.orderNotes) { document.getElementById('sford-notes').textContent=o.orderNotes; document.getElementById('sford-notes-row').classList.remove('hidden'); }
+  else { document.getElementById('sford-notes-row').classList.add('hidden'); }
+  document.getElementById('sford-admin-notes').value=o.adminNotes||'';
+  const isDone=o.status==='completed'||o.status==='cancelled';
+  document.getElementById('sford-process-btn').classList.toggle('hidden', o.status==='processing'||isDone);
+  document.getElementById('sford-complete-btn').classList.toggle('hidden', isDone);
+  document.getElementById('sford-cancel-btn').classList.toggle('hidden',   isDone);
+  openModal('modal-sf-order');
+};
+
+window.updateSFOrderStatus = async (status) => {
+  if (!activeSFOrderId||!activeSF) return;
+  const adminNotes=document.getElementById('sford-admin-notes').value;
+  await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`,{ status, adminNotes, updatedAt:new Date().toISOString() });
+  const o=activeSFOrders.find(x=>x.id===activeSFOrderId);
+  if(o){o.status=status;o.adminNotes=adminNotes;}
+  closeModal('modal-sf-order'); toast(`Order marked as ${status}.`,'success'); renderSFOrders();
+};
+
+async function loadSFUsers() {
+  const token = await getToken();
+  const res = await fetch(`${getFS_BASE()}:runQuery`,{
+    method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({ structuredQuery:{ from:[{collectionId:'storefrontUsers'}],
+      where:{fieldFilter:{field:{fieldPath:'storefrontId'},op:'EQUAL',value:{stringValue:activeSF.id}}},
+      orderBy:[{field:{fieldPath:'createdAt'},direction:'DESCENDING'}] }})
+  });
+  const data=await res.json();
+  activeSFUsers=(data||[]).filter(r=>r.document).map(r=>({id:r.document.name.split('/').pop(),...ff(r.document.fields)}));
+  renderSFUsers();
+}
+
+function renderSFUsers() {
+  const tbody=document.getElementById('sf-users-tbody'); if(!tbody) return;
+  tbody.innerHTML=activeSFUsers.length===0
+    ? `<tr><td colspan="7"><div class="empty">No registered users yet.</div></td></tr>`
+    : activeSFUsers.map(u=>`
+      <tr>
+        <td style="font-weight:500">${esc(u.name||'—')}</td>
+        <td style="font-size:13px">${esc(u.email||'—')}</td>
+        <td style="font-size:13px">${esc(u.locationName||'—')}</td>
+        <td style="font-size:12px;color:var(--mid-gray)">${esc(u.accessCodeLabel||'—')}</td>
+        <td>${fmtDateTime(u.lastLoginAt)}</td>
+        <td>${u.active!==false?badge('active'):badge('changes')}</td>
+        <td>${u.active!==false
+          ?`<button class="btn btn-ghost btn-sm" onclick="toggleSFUser('${u.id}',false)">Deactivate</button>`
+          :`<button class="btn btn-ghost btn-sm" onclick="toggleSFUser('${u.id}',true)">Reactivate</button>`}
+        </td>
+      </tr>`).join('');
+}
+
+window.toggleSFUser = async (userId, active) => {
+  await fbUpdate(`storefrontUsers/${userId}`,{active});
+  const u=activeSFUsers.find(x=>x.id===userId); if(u) u.active=active;
+  renderSFUsers(); toast(active?'User reactivated.':'User deactivated.','success');
+};
+
+window.openNewStorefrontModal = () => {
+  editingStorefrontId=null;
+  document.getElementById('sf-modal-title').textContent='New storefront';
+  document.getElementById('sf-name').value='';
+  document.getElementById('sf-slug').value='';
+  document.getElementById('sf-client-uid').value='';
+  document.getElementById('sf-shipping').value='12.95';
+  document.getElementById('sf-free-threshold').value='150.00';
+  document.getElementById('sf-active').checked=true;
+  document.getElementById('sf-error').classList.add('hidden');
+  openModal('modal-storefront');
+};
+
+window.openEditStorefrontModal = () => {
+  if (!activeSF) return;
+  editingStorefrontId=activeSF.id;
+  document.getElementById('sf-modal-title').textContent='Edit storefront';
+  document.getElementById('sf-name').value          =activeSF.name||'';
+  document.getElementById('sf-slug').value          =activeSF.slug||'';
+  document.getElementById('sf-client-uid').value    =activeSF.clientUid||'';
+  document.getElementById('sf-shipping').value      =(activeSF.shippingRate||0).toFixed(2);
+  document.getElementById('sf-free-threshold').value=(activeSF.freeShippingThreshold||0).toFixed(2);
+  document.getElementById('sf-active').checked      =activeSF.active!==false;
+  document.getElementById('sf-error').classList.add('hidden');
+  openModal('modal-storefront');
+};
+
+window.saveStorefront = async () => {
+  const name     =document.getElementById('sf-name').value.trim();
+  const slug     =document.getElementById('sf-slug').value.trim();
+  const clientUid=document.getElementById('sf-client-uid').value.trim();
+  const shipping =parseFloat(document.getElementById('sf-shipping').value)||0;
+  const threshold=parseFloat(document.getElementById('sf-free-threshold').value)||0;
+  const active   =document.getElementById('sf-active').checked;
+  const errEl    =document.getElementById('sf-error');
+  errEl.classList.add('hidden');
+  if (!name) { errEl.textContent='Storefront name is required.'; errEl.classList.remove('hidden'); return; }
+  if (!slug) { errEl.textContent='Slug is required.';            errEl.classList.remove('hidden'); return; }
+  const sfId=editingStorefrontId||slug;
+  await fbSet(`storefronts/${sfId}`,{
+    name, slug, clientUid, active,
+    shippingRate:          Math.round(shipping*100)/100,
+    freeShippingThreshold: Math.round(threshold*100)/100,
+    updatedAt:new Date().toISOString(),
+    ...(editingStorefrontId?{}:{createdAt:new Date().toISOString()}),
+  });
+  closeModal('modal-storefront');
+  toast(editingStorefrontId?'Storefront updated!':'Storefront created!','success');
+  await loadStorefronts();
+  if (!editingStorefrontId) {
+    activeSF={id:sfId,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold};
+    openStorefrontDetail(sfId);
+  } else {
+    activeSF={...activeSF,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold};
+    document.getElementById('sf-detail-name').textContent=name;
+    document.getElementById('sf-detail-url').textContent=`portal.commonprintco.com/store/?s=${slug}`;
+    document.getElementById('sf-detail-status-badge').innerHTML=active?badge('active'):badge('changes');
+  }
+};
+
+window.toggleStorefrontActive = async () => {
+  if (!activeSF) return;
+  const newActive=!(activeSF.active!==false);
+  await fbUpdate(`storefronts/${activeSF.id}`,{active:newActive});
+  activeSF.active=newActive;
+  document.getElementById('sf-detail-status-badge').innerHTML=newActive?badge('active'):badge('changes');
+  const sfInList=allStorefronts.find(s=>s.id===activeSF.id);
+  if(sfInList) sfInList.active=newActive;
+  toast(newActive?'Storefront activated.':'Storefront paused.','success');
+};
+
+// Hook showPage to load storefronts when navigating there
+const _origShowPage = window.showPage;
+window.showPage = (id) => {
+  _origShowPage(id);
+  if (id==='storefronts') loadStorefronts();
+};
+
+
 document.addEventListener('keydown', e => {
   if (e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
   if (e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') window.doLogin();
