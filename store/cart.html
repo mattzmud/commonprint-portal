@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:      #3a3a3a;
+      --primary-dark: #1a1a1a;
+      --primary-light:#f0f0f0;
+      --accent:       #888888;
+      --accent-light: #eeeeee;
+      --nav-bg:       #2c2c2c;
+      --success:      #194A4E;
+      --success-light:#DCE7E8;
+      --ink:          #2D2926;
+      --gray:         #575451;
+      --mid-gray:     #888780;
+      --near-black:   #1a1818;
+      --border:       #E8DEC8;
+      --bg:           #F7EED8;
+      --card-bg:      #FFFFFF;
+      --pale:         #FBF9ED;
+      --red:          #C0392B;
+      --font-body:    'Jost', system-ui, sans-serif;
+      --radius:       10px;
+      --shadow:       0 2px 12px rgba(45,41,38,0.10);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+
+    /* ── NAV ── */
+    .sf-nav {
+      background:var(--nav-bg); padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between;
+      height:60px; position:sticky; top:0; z-index:100;
+      box-shadow:0 2px 8px rgba(0,0,0,0.2);
+    }
+    .sf-nav-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+    .sf-nav-logo  { height:36px; width:36px; object-fit:contain; border-radius:50%; background:#fff; padding:3px; }
+    .sf-nav-title { font-size:14px; font-weight:600; color:rgba(255,255,255,0.9); max-width:280px; line-height:1.3; }
+    .sf-nav-right { display:flex; align-items:center; gap:4px; }
+    .sf-nav-link  {
+      color:rgba(255,255,255,0.7); font-size:13px; padding:6px 12px;
+      border-radius:6px; text-decoration:none; transition:all .15s;
+    }
+    .sf-nav-link:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .sf-nav-link.active { color:#fff; background:rgba(255,255,255,0.15); }
+    .sf-cart-btn {
+      display:flex; align-items:center; gap:6px;
+      background:var(--primary); color:#fff; border:none;
+      padding:8px 16px; border-radius:8px; font-family:var(--font-body);
+      font-size:13px; font-weight:500; cursor:pointer;
+      transition:background .15s; margin-left:8px; text-decoration:none;
+    }
+    .sf-cart-btn:hover { background:var(--primary-dark); color:#fff; }
+    .cart-badge {
+      background:#fff; color:var(--primary); border-radius:50%;
+      font-size:11px; font-weight:700; width:18px; height:18px;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
+
+    /* ── PAGE ── */
+    .sf-page { max-width:900px; margin:0 auto; padding:40px 32px; }
+    .page-title { font-size:24px; font-weight:700; color:var(--near-black); margin-bottom:32px; }
+
+    /* ── LAYOUT ── */
+    .cart-layout {
+      display:grid; grid-template-columns:1fr 340px; gap:32px; align-items:start;
+    }
+
+    /* ── CART ITEMS ── */
+    .cart-card {
+      background:var(--card-bg); border:1px solid var(--border);
+      border-radius:14px; overflow:hidden;
+    }
+    .cart-item {
+      display:flex; align-items:center; gap:16px;
+      padding:16px 20px; border-bottom:1px solid var(--border);
+    }
+    .cart-item:last-child { border-bottom:none; }
+    .cart-thumb {
+      width:72px; height:72px; border-radius:8px;
+      object-fit:cover; background:var(--bg); flex-shrink:0;
+    }
+    .cart-thumb-placeholder {
+      width:72px; height:72px; border-radius:8px;
+      background:var(--bg); flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:28px;
+    }
+    .cart-item-info { flex:1; min-width:0; }
+    .cart-item-name { font-size:15px; font-weight:600; color:var(--near-black); margin-bottom:2px; }
+    .cart-item-meta { font-size:12px; color:var(--mid-gray); margin-bottom:6px; }
+    .cart-item-price{ font-size:13px; color:var(--gray); }
+    .cart-item-total{ font-size:16px; font-weight:700; color:var(--near-black); white-space:nowrap; margin-right:12px; }
+    .cart-remove {
+      background:none; border:none; cursor:pointer;
+      color:var(--mid-gray); font-size:20px; line-height:1;
+      padding:4px; transition:color .15s; flex-shrink:0;
+    }
+    .cart-remove:hover { color:var(--red); }
+
+    /* ── EMPTY ── */
+    .cart-empty {
+      text-align:center; padding:60px 24px;
+    }
+    .cart-empty-icon { font-size:52px; margin-bottom:16px; }
+    .cart-empty h3   { font-size:20px; color:var(--gray); margin-bottom:8px; }
+    .cart-empty p    { font-size:14px; color:var(--mid-gray); margin-bottom:24px; }
+
+    /* ── SUMMARY CARD ── */
+    .summary-card {
+      background:var(--card-bg); border:1px solid var(--border);
+      border-radius:14px; padding:24px; position:sticky; top:80px;
+    }
+    .summary-title { font-size:16px; font-weight:600; color:var(--near-black); margin-bottom:20px; }
+    .summary-row {
+      display:flex; justify-content:space-between;
+      font-size:14px; color:var(--gray); padding:6px 0;
+    }
+    .summary-row.total {
+      font-size:17px; font-weight:700; color:var(--near-black);
+      border-top:2px solid var(--border); margin-top:8px; padding-top:14px;
+    }
+    .summary-row.free-ship { color:var(--success); font-weight:500; }
+    .summary-divider { border:none; border-top:1px solid var(--border); margin:12px 0; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display:block; width:100%; padding:13px;
+      border:none; border-radius:var(--radius);
+      font-family:var(--font-body); font-size:15px; font-weight:600;
+      cursor:pointer; transition:all .18s; text-align:center; text-decoration:none;
+    }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:var(--primary-dark); color:#fff; }
+    .btn-ghost {
+      background:transparent; color:var(--gray);
+      border:1.5px solid var(--border); font-size:14px;
+      padding:10px; margin-top:10px;
+    }
+    .btn-ghost:hover { background:var(--pale); color:var(--ink); }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* ── TOAST ── */
+    .sf-toast {
+      position:fixed; bottom:24px; right:24px;
+      background:var(--success); color:#fff;
+      padding:12px 20px; border-radius:10px;
+      font-size:14px; font-weight:500; z-index:9999;
+      opacity:0; transform:translateY(8px); transition:all .25s;
+    }
+    .sf-toast.show { opacity:1; transform:translateY(0); }
+    .sf-toast.error { background:var(--red); }
+
+    @media (max-width:700px) {
+      .sf-nav { padding:0 16px; }
+      .sf-nav-title { display:none; }
+      .sf-nav-link  { display:none; }
+      .sf-page { padding:24px 16px; }
+      .cart-layout { grid-template-columns:1fr; }
+      .summary-card { position:static; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sf-nav">
+    <a class="sf-nav-brand" id="nav-brand" href="#">
+      <img class="sf-nav-logo hidden" id="nav-logo" src="" alt="Logo">
+      <span class="sf-nav-title" id="nav-title">Store</span>
+    </a>
+    <div class="sf-nav-right">
+      <a class="sf-nav-link" id="nav-catalog-link" href="#">Catalog</a>
+      <a class="sf-nav-link" id="nav-orders-link"  href="#">My Orders</a>
+      <a class="sf-nav-link" id="nav-account-link" href="#">My Account</a>
+      <a class="sf-cart-btn active" id="cart-btn" href="#">
+        🛒 Cart <span class="cart-badge" id="cart-count">0</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="sf-page">
+    <div class="page-title">Your Cart</div>
+
+    <!-- Empty state -->
+    <div id="cart-empty" style="display:none">
+      <div class="cart-card">
+        <div class="cart-empty">
+          <div class="cart-empty-icon">🛒</div>
+          <h3>Your cart is empty</h3>
+          <p>Browse the catalog and add some items to get started.</p>
+          <a class="btn btn-primary" id="empty-catalog-link" href="#" style="display:inline-block;width:auto;padding:12px 28px">
+            Browse catalog
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart with items -->
+    <div id="cart-filled" style="display:none">
+      <div class="cart-layout">
+
+        <!-- Items -->
+        <div>
+          <div class="cart-card" id="cart-items-list"></div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-card">
+          <div class="summary-title">Order summary</div>
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span id="summary-subtotal">$0.00</span>
+          </div>
+          <div class="summary-row" id="summary-ship-row">
+            <span>Shipping</span>
+            <span id="summary-shipping">—</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total</span>
+            <span id="summary-total">$0.00</span>
+          </div>
+          <div style="margin-top:20px">
+            <a class="btn btn-primary" id="checkout-btn" href="#">Proceed to checkout →</a>
+            <a class="btn btn-ghost" id="continue-btn" href="#">← Continue shopping</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="sf-toast" id="sf-toast"></div>
+
+<script type="module">
+  import { VERSION } from '../shared/version.js';
+
+  const WORKER_URL = 'https://storefront-api.matt-zmud.workers.dev';
+  const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
+  const CART_KEY   = 'sf_cart';
+
+  let storefrontId = null;
+  let storefront   = null;
+  let auth         = null;
+
+  // ── HELPERS ──────────────────────────────────────────────────────────
+  function ff(fields = {}) {
+    return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
+      if (v.stringValue  !== undefined) return [k, v.stringValue];
+      if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+      if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+      if (v.booleanValue !== undefined) return [k, v.booleanValue];
+      if (v.nullValue    !== undefined) return [k, null];
+      if (v.arrayValue)  return [k, (v.arrayValue.values||[]).map(i => ff({_:i})._)];
+      if (v.mapValue)    return [k, ff(v.mapValue.fields||{})];
+      return [k, null];
+    }));
+  }
+
+  async function fsGetPublic(path) {
+    const res = await fetch(`${FS_BASE}/${path}`);
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
+  async function callWorker(action, data = {}) {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action, ...data })
+    });
+    return res.json();
+  }
+
+  function getCart()        { try { return JSON.parse(sessionStorage.getItem(CART_KEY)||'[]'); } catch { return []; } }
+  function saveCart(items)  { sessionStorage.setItem(CART_KEY, JSON.stringify(items)); }
+  function clearCart()      { sessionStorage.removeItem(CART_KEY); }
+
+  function fmt(cents) { return '$' + (cents / 100).toFixed(2); }
+  function fmtDollars(n) { return '$' + Number(n).toFixed(2); }
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('sf-toast');
+    el.textContent = msg;
+    el.className   = 'sf-toast' + (type === 'error' ? ' error' : '');
+    setTimeout(() => el.classList.add('show'), 10);
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  function applyBranding(sf) {
+    const brand = sf.brand || {};
+    const root  = document.documentElement.style;
+    if (brand.primary)         root.setProperty('--primary',      brand.primary);
+    if (brand['primary-dark']) root.setProperty('--primary-dark', brand['primary-dark']);
+    if (brand.bg)              root.setProperty('--nav-bg',        brand.bg);
+    if (brand.accent)          root.setProperty('--accent',        brand.accent);
+    document.getElementById('nav-title').textContent = sf.name || 'Store';
+    if (sf.logoUrl) {
+      const logo = document.getElementById('nav-logo');
+      logo.src = sf.logoUrl;
+      logo.classList.remove('hidden');
+    }
+    document.title = `Cart — ${sf.name || 'Store'}`;
+  }
+
+  // ── REMOVE ITEM ───────────────────────────────────────────────────────
+  window.removeItem = (productId) => {
+    const cart    = getCart().filter(i => i.productId !== productId);
+    saveCart(cart);
+    renderCart();
+    toast('Item removed from cart.');
+  };
+
+  // ── RENDER CART ───────────────────────────────────────────────────────
+  function renderCart() {
+    const cart        = getCart();
+    const cartCount   = document.getElementById('cart-count');
+    cartCount.textContent = cart.length;
+
+    if (cart.length === 0) {
+      document.getElementById('cart-empty').style.display  = 'block';
+      document.getElementById('cart-filled').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('cart-empty').style.display  = 'none';
+    document.getElementById('cart-filled').style.display = 'block';
+
+    // Items
+    document.getElementById('cart-items-list').innerHTML = cart.map(item => {
+      const imgHtml = item.imageUrl
+        ? `<img class="cart-thumb" src="${esc(item.imageUrl)}" alt="${esc(item.productName)}">`
+        : `<div class="cart-thumb-placeholder">🖼️</div>`;
+      return `
+        <div class="cart-item">
+          ${imgHtml}
+          <div class="cart-item-info">
+            <div class="cart-item-name">${esc(item.productName)}</div>
+            ${item.size ? `<div class="cart-item-meta">${esc(item.size)}</div>` : ''}
+            <div class="cart-item-price">${item.qty} × ${fmtDollars(item.unitPrice)} / unit</div>
+          </div>
+          <div class="cart-item-total">${fmtDollars(item.lineTotal)}</div>
+          <button class="cart-remove" onclick="removeItem('${item.productId}')" title="Remove">×</button>
+        </div>`;
+    }).join('');
+
+    // Totals
+    const subtotal    = cart.reduce((s, i) => s + i.lineTotal, 0);
+    const shippingRate= storefront?.shippingRate || 0;
+    const threshold   = storefront?.freeShippingThreshold || 0;
+    const freeShip    = threshold > 0 && subtotal >= threshold;
+    const shippingFee = freeShip ? 0 : shippingRate;
+    const total       = subtotal + shippingFee;
+
+    document.getElementById('summary-subtotal').textContent = fmtDollars(subtotal);
+
+    const shipRow  = document.getElementById('summary-ship-row');
+    const shipSpan = document.getElementById('summary-shipping');
+    if (freeShip) {
+      shipRow.classList.add('free-ship');
+      shipSpan.textContent = 'Free';
+    } else {
+      shipRow.classList.remove('free-ship');
+      shipSpan.textContent = shippingRate > 0 ? fmtDollars(shippingFee) : 'Calculated at checkout';
+    }
+    document.getElementById('summary-total').textContent = fmtDollars(total);
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  try {
+    const params = new URLSearchParams(window.location.search);
+    storefrontId  = params.get('s');
+    if (!storefrontId) throw new Error('No storefront specified');
+
+    // Auth check
+    const config = await callWorker('get_config');
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+
+    const appName = `storefront-${storefrontId}`;
+    const app  = getApps().find(a => a.name === appName) || initializeApp(config, appName);
+    auth = getAuth(app);
+    await setPersistence(auth, browserSessionPersistence);
+
+    const currentUser = await new Promise((resolve, reject) => {
+      const unsub = onAuthStateChanged(auth, user => {
+        unsub();
+        if (user) resolve(user);
+        else reject(new Error('Not authenticated'));
+      });
+    });
+
+    // Load storefront for branding + shipping
+    storefront = await fsGetPublic(`storefronts/${storefrontId}`);
+    if (!storefront || storefront.active === false) throw new Error('Storefront not found');
+
+    applyBranding(storefront);
+
+    // Wire nav links
+    document.getElementById('nav-brand').href        = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-catalog-link').href = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-orders-link').href  = `orders.html?s=${storefrontId}`;
+    document.getElementById('nav-account-link').href = `profile.html?s=${storefrontId}`;
+    document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
+    document.getElementById('empty-catalog-link').href = `catalog.html?s=${storefrontId}`;
+    document.getElementById('continue-btn').href     = `catalog.html?s=${storefrontId}`;
+    document.getElementById('checkout-btn').href     = `checkout.html?s=${storefrontId}`;
+
+    renderCart();
+
+  } catch(e) {
+    if (e.message === 'Not authenticated') {
+      window.location.href = `index.html?s=${storefrontId || ''}`;
+    } else {
+      console.error('Cart error:', e.message);
+    }
+  }
+</script>
+
+</body>
+</html>
