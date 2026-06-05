@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Passionists of Holy Cross Province — Branded Merchandise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../shared/styles.css">
+  <style>
+    /* ── PAGE-SPECIFIC OVERRIDES ── */
+    .sf-login-wrap {
+      background: linear-gradient(160deg, #002B46 0%, #001a2e 60%, #5C1D21 100%);
+    }
+    .sf-login-card {
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    }
+    .sf-login-logo {
+      filter: brightness(0) invert(0);
+      width: 100px;
+      height: 100px;
+    }
+    .sf-step { display: none; }
+    .sf-step.active { display: block; }
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background .2s;
+    }
+    .step-dot.active { background: var(--primary); }
+    .sf-location-search {
+      position: relative;
+    }
+    .sf-location-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
+    .sf-location-dropdown.open { display: block; }
+    .sf-location-option {
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: background .1s;
+    }
+    .sf-location-option:hover { background: var(--primary-light); }
+    .sf-location-option.selected { background: var(--primary-light); font-weight: 500; }
+    .sf-powered {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+    }
+    .sf-powered a { color: rgba(255,255,255,0.5); }
+    .sf-powered a:hover { color: rgba(255,255,255,0.8); }
+    .sf-divider-text {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+      font-size: 12px;
+      color: var(--mid-gray);
+    }
+    .sf-divider-text::before,
+    .sf-divider-text::after {
+      content: '';
+      flex: 1;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<div class="sf-login-wrap">
+  <div class="sf-login-card">
+
+    <!-- Logo + Org name -->
+    <img src="assets/passionist-sign.png" alt="Passionist Logo" class="sf-login-logo">
+    <div class="sf-login-title">Branded Merchandise</div>
+    <div class="sf-login-org">Passionists of Holy Cross Province</div>
+
+    <!-- Tabs -->
+    <div class="sf-login-tabs">
+      <button class="sf-login-tab active" id="tab-signin" onclick="switchTab('signin')">Sign in</button>
+      <button class="sf-login-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- ── SIGN IN PANEL ── -->
+    <div id="panel-signin">
+      <div class="sf-field">
+        <label>Email address</label>
+        <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="sf-field">
+        <label>Password</label>
+        <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="sf-error" id="si-error"></div>
+      <button class="sf-btn sf-btn-primary sf-btn-block sf-btn-lg" id="si-btn" onclick="doSignIn()" style="margin-top:8px">
+        Sign in
+      </button>
+      <div class="sf-divider-text">or</div>
+      <button class="sf-btn sf-btn-ghost sf-btn-block" onclick="switchTab('register')">
+        Create an account
+      </button>
+    </div>
+
+    <!-- ── REGISTER PANEL ── -->
+    <div id="panel-register" style="display:none">
+
+      <!-- Step indicators -->
+      <div class="step-indicator" id="step-dots">
+        <div class="step-dot active" id="dot-1"></div>
+        <div class="step-dot" id="dot-2"></div>
+        <div class="step-dot" id="dot-3"></div>
+      </div>
+
+      <!-- Step 1: Access code -->
+      <div class="sf-step active" id="step-1">
+        <p style="font-size:14px;color:var(--gray);margin-bottom:16px;text-align:center">
+          Enter the access code provided by your organization to create an account.
+        </p>
+        <div class="sf-field">
+          <label>Access code</label>
+          <input type="text" id="reg-code" placeholder="e.g. ASSEMBLY26"
+            style="text-transform:uppercase;letter-spacing:.1em;font-size:16px;font-weight:600;text-align:center"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="sf-error" id="code-error"></div>
+        <button class="sf-btn sf-btn-primary sf-btn-block sf-btn-lg" id="code-btn" onclick="validateCode()" style="margin-top:8px">
+          Continue
+        </button>
+      </div>
+
+      <!-- Step 2: Location + Name -->
+      <div class="sf-step" id="step-2">
+        <p style="font-size:13px;color:var(--gray);margin-bottom:16px;text-align:center">
+          Tell us who you are and which location you're ordering for.
+        </p>
+        <div class="sf-field">
+          <label>Your name</label>
+          <input type="text" id="reg-name" placeholder="First and last name" autocomplete="name">
+        </div>
+        <div class="sf-field">
+          <label>Location</label>
+          <div class="sf-location-search">
+            <input type="text" id="reg-location-input" placeholder="Type to search locations…"
+              oninput="filterLocations(this.value)"
+              onfocus="openLocationDropdown()"
+              autocomplete="off">
+            <div class="sf-location-dropdown" id="location-dropdown"></div>
+          </div>
+          <input type="hidden" id="reg-location-id">
+          <input type="hidden" id="reg-location-name">
+        </div>
+        <div class="sf-error" id="step2-error"></div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="sf-btn sf-btn-ghost" onclick="goToStep(1)">Back</button>
+          <button class="sf-btn sf-btn-primary" style="flex:1" onclick="validateStep2()">Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Email + Password -->
+      <div class="sf-step" id="step-3">
+        <p style="font-size:13px;color:var(--gray);margin-bottom:16px;text-align:center">
+          Create your account credentials.
+        </p>
+        <div class="sf-field">
+          <label>Email address</label>
+          <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="sf-field">
+          <label>Password</label>
+          <input type="password" id="reg-password" placeholder="At least 8 characters" autocomplete="new-password">
+        </div>
+        <div class="sf-field">
+          <label>Confirm password</label>
+          <input type="password" id="reg-confirm" placeholder="Re-enter password" autocomplete="new-password">
+        </div>
+        <div class="sf-error" id="step3-error"></div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="sf-btn sf-btn-ghost" onclick="goToStep(2)">Back</button>
+          <button class="sf-btn sf-btn-primary" style="flex:1" id="reg-btn" onclick="doRegister()">Create account</button>
+        </div>
+      </div>
+
+    </div><!-- /panel-register -->
+
+  </div><!-- /sf-login-card -->
+
+  <div class="sf-powered">
+    Powered by <a href="https://commonprintco.com" target="_blank">Common Print Co.</a>
+  </div>
+
+</div><!-- /sf-login-wrap -->
+
+<script type="module">
+  import { VERSION }    from '../../shared/version.js';
+  import { initAuth, signIn, register, redirectIfAuthed, authError } from `../../shared/auth.js?v=${VERSION}`;
+  import { WORKER_URL, callWorker, toast } from `../../shared/utils.js?v=${VERSION}`;
+
+  // ── CONFIG ──────────────────────────────────────────────────────────────
+  const STOREFRONT_ID   = 'passionist-holy-cross';
+  const STOREFRONT_NAME = 'The Passionists of Holy Cross Province Branded Merchandise Storefront';
+
+  // Locations — pre-loaded, sorted alphabetically
+  const LOCATIONS = [
+    { id: 'christ-the-king',  name: 'Christ the King Passionist Retreat Center (Citrus Heights, CA)' },
+    { id: 'holy-name',        name: 'Holy Name Passionist Retreat Center (Houston, TX)' },
+    { id: 'mater-dolorosa',   name: 'Mater Dolorosa Passionist Retreat Center (Sierra Madre, CA)' },
+    { id: 'st-paul-cross',    name: 'St. Paul of the Cross Passionist Retreat & Conference Center (Detroit, MI)' },
+    { id: 'other',            name: 'Other / Not listed' },
+  ];
+
+  // ── STATE ────────────────────────────────────────────────────────────────
+  let currentStep    = 1;
+  let validatedCode  = null; // { codeId, codeLabel }
+  let selectedLocation = null; // { id, name }
+
+  // ── INIT ─────────────────────────────────────────────────────────────────
+  await initAuth(WORKER_URL);
+  await redirectIfAuthed('catalog.html');
+
+  // ── TAB SWITCHING ────────────────────────────────────────────────────────
+  window.switchTab = (tab) => {
+    document.getElementById('panel-signin').style.display   = tab === 'signin'   ? 'block' : 'none';
+    document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('tab-signin').classList.toggle('active',   tab === 'signin');
+    document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+    clearErrors();
+  };
+
+  // ── SIGN IN ──────────────────────────────────────────────────────────────
+  window.doSignIn = async () => {
+    const email    = document.getElementById('si-email').value.trim();
+    const password = document.getElementById('si-password').value;
+    const errEl    = document.getElementById('si-error');
+    const btn      = document.getElementById('si-btn');
+    errEl.classList.remove('show');
+
+    if (!email || !password) {
+      errEl.textContent = 'Please enter your email and password.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Signing in…';
+
+    try {
+      const cred = await signIn(email, password);
+      // Update last login
+      callWorker('update_last_login', { uid: cred.user.uid }).catch(() => {});
+      window.location.href = 'catalog.html';
+    } catch(e) {
+      errEl.textContent = authError(e.code);
+      errEl.classList.add('show');
+      btn.disabled    = false;
+      btn.textContent = 'Sign in';
+    }
+  };
+
+  // ── STEP NAVIGATION ──────────────────────────────────────────────────────
+  window.goToStep = (step) => {
+    document.querySelectorAll('.sf-step').forEach((el, i) => {
+      el.classList.toggle('active', i + 1 === step);
+    });
+    document.querySelectorAll('.step-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i + 1 <= step);
+    });
+    currentStep = step;
+    clearErrors();
+  };
+
+  // ── STEP 1: VALIDATE ACCESS CODE ─────────────────────────────────────────
+  window.validateCode = async () => {
+    const code  = document.getElementById('reg-code').value.trim().toUpperCase();
+    const errEl = document.getElementById('code-error');
+    const btn   = document.getElementById('code-btn');
+    errEl.classList.remove('show');
+
+    if (!code) {
+      errEl.textContent = 'Please enter your access code.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Checking…';
+
+    try {
+      const result = await callWorker('validate_code', { code, storefrontId: STOREFRONT_ID });
+      if (!result.valid) {
+        errEl.textContent = result.error || 'Invalid access code.';
+        errEl.classList.add('show');
+        btn.disabled    = false;
+        btn.textContent = 'Continue';
+        return;
+      }
+      validatedCode = { codeId: result.codeId, codeLabel: result.codeLabel };
+      goToStep(2);
+    } catch(e) {
+      errEl.textContent = 'Unable to verify code. Please try again.';
+      errEl.classList.add('show');
+    }
+    btn.disabled    = false;
+    btn.textContent = 'Continue';
+  };
+
+  // ── LOCATION DROPDOWN ─────────────────────────────────────────────────────
+  window.filterLocations = (query) => {
+    const dropdown = document.getElementById('location-dropdown');
+    const filtered = query.trim()
+      ? LOCATIONS.filter(l => l.name.toLowerCase().includes(query.toLowerCase()))
+      : LOCATIONS;
+
+    dropdown.innerHTML = filtered.map(l => `
+      <div class="sf-location-option ${selectedLocation?.id === l.id ? 'selected' : ''}"
+        onclick="selectLocation('${l.id}', '${l.name.replace(/'/g, "\\'")}')">
+        ${l.name}
+      </div>`).join('');
+    dropdown.classList.add('open');
+  };
+
+  window.openLocationDropdown = () => {
+    filterLocations(document.getElementById('reg-location-input').value);
+  };
+
+  window.selectLocation = (id, name) => {
+    selectedLocation = { id, name };
+    document.getElementById('reg-location-input').value = name;
+    document.getElementById('reg-location-id').value   = id;
+    document.getElementById('reg-location-name').value = name;
+    document.getElementById('location-dropdown').classList.remove('open');
+  };
+
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.sf-location-search')) {
+      document.getElementById('location-dropdown').classList.remove('open');
+    }
+  });
+
+  // ── STEP 2: VALIDATE NAME + LOCATION ─────────────────────────────────────
+  window.validateStep2 = () => {
+    const name   = document.getElementById('reg-name').value.trim();
+    const errEl  = document.getElementById('step2-error');
+    errEl.classList.remove('show');
+
+    if (!name) {
+      errEl.textContent = 'Please enter your name.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (!selectedLocation) {
+      errEl.textContent = 'Please select your location.';
+      errEl.classList.add('show');
+      return;
+    }
+    goToStep(3);
+  };
+
+  // ── STEP 3: CREATE ACCOUNT ────────────────────────────────────────────────
+  window.doRegister = async () => {
+    const name      = document.getElementById('reg-name').value.trim();
+    const email     = document.getElementById('reg-email').value.trim();
+    const password  = document.getElementById('reg-password').value;
+    const confirm   = document.getElementById('reg-confirm').value;
+    const errEl     = document.getElementById('step3-error');
+    const btn       = document.getElementById('reg-btn');
+    errEl.classList.remove('show');
+
+    if (!email) {
+      errEl.textContent = 'Please enter your email address.';
+      errEl.classList.add('show'); return;
+    }
+    if (password.length < 8) {
+      errEl.textContent = 'Password must be at least 8 characters.';
+      errEl.classList.add('show'); return;
+    }
+    if (password !== confirm) {
+      errEl.textContent = "Passwords don't match.";
+      errEl.classList.add('show'); return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Creating account…';
+
+    try {
+      // Create Firebase Auth account
+      const cred = await register(email, password);
+      const uid  = cred.user.uid;
+
+      // Save user profile via worker
+      await callWorker('register_storefront_user', {
+        uid,
+        email,
+        name,
+        locationId:      selectedLocation.id,
+        locationName:    selectedLocation.name,
+        storefrontId:    STOREFRONT_ID,
+        accessCodeId:    validatedCode.codeId,
+        accessCodeLabel: validatedCode.codeLabel,
+      });
+
+      window.location.href = 'catalog.html';
+    } catch(e) {
+      errEl.textContent = authError(e.code) || 'Registration failed. Please try again.';
+      errEl.classList.add('show');
+      btn.disabled    = false;
+      btn.textContent = 'Create account';
+    }
+  };
+
+  // ── KEYBOARD SUPPORT ─────────────────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    if (document.getElementById('panel-signin').style.display !== 'none') {
+      doSignIn();
+    } else if (currentStep === 1) {
+      validateCode();
+    } else if (currentStep === 2) {
+      validateStep2();
+    } else if (currentStep === 3) {
+      doRegister();
+    }
+  });
+
+  // ── HELPERS ───────────────────────────────────────────────────────────────
+  function clearErrors() {
+    document.querySelectorAll('.sf-error').forEach(el => el.classList.remove('show'));
+  }
+</script>
+
+</body>
+</html>
