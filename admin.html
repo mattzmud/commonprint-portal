@@ -4801,7 +4801,7 @@ window.saveStorefront = async () => {
     activeSF={id:sfId,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold};
     openStorefrontDetail(sfId);
   } else {
-    activeSF={...activeSF,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold};
+    activeSF={...activeSF,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold,...(logoUrl?{logoUrl}:{}),...(Object.keys(brand).length?{brand}:{})};
     document.getElementById('sf-detail-name').textContent=name;
     document.getElementById('sf-detail-url').textContent=`portal.commonprintco.com/store/?s=${slug}`;
     document.getElementById('sf-detail-status-badge').innerHTML=active?badge('active'):badge('changes');
