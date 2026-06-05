@@ -207,6 +207,30 @@
   .msg-bubble-admin .msg-bubble-meta { color:rgba(255,255,255,0.7); text-align:right; }
   .msg-bubble-client .msg-bubble-meta { color:var(--mid-gray); }
 
+  /* ── STOREFRONT TOOLTIPS ── */
+  .sf-tip {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:15px; height:15px; border-radius:50%;
+    background:var(--linen-dark); color:var(--mid-gray);
+    font-size:10px; cursor:help; position:relative; flex-shrink:0;
+    font-style:normal;
+  }
+  .sf-tip:hover::after {
+    content: attr(data-tip);
+    position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
+    background:var(--near-black); color:var(--white);
+    font-size:12px; font-weight:400; font-family:var(--font-body);
+    padding:6px 10px; border-radius:6px; white-space:nowrap;
+    max-width:220px; white-space:normal; line-height:1.4;
+    z-index:1000; pointer-events:none;
+    box-shadow:0 2px 8px rgba(0,0,0,0.2);
+  }
+  .sf-tip:hover::before {
+    content:''; position:absolute; bottom:calc(100% + 1px); left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:var(--near-black);
+    z-index:1000; pointer-events:none;
+  }
+
   /* ── PROOF THREAD ── */
   .proof-modal-wrap {
     display: grid;
@@ -890,7 +914,7 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div class="field" style="grid-column:1/-1">
         <label>Storefront name</label>
-        <input type="text" id="sf-name" placeholder="Passionists of Holy Cross Province Branded Merchandise">
+        <input type="text" id="sf-name" placeholder="Passionists of Holy Cross Province Branded Merchandise" oninput="const t=document.getElementById('prev-title');if(t)t.textContent=this.value||'Storefront Name'">
       </div>
       <div class="field">
         <label>Slug (URL identifier)</label>
@@ -912,49 +936,128 @@
 
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--linen-dark)">
       <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">Branding</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="field" style="grid-column:1/-1">
-          <label>Logo</label>
-          <div id="sf-logo-preview" class="hidden" style="margin-bottom:8px">
-            <img id="sf-logo-thumb" src="" style="height:64px;border-radius:var(--radius);border:1px solid var(--border);background:var(--linen);padding:4px;object-fit:contain">
+
+      <!-- Logo -->
+      <div class="field">
+        <label>Logo</label>
+        <div id="sf-logo-preview" class="hidden" style="margin-bottom:8px">
+          <img id="sf-logo-thumb" src="" style="height:64px;border-radius:var(--radius);border:1px solid var(--border);background:var(--linen);padding:4px;object-fit:contain">
+        </div>
+        <input type="file" id="sf-logo-file" accept="image/*" onchange="handleSFLogoSelect(this)">
+        <div style="font-size:12px;color:var(--mid-gray);margin-top:4px">PNG with transparent background recommended.</div>
+      </div>
+
+      <!-- Color grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px">
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:5px">
+            Nav background
+            <span class="sf-tip" data-tip="Controls the top navigation bar and login page header band">ⓘ</span>
+          </label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-nav" value="#002B46" oninput="syncColor('nav',this.value);updatePreview()" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-nav-hex" placeholder="#002B46" maxlength="7"
+              oninput="syncColor('nav',this.value);updatePreview()"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
           </div>
-          <input type="file" id="sf-logo-file" accept="image/*" onchange="handleSFLogoSelect(this)">
-          <div style="font-size:12px;color:var(--mid-gray);margin-top:4px">PNG with transparent background recommended.</div>
         </div>
         <div class="field">
-          <label>Primary color</label>
+          <label style="display:flex;align-items:center;gap:5px">
+            Primary color
+            <span class="sf-tip" data-tip="Buttons, active tabs, selected states, and step indicators">ⓘ</span>
+          </label>
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="color" id="sf-color-primary" value="#5C1D21" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="color" id="sf-color-primary" value="#5C1D21" oninput="syncColor('primary',this.value);updatePreview()" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
             <input type="text" id="sf-color-primary-hex" placeholder="#5C1D21" maxlength="7"
-              oninput="syncColor('primary',this.value)"
+              oninput="syncColor('primary',this.value);updatePreview()"
               style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
           </div>
         </div>
         <div class="field">
-          <label>Primary dark (hover)</label>
+          <label style="display:flex;align-items:center;gap:5px">
+            Primary dark
+            <span class="sf-tip" data-tip="Button and link hover state — slightly darker than Primary">ⓘ</span>
+          </label>
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="color" id="sf-color-primary-dark" value="#3d1216" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="color" id="sf-color-primary-dark" value="#3d1216" oninput="syncColor('primary-dark',this.value);updatePreview()" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
             <input type="text" id="sf-color-primary-dark-hex" placeholder="#3d1216" maxlength="7"
-              oninput="syncColor('primary-dark',this.value)"
+              oninput="syncColor('primary-dark',this.value);updatePreview()"
               style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
           </div>
         </div>
         <div class="field">
-          <label>Page background</label>
+          <label style="display:flex;align-items:center;gap:5px">
+            Accent color
+            <span class="sf-tip" data-tip="Hairline divider under the header, step completion dots, and highlights">ⓘ</span>
+          </label>
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="color" id="sf-color-bg" value="#002B46" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
-            <input type="text" id="sf-color-bg-hex" placeholder="#002B46" maxlength="7"
-              oninput="syncColor('bg',this.value)"
-              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
-          </div>
-        </div>
-        <div class="field">
-          <label>Accent color</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="color" id="sf-color-accent" value="#A07400" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="color" id="sf-color-accent" value="#A07400" oninput="syncColor('accent',this.value);updatePreview()" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
             <input type="text" id="sf-color-accent-hex" placeholder="#A07400" maxlength="7"
-              oninput="syncColor('accent',this.value)"
+              oninput="syncColor('accent',this.value);updatePreview()"
               style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:5px">
+            Page background
+            <span class="sf-tip" data-tip="The body background behind the login card and all storefront pages">ⓘ</span>
+          </label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-bg" value="#F7EED8" oninput="syncColor('bg',this.value);updatePreview()" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-bg-hex" placeholder="#F7EED8" maxlength="7"
+              oninput="syncColor('bg',this.value);updatePreview()"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:5px">
+            Card background
+            <span class="sf-tip" data-tip="Background of the login card, product cards, and content panels">ⓘ</span>
+          </label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-card" value="#FFFFFF" oninput="syncColor('card',this.value);updatePreview()" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-card-hex" placeholder="#FFFFFF" maxlength="7"
+              oninput="syncColor('card',this.value);updatePreview()"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:5px">
+            Border color
+            <span class="sf-tip" data-tip="Card borders, input field outlines, and divider lines">ⓘ</span>
+          </label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="sf-color-border" value="#E8DEC8" oninput="syncColor('border',this.value);updatePreview()" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="sf-color-border-hex" placeholder="#E8DEC8" maxlength="7"
+              oninput="syncColor('border',this.value);updatePreview()"
+              style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:13px;outline:none">
+          </div>
+        </div>
+      </div>
+
+      <!-- Live preview -->
+      <div style="margin-top:20px">
+        <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Live preview</div>
+        <div id="sf-brand-preview" style="border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-width:300px;margin:0 auto">
+          <!-- Header -->
+          <div id="prev-header" style="padding:18px 20px 16px;text-align:center;position:relative">
+            <div id="prev-header-after" style="position:absolute;bottom:0;left:0;right:0;height:2px"></div>
+            <div id="prev-logo" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:20px">🏪</div>
+            <div style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:3px">Branded Merchandise</div>
+            <div id="prev-title" style="font-size:13px;font-weight:600;color:#fff;line-height:1.3">Storefront Name</div>
+          </div>
+          <!-- Body -->
+          <div id="prev-body" style="padding:16px 20px 20px">
+            <!-- Tab pills -->
+            <div id="prev-tabs" style="display:flex;border-radius:8px;padding:3px;gap:3px;margin-bottom:14px">
+              <div id="prev-tab-active" style="flex:1;padding:6px;border-radius:6px;text-align:center;font-size:11px;font-weight:600;color:#fff">Sign in</div>
+              <div style="flex:1;padding:6px;text-align:center;font-size:11px;font-weight:500;color:#999">Register</div>
+            </div>
+            <!-- Input placeholder -->
+            <div id="prev-input" style="height:34px;border-radius:8px;border:1.5px solid;margin-bottom:10px"></div>
+            <div id="prev-input2" style="height:34px;border-radius:8px;border:1.5px solid;margin-bottom:12px"></div>
+            <!-- Button -->
+            <div id="prev-btn" style="height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff">Sign in</div>
           </div>
         </div>
       </div>
@@ -4510,6 +4613,56 @@ window.syncColor = (key, hex) => {
   }
 };
 
+window.updatePreview = () => {
+  const get = (key, fallback) => {
+    const el = document.getElementById(`sf-color-${key}-hex`);
+    const val = el?.value?.trim();
+    return /^#[0-9A-Fa-f]{6}$/.test(val) ? val : fallback;
+  };
+  const nav     = get('nav',     '#002B46');
+  const primary = get('primary', '#5C1D21');
+  const accent  = get('accent',  '#A07400');
+  const bg      = get('bg',      '#F7EED8');
+  const card    = get('card',    '#FFFFFF');
+  const border  = get('border',  '#E8DEC8');
+
+  const header    = document.getElementById('prev-header');
+  const headerAft = document.getElementById('prev-header-after');
+  const body      = document.getElementById('prev-body');
+  const tabs      = document.getElementById('prev-tabs');
+  const tabActive = document.getElementById('prev-tab-active');
+  const input1    = document.getElementById('prev-input');
+  const input2    = document.getElementById('prev-input2');
+  const btn       = document.getElementById('prev-btn');
+  const title     = document.getElementById('prev-title');
+  const wrap      = document.getElementById('sf-brand-preview');
+
+  if (!header) return;
+
+  header.style.background      = nav;
+  headerAft.style.background   = `linear-gradient(90deg,transparent,${accent},transparent)`;
+  body.style.background        = card;
+  tabs.style.background        = bg;
+  tabActive.style.background   = primary;
+  input1.style.borderColor     = border;
+  input1.style.background      = bg;
+  input2.style.borderColor     = border;
+  input2.style.background      = bg;
+  btn.style.background         = primary;
+  wrap.style.background        = bg;
+
+  // Update name from field
+  const nameField = document.getElementById('sf-name');
+  if (nameField?.value && title) title.textContent = nameField.value || 'Storefront Name';
+
+  // Update logo in preview if thumb exists
+  const thumb = document.getElementById('sf-logo-thumb');
+  const prevLogo = document.getElementById('prev-logo');
+  if (thumb?.src && !thumb.src.endsWith('#') && prevLogo) {
+    prevLogo.innerHTML = `<img src="${thumb.src}" style="width:36px;height:36px;object-fit:contain;border-radius:50%">`;
+  }
+};
+
 window.handleSFLogoSelect = (input) => {
   const file = input.files[0]; if (!file) return;
   sfLogoFile = file;
@@ -4522,15 +4675,27 @@ window.handleSFLogoSelect = (input) => {
 };
 
 function setSFColors(sf) {
-  const defaults = { primary:'#5C1D21', 'primary-dark':'#3d1216', bg:'#002B46', accent:'#A07400' };
-  const brand    = sf?.brand || {};
+  const defaults = {
+    nav:            '#002B46',
+    primary:        '#5C1D21',
+    'primary-dark': '#3d1216',
+    accent:         '#A07400',
+    bg:             '#F7EED8',
+    card:           '#FFFFFF',
+    border:         '#E8DEC8',
+  };
+  const brand = sf?.brand || {};
   for (const [key, def] of Object.entries(defaults)) {
-    const val = brand[key] || def;
+    const val    = brand[key] || def;
     const picker = document.getElementById(`sf-color-${key}`);
     const hex    = document.getElementById(`sf-color-${key}-hex`);
     if (picker) picker.value = val;
     if (hex)    hex.value    = val;
   }
+  // Update storefront name in preview
+  const nameEl = document.getElementById('prev-title');
+  if (nameEl) nameEl.textContent = sf?.name || document.getElementById('sf-name')?.value || 'Storefront Name';
+  updatePreview();
 }
 
 window.openNewStorefrontModal = () => {
@@ -4603,14 +4768,12 @@ window.saveStorefront = async () => {
   }
 
   // Collect brand colors
-  const brand = {
-    primary:        document.getElementById('sf-color-primary-hex').value.trim()      || null,
-    'primary-dark': document.getElementById('sf-color-primary-dark-hex').value.trim() || null,
-    bg:             document.getElementById('sf-color-bg-hex').value.trim()            || null,
-    accent:         document.getElementById('sf-color-accent-hex').value.trim()        || null,
-  };
-  // Remove nulls
-  Object.keys(brand).forEach(k => { if (!brand[k]) delete brand[k]; });
+  const brandKeys = ['nav','primary','primary-dark','accent','bg','card','border'];
+  const brand = {};
+  brandKeys.forEach(k => {
+    const val = document.getElementById(`sf-color-${k}-hex`)?.value.trim();
+    if (val && /^#[0-9A-Fa-f]{6}$/.test(val)) brand[k] = val;
+  });
 
   await fbSet(`storefronts/${sfId}`,{
     name, slug, clientUid, active,
