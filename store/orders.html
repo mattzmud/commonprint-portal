@@ -392,7 +392,7 @@
                       };
                       const statusBadge = statusMap[o.status] || statusMap.pending;
                       if (o.squareInvoiceId) {
-                        return '📄 <a href="https://squareup.com/invoice/' + esc(o.squareInvoiceId) + '" target="_blank" style="color:var(--primary);text-decoration:none">Pay invoice →</a>' + statusBadge;
+                        return '📄 <a href="https://app.squareup.com/pay-invoice/' + esc(o.squareInvoiceId) + '" target="_blank" style="color:var(--primary);text-decoration:none">Pay invoice →</a>' + statusBadge;
                       }
                       return '📄 Invoice' + statusBadge;
                     }
