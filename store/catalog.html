@@ -833,12 +833,12 @@
     if (e.message === 'Not authenticated') {
       window.location.href = `index.html?s=${storefrontId || ''}`;
     } else {
-      console.error('Catalog error:', e.message, e.stack);
+      console.error('Catalog error:', e.message);
       document.getElementById('catalog-content').innerHTML = `
         <div class="sf-empty">
           <div class="sf-empty-icon">⚠️</div>
-          <h3>Error: ${e.message}</h3>
-          <pre style="font-size:11px;text-align:left;padding:12px;background:#f5f5f5;border-radius:8px;overflow:auto">${e.stack}</pre>
+          <h3>Something went wrong</h3>
+          <p>Unable to load the catalog. Please refresh the page or contact Common Print Co.</p>
         </div>`;
     }
   }
