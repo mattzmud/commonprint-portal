@@ -1078,6 +1078,15 @@
       </div>
     </div>
 
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--linen-dark)">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">
+        Custom orders FAQ
+        <span class="sf-tip" data-tip="Overrides the default 'Can I order a custom design?' FAQ answer for this storefront. Leave blank to use the default answer.">ⓘ</span>
+      </div>
+      <textarea id="sf-custom-orders-note" rows="4"
+        placeholder="Leave blank to use the default FAQ answer. Enter custom text here to replace it — e.g. restrictions or contact instructions specific to this organization."
+        style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;resize:vertical;outline:none;line-height:1.6"></textarea>
+    </div>
     <div style="margin-top:12px">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--charcoal)">
         <input type="checkbox" id="sf-active" checked>
@@ -4916,6 +4925,7 @@ function setSFColors(sf) {
 
 window.openNewStorefrontModal = () => {
   editingStorefrontId=null; sfLogoFile=null;
+  document.getElementById('sf-custom-orders-note').value='';
   document.getElementById('sf-modal-title').textContent='New storefront';
   document.getElementById('sf-name').value='';
   document.getElementById('sf-slug').value='';
@@ -4925,6 +4935,7 @@ window.openNewStorefrontModal = () => {
   document.getElementById('sf-active').checked=true;
   document.getElementById('sf-logo-preview').classList.add('hidden');
   document.getElementById('sf-logo-file').value='';
+  document.getElementById('sf-custom-orders-note').value = activeSF.customOrdersNote || '';
   document.getElementById('sf-error').classList.add('hidden');
   setSFColors(null);
   openModal('modal-storefront');
@@ -4991,11 +5002,13 @@ window.saveStorefront = async () => {
     if (val && /^#[0-9A-Fa-f]{6}$/.test(val)) brand[k] = val;
   });
 
+  const customOrdersNote = document.getElementById('sf-custom-orders-note').value.trim();
   await fbSet(`storefronts/${sfId}`,{
     name, slug, clientUid, active,
     shippingRate:          Math.round(shipping*100)/100,
     freeShippingThreshold: Math.round(threshold*100)/100,
     ...(logoUrl ? { logoUrl } : {}),
+    ...(customOrdersNote ? { customOrdersNote } : { customOrdersNote: null }),
     ...(Object.keys(brand).length ? { brand } : {}),
     updatedAt:new Date().toISOString(),
     ...(editingStorefrontId?{}:{createdAt:new Date().toISOString()}),
@@ -5007,7 +5020,7 @@ window.saveStorefront = async () => {
     activeSF={id:sfId,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold};
     openStorefrontDetail(sfId);
   } else {
-    activeSF={...activeSF,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold,...(logoUrl?{logoUrl}:{}),...(Object.keys(brand).length?{brand}:{})};
+    activeSF={...activeSF,name,slug,clientUid,active,shippingRate:shipping,freeShippingThreshold:threshold,...(logoUrl?{logoUrl}:{}),...(Object.keys(brand).length?{brand}:{}),customOrdersNote};
     document.getElementById('sf-detail-name').textContent=name;
     document.getElementById('sf-detail-url').textContent=`portal.commonprintco.com/store/?s=${slug}`;
     document.getElementById('sf-detail-status-badge').innerHTML=active?badge('active'):badge('changes');
