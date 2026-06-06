@@ -144,12 +144,22 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.12);
       transform: translateY(-2px);
     }
-    .product-img {
+    .product-img-wrap {
       width: 100%;
       aspect-ratio: 1;
-      object-fit: contain;
       background: var(--card-bg, #fff);
-      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .product-img {
+      max-width: calc(100% - 32px);
+      max-height: calc(100% - 32px);
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
     }
     .product-img-placeholder {
       width: 100%;
@@ -557,7 +567,7 @@
       const tiers    = (p.pricingTiers || []).sort((a,b) => a.minQty - b.minQty);
       const lowestPrice = tiers.length ? tiers[0].unitPrice : 0;
       const imgHtml  = p.imageUrl
-        ? `<img class="product-img" src="${p.imageUrl}" alt="${esc(p.name||'')}" loading="lazy">`
+        ? `<div class="product-img-wrap"><img class="product-img" src="${p.imageUrl}" alt="${esc(p.name||'')}" loading="lazy"></div>`
         : `<div class="product-img-placeholder">🖼️</div>`;
       return `
         <div class="product-card" onclick="showDetail('${p.id}')">
