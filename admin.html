@@ -1318,6 +1318,7 @@
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-sf-order')">Close</button>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="saveSFOrderDetails()">Save</button>
         <button class="btn btn-ghost btn-sm" id="sford-process-btn" onclick="updateSFOrderStatus('processing')">Mark in process</button>
         <button class="btn btn-ghost btn-sm" id="sford-ship-btn"    onclick="markShipped()">Mark shipped</button>
         <button class="btn btn-primary btn-sm" id="sford-complete-btn" onclick="updateSFOrderStatus('completed')">Mark complete</button>
@@ -4675,7 +4676,7 @@ function renderSFOrders() {
     : activeSFOrders.map(o => `
       <tr style="cursor:pointer" onclick="openSFOrderModal('${o.id}')"
         onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background=''">
-        <td style="font-size:12px;font-family:monospace">${esc(o.id.slice(0,8).toUpperCase())}</td>
+        <td style="font-size:12px;font-family:monospace">${esc(o.id.slice(0,12).toUpperCase())}</td>
         <td style="font-size:13px">${esc(o.locationName||'—')}</td>
         <td style="font-weight:500">${esc(o.name||o.email||'—')}</td>
         <td>$${Number(o.orderTotal||0).toFixed(2)}</td>
@@ -4689,7 +4690,7 @@ function renderSFOrders() {
 window.openSFOrderModal = (orderId) => {
   const o = activeSFOrders.find(x=>x.id===orderId); if (!o) return;
   activeSFOrderId=orderId;
-  document.getElementById('sford-title').textContent     = `Order ${orderId.slice(0,8).toUpperCase()}`;
+  document.getElementById('sford-title').textContent     = `Order ${orderId.slice(0,12).toUpperCase()}`;
   document.getElementById('sford-meta').textContent      = fmtDateTime(o.createdAt);
   document.getElementById('sford-status-badge').innerHTML= badge(o.status||'pending');
   document.getElementById('sford-customer').textContent  = o.name||o.email||'—';
@@ -4761,6 +4762,27 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-complete-btn').classList.toggle('hidden', isDone);
   document.getElementById('sford-cancel-btn').classList.toggle('hidden',   isDone);
   openModal('modal-sf-order');
+};
+
+window.saveSFOrderDetails = async () => {
+  if (!activeSFOrderId||!activeSF) return;
+  const adminNotes      = document.getElementById('sford-admin-notes').value;
+  const squareInvoiceId = document.getElementById('sford-invoice-id').value.trim();
+  const carrier         = document.getElementById('sford-carrier').value;
+  const trackingNumber  = document.getElementById('sford-tracking').value.trim();
+  const updateData = {
+    updatedAt: new Date().toISOString(),
+    ...(adminNotes      ? { adminNotes }      : {}),
+    ...(squareInvoiceId ? { squareInvoiceId } : {}),
+    ...(carrier         ? { carrier }         : {}),
+    ...(trackingNumber  ? { trackingNumber }  : {}),
+  };
+  await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`, updateData);
+  const o = activeSFOrders.find(x=>x.id===activeSFOrderId);
+  if (o) Object.assign(o, updateData);
+  toast('Order details saved!', 'success');
+  // Refresh invoice status badge
+  openSFOrderModal(activeSFOrderId);
 };
 
 window.updateSFOrderStatus = async (status) => {
