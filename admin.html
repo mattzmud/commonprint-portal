@@ -840,6 +840,7 @@
         <button class="detail-tab"        onclick="showSFTab('codes')"     data-sftab="codes">Access Codes</button>
         <button class="detail-tab"        onclick="showSFTab('orders')"    data-sftab="orders">Orders</button>
         <button class="detail-tab"        onclick="showSFTab('users')"     data-sftab="users">Users</button>
+        <button class="detail-tab"        onclick="showSFTab('discounts')" data-sftab="discounts">Discounts</button>
       </div>
 
       <!-- Products tab -->
@@ -892,10 +893,23 @@
       <div class="detail-panel" id="sftab-users">
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>Name</th><th>Email</th><th>Location</th><th>Registered via</th><th>Last login</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Location</th><th>Registered via</th><th>Last login</th><th>Status</th><th>UID</th><th></th></tr></thead>
             <tbody id="sf-users-tbody"></tbody>
           </table>
         </div>
+
+      <!-- Discounts panel -->
+      <div class="detail-panel" id="sftab-discounts">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-primary btn-sm" onclick="openNewDiscountModal()">+ Add discount code</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Uses</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+            <tbody id="sf-discounts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -1664,6 +1678,86 @@
   </div>
 </div>
 
+<!-- New / Edit Discount Code -->
+<div class="modal-overlay" id="modal-discount">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title" id="discount-modal-title">New discount code</div>
+      <button class="modal-close" onclick="closeModal('modal-discount')">×</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="field" style="grid-column:1/-1;position:relative">
+        <label>Discount code</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="dc-code" placeholder="e.g. FREESHIP"
+            style="text-transform:uppercase;letter-spacing:.08em;font-weight:600;flex:1"
+            oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')">
+          <button class="btn btn-ghost btn-sm" onclick="generateDiscountCode()" id="dc-gen-btn" style="display:none;white-space:nowrap">Generate</button>
+        </div>
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Label (internal reference)</label>
+        <input type="text" id="dc-label" placeholder="e.g. Conference free shipping">
+      </div>
+      <div class="field">
+        <label>Discount type</label>
+        <select id="dc-type" onchange="onDiscountTypeChange(this.value)">
+          <option value="free_shipping">Free shipping</option>
+          <option value="percent_off">Percentage off subtotal</option>
+          <option value="amount_off">Fixed amount off subtotal</option>
+        </select>
+      </div>
+      <div class="field" id="dc-value-field" style="display:none">
+        <label id="dc-value-label">Value</label>
+        <input type="number" id="dc-value" min="0" step="0.01" placeholder="0">
+      </div>
+    </div>
+
+    <div style="margin-top:4px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">Usage limit</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="radio" name="dc-limit" value="unlimited" checked onchange="onLimitTypeChange(this.value)"> Unlimited uses
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="radio" name="dc-limit" value="limited" onchange="onLimitTypeChange(this.value)"> Limited uses
+        </label>
+        <div id="dc-maxuses-wrap" style="display:none;margin-left:24px">
+          <input type="number" id="dc-max-uses" min="1" placeholder="Max number of uses"
+            style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;width:200px;outline:none">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="radio" name="dc-limit" value="single_user" onchange="onLimitTypeChange(this.value)"> Single user (by UID)
+        </label>
+        <div id="dc-uid-wrap" style="display:none;margin-left:24px">
+          <input type="text" id="dc-locked-uid" placeholder="Storefront user UID"
+            style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:monospace;font-size:12px;width:100%;outline:none">
+          <div style="font-size:11px;color:var(--mid-gray);margin-top:4px">Find the UID in the storefront Users tab</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <div class="field">
+        <label>Expiry date (optional)</label>
+        <input type="date" id="dc-expires">
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end;padding-bottom:2px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="dc-active" checked> Code is active
+        </label>
+      </div>
+    </div>
+
+    <div class="form-error hidden" id="dc-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-discount')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveDiscountCode()">Save code</button>
+    </div>
+  </div>
+</div>
+
 <!-- Invite Client -->
 <div class="modal-overlay" id="modal-new-client">
   <div class="modal">
@@ -2201,6 +2295,13 @@ async function loadClientDetail(uid) {
       <div class="info-row" style="grid-column:1/-1"><span class="info-label">Phone</span><span class="info-val">${esc(selectedClient.phone||'—')}</span></div>
       <div class="info-row" style="grid-column:1/-1"><span class="info-label">Client since</span><span class="info-val">${fmtDate(selectedClient.createdAt)}</span></div>
       <div class="info-row" style="grid-column:1/-1"><span class="info-label">Last login</span><span class="info-val">${selectedClient.lastLoginAt ? fmtDateTime(selectedClient.lastLoginAt) : '—'}</span></div>
+      <div class="info-row" style="grid-column:1/-1">
+        <span class="info-label">Firebase UID</span>
+        <span class="info-val" style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:monospace;font-size:12px">${esc(selectedClient.uid||'—')}</span>
+          <button onclick="copyToClipboard('${selectedClient.uid}')" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:14px" title="Copy UID">📋</button>
+        </span>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0">
       <div style="background:var(--linen);border-radius:var(--radius);padding:12px 14px;text-align:center">
@@ -4219,6 +4320,7 @@ window.showSFTab = (tab) => {
   if (tab === 'codes')     loadSFCodes();
   if (tab === 'orders')    loadSFOrders();
   if (tab === 'users')     loadSFUsers();
+  if (tab === 'discounts') loadSFDiscounts();
 };
 
 async function loadSFProducts() {
@@ -4834,6 +4936,175 @@ const _origShowPage = window.showPage;
 window.showPage = (id) => {
   _origShowPage(id);
   if (id==='storefronts') loadStorefronts();
+};
+
+
+// ── DISCOUNT CODES ─────────────────────────────────────────────────────
+let activeSFDiscounts   = [];
+let editingDiscountId   = null;
+
+window.copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard!', 'success'));
+};
+
+function genRandomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg   = (n) => Array.from({length:n}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+  return `${seg(4)}-${seg(4)}`;
+}
+
+window.generateDiscountCode = () => {
+  document.getElementById('dc-code').value = genRandomCode();
+};
+
+window.onDiscountTypeChange = (type) => {
+  const valField  = document.getElementById('dc-value-field');
+  const valLabel  = document.getElementById('dc-value-label');
+  const genBtn    = document.getElementById('dc-gen-btn');
+  valField.style.display = type === 'free_shipping' ? 'none' : 'block';
+  if (type === 'percent_off') { valLabel.textContent = 'Percentage (%)'; document.getElementById('dc-value').placeholder = '10'; }
+  if (type === 'amount_off')  { valLabel.textContent = 'Amount off ($)'; document.getElementById('dc-value').placeholder = '5.00'; }
+};
+
+window.onLimitTypeChange = (type) => {
+  document.getElementById('dc-maxuses-wrap').style.display = type === 'limited'     ? 'block' : 'none';
+  document.getElementById('dc-uid-wrap').style.display     = type === 'single_user' ? 'block' : 'none';
+  document.getElementById('dc-gen-btn').style.display      = type === 'single_user' ? 'inline-flex' : 'none';
+};
+
+async function loadSFDiscounts() {
+  const docs = await fbList(`storefronts/${activeSF.id}/discountCodes`);
+  activeSFDiscounts = docs.map(d => ({ id: docId(d), ...ff(d.fields) }));
+  renderSFDiscounts();
+}
+
+function renderSFDiscounts() {
+  const tbody = document.getElementById('sf-discounts-tbody');
+  if (!tbody) return;
+
+  function discountTypeLabel(d) {
+    if (d.type === 'free_shipping') return 'Free shipping';
+    if (d.type === 'percent_off')   return `${d.value}% off`;
+    if (d.type === 'amount_off')    return `$${Number(d.value).toFixed(2)} off`;
+    return d.type;
+  }
+  function usageLabel(d) {
+    if (d.limitType === 'unlimited')   return `${d.useCount||0} uses`;
+    if (d.limitType === 'limited')     return `${d.useCount||0} / ${d.maxUses}`;
+    if (d.limitType === 'single_user') return `Single user`;
+    return '—';
+  }
+
+  tbody.innerHTML = activeSFDiscounts.length === 0
+    ? `<tr><td colspan="7"><div class="empty">No discount codes yet.</div></td></tr>`
+    : activeSFDiscounts.map(d => `
+      <tr>
+        <td style="font-weight:600;letter-spacing:.06em;font-family:monospace">
+          ${esc(d.code||'—')}
+          <button onclick="copyToClipboard('${esc(d.code||'')}')" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:12px;margin-left:4px" title="Copy">📋</button>
+        </td>
+        <td style="font-size:13px">${esc(discountTypeLabel(d))}</td>
+        <td>${d.type==='free_shipping' ? '—' : esc(String(d.value||''))}</td>
+        <td style="font-size:13px">${esc(usageLabel(d))}</td>
+        <td>${d.expiresAt ? fmtDate(d.expiresAt) : '<span class="text-muted">Never</span>'}</td>
+        <td>${d.active!==false ? badge('active') : badge('changes')}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditDiscountModal('${d.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDiscount('${d.id}')">Delete</button>
+        </td>
+      </tr>`).join('');
+}
+
+window.openNewDiscountModal = () => {
+  editingDiscountId = null;
+  document.getElementById('discount-modal-title').textContent = 'New discount code';
+  document.getElementById('dc-code').value       = '';
+  document.getElementById('dc-label').value      = '';
+  document.getElementById('dc-type').value       = 'free_shipping';
+  document.getElementById('dc-value').value      = '';
+  document.getElementById('dc-expires').value    = '';
+  document.getElementById('dc-active').checked   = true;
+  document.getElementById('dc-max-uses').value   = '';
+  document.getElementById('dc-locked-uid').value = '';
+  document.getElementById('dc-error').classList.add('hidden');
+  // Reset radio
+  document.querySelector('input[name="dc-limit"][value="unlimited"]').checked = true;
+  onDiscountTypeChange('free_shipping');
+  onLimitTypeChange('unlimited');
+  openModal('modal-discount');
+};
+
+window.openEditDiscountModal = (id) => {
+  const d = activeSFDiscounts.find(x => x.id === id);
+  if (!d) return;
+  editingDiscountId = id;
+  document.getElementById('discount-modal-title').textContent = 'Edit discount code';
+  document.getElementById('dc-code').value       = d.code    || '';
+  document.getElementById('dc-label').value      = d.label   || '';
+  document.getElementById('dc-type').value       = d.type    || 'free_shipping';
+  document.getElementById('dc-value').value      = d.value   || '';
+  document.getElementById('dc-expires').value    = d.expiresAt ? d.expiresAt.split('T')[0] : '';
+  document.getElementById('dc-active').checked   = d.active !== false;
+  document.getElementById('dc-max-uses').value   = d.maxUses || '';
+  document.getElementById('dc-locked-uid').value = d.lockedUid || '';
+  document.getElementById('dc-error').classList.add('hidden');
+  const limitVal = d.limitType || 'unlimited';
+  document.querySelector(`input[name="dc-limit"][value="${limitVal}"]`).checked = true;
+  onDiscountTypeChange(d.type || 'free_shipping');
+  onLimitTypeChange(limitVal);
+  openModal('modal-discount');
+};
+
+window.saveDiscountCode = async () => {
+  const code      = document.getElementById('dc-code').value.trim().toUpperCase();
+  const label     = document.getElementById('dc-label').value.trim();
+  const type      = document.getElementById('dc-type').value;
+  const value     = parseFloat(document.getElementById('dc-value').value) || 0;
+  const expires   = document.getElementById('dc-expires').value;
+  const active    = document.getElementById('dc-active').checked;
+  const limitType = document.querySelector('input[name="dc-limit"]:checked')?.value || 'unlimited';
+  const maxUses   = parseInt(document.getElementById('dc-max-uses').value) || 0;
+  const lockedUid = document.getElementById('dc-locked-uid').value.trim();
+  const errEl     = document.getElementById('dc-error');
+  errEl.classList.add('hidden');
+
+  if (!code)  { errEl.textContent='Code is required.';  errEl.classList.remove('hidden'); return; }
+  if (!label) { errEl.textContent='Label is required.'; errEl.classList.remove('hidden'); return; }
+  if ((type==='percent_off'||type==='amount_off') && !value) {
+    errEl.textContent='Please enter a discount value.'; errEl.classList.remove('hidden'); return;
+  }
+  if (limitType==='limited'   && !maxUses)   { errEl.textContent='Please enter max uses.';   errEl.classList.remove('hidden'); return; }
+  if (limitType==='single_user' && !lockedUid){ errEl.textContent='Please enter the user UID.'; errEl.classList.remove('hidden'); return; }
+
+  const codeId = editingDiscountId || genId();
+  const existing = editingDiscountId ? activeSFDiscounts.find(d=>d.id===editingDiscountId) : null;
+
+  await fbSet(`storefronts/${activeSF.id}/discountCodes/${codeId}`, {
+    code, label, type, active, storefrontId: activeSF.id,
+    value:      type==='free_shipping' ? 0 : value,
+    limitType,
+    maxUses:    limitType==='limited'     ? maxUses   : 0,
+    lockedUid:  limitType==='single_user' ? lockedUid : '',
+    useCount:   existing?.useCount || 0,
+    usedByUids: existing?.usedByUids || [],
+    expiresAt:  expires ? new Date(expires+'T23:59:59').toISOString() : null,
+    ...(editingDiscountId ? {} : { createdAt: new Date().toISOString() }),
+    updatedAt:  new Date().toISOString(),
+  });
+
+  closeModal('modal-discount');
+  toast(editingDiscountId ? 'Discount code updated!' : 'Discount code added!', 'success');
+  await loadSFDiscounts();
+};
+
+window.deleteDiscount = async (id) => {
+  const d = activeSFDiscounts.find(x=>x.id===id);
+  if (!confirm(`Delete code "${d?.code||'this code'}"?`)) return;
+  const token = await getToken();
+  await fetch(`${getFS_BASE()}/storefronts/${activeSF.id}/discountCodes/${id}`,
+    { method:'DELETE', headers:{ Authorization:'Bearer '+token } });
+  toast('Discount code deleted.', 'success');
+  await loadSFDiscounts();
 };
 
 
