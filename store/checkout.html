@@ -287,9 +287,9 @@
               <input class="payment-option-radio" type="radio" name="payment" id="radio-invoice">
               <div class="payment-option-title">Invoice me</div>
             </div>
-            <div class="payment-option-desc">Submit your order now and receive a Square invoice by email within 24 hours. Production begins once the invoice is paid.</div>
+            <div class="payment-option-desc">Submit your order now and receive an invoice by email within 24 hours. Production begins once the invoice is paid.</div>
             <div id="invoice-note">
-              📋 You'll receive a payment link by email within 24 hours. Note: production of your order won't begin until the invoice is paid.
+              📋 You'll receive an invoice with a payment link by email within 24 hours. Production of your order won't begin until the invoice is paid.
             </div>
           </div>
         </div>
@@ -309,8 +309,31 @@
         <div id="summary-items"></div>
         <hr class="sum-divider">
         <div class="summary-row"><span>Subtotal</span><span id="sum-subtotal">—</span></div>
+        <div class="summary-row" id="sum-discount-row" style="display:none;color:var(--success)">
+          <span id="sum-discount-label">Discount</span>
+          <span id="sum-discount-amount">—</span>
+        </div>
         <div class="summary-row" id="sum-ship-row"><span>Shipping</span><span id="sum-shipping">—</span></div>
         <div class="summary-row total"><span>Total</span><span id="sum-total">—</span></div>
+        <hr class="sum-divider">
+        <!-- Discount code -->
+        <div style="margin-top:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--gray);margin-bottom:8px">Discount code</div>
+          <div style="display:flex;gap:8px" id="discount-input-row">
+            <input type="text" id="discount-code-input" placeholder="Enter code"
+              style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;text-transform:uppercase;outline:none"
+              oninput="this.value=this.value.toUpperCase()">
+            <button onclick="applyDiscountCode()" id="discount-apply-btn"
+              style="padding:9px 14px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap">
+              Apply
+            </button>
+          </div>
+          <div id="discount-msg" style="font-size:12px;margin-top:6px;display:none"></div>
+          <div id="discount-applied-row" style="display:none;margin-top:8px;background:var(--success-light);border-radius:var(--radius);padding:8px 12px;display:none;align-items:center;justify-content:space-between">
+            <span style="font-size:13px;color:var(--success);font-weight:500" id="discount-applied-label"></span>
+            <button onclick="removeDiscountCode()" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:16px">×</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -326,15 +349,16 @@
   const FS_BASE       = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
   const CART_KEY      = 'sf_cart';
 
-  let storefrontId  = null;
-  let storefront    = null;
-  let auth          = null;
-  let currentUser   = null;
-  let sfUser        = null;
-  let cart          = [];
-  let paymentMethod = null;
-  let squareCard    = null;
-  let squarePayments= null;
+  let storefrontId    = null;
+  let storefront      = null;
+  let auth            = null;
+  let currentUser     = null;
+  let sfUser          = null;
+  let cart            = [];
+  let paymentMethod   = null;
+  let squareCard      = null;
+  let squarePayments  = null;
+  let appliedDiscount = null; // { codeId, code, type, value, freeShipping, discountAmount, label }
 
   // ── HELPERS ──────────────────────────────────────────────────────────
   function ff(fields = {}) {
@@ -507,9 +531,15 @@
     const subtotal    = cart.reduce((s, i) => s + i.lineTotal, 0);
     const shippingRate= storefront?.shippingRate || 0;
     const threshold   = storefront?.freeShippingThreshold || 0;
-    const freeShip    = threshold > 0 && subtotal >= threshold;
+
+    // Apply discount
+    const discountAmount = appliedDiscount?.discountAmount || 0;
+    const freeShipDiscount = appliedDiscount?.freeShipping || false;
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+
+    const freeShip    = freeShipDiscount || (threshold > 0 && discountedSubtotal >= threshold);
     const shippingFee = freeShip ? 0 : shippingRate;
-    const total       = subtotal + shippingFee;
+    const total       = discountedSubtotal + shippingFee;
 
     document.getElementById('summary-items').innerHTML = cart.map(item => `
       <div class="summary-item">
@@ -524,6 +554,19 @@
       </div>`).join('');
 
     document.getElementById('sum-subtotal').textContent = fmtD(subtotal);
+
+    // Discount row
+    const discountRow = document.getElementById('sum-discount-row');
+    if (appliedDiscount) {
+      discountRow.style.display = 'flex';
+      document.getElementById('sum-discount-label').textContent =
+        appliedDiscount.freeShipping ? `${appliedDiscount.code} (Free shipping)` : `${appliedDiscount.code}`;
+      document.getElementById('sum-discount-amount').textContent =
+        appliedDiscount.freeShipping ? '' : `-${fmtD(discountAmount)}`;
+    } else {
+      discountRow.style.display = 'none';
+    }
+
     const shipRow  = document.getElementById('sum-ship-row');
     const shipSpan = document.getElementById('sum-shipping');
     if (freeShip) {
@@ -534,7 +577,7 @@
     }
     document.getElementById('sum-total').textContent = fmtD(total);
 
-    return { subtotal, shippingFee, total };
+    return { subtotal, shippingFee, total, discountAmount, discountedSubtotal };
   }
 
   // ── VALIDATE ──────────────────────────────────────────────────────────
@@ -567,6 +610,62 @@
   }
 
   // ── SUBMIT ────────────────────────────────────────────────────────────
+  window.applyDiscountCode = async () => {
+    const code   = document.getElementById('discount-code-input').value.trim().toUpperCase();
+    const msgEl  = document.getElementById('discount-msg');
+    const btn    = document.getElementById('discount-apply-btn');
+    msgEl.style.display = 'none';
+    if (!code) return;
+
+    btn.disabled = true; btn.textContent = 'Checking…';
+
+    try {
+      const { subtotal } = renderSummary();
+      const res = await callWorker('validate_discount', {
+        code, storefrontId,
+        userId:   currentUser.uid,
+        subtotal,
+      });
+
+      if (!res.valid) {
+        msgEl.textContent    = res.error || 'Invalid discount code.';
+        msgEl.style.color    = 'var(--red)';
+        msgEl.style.display  = 'block';
+        appliedDiscount      = null;
+      } else {
+        appliedDiscount = { ...res, code };
+        document.getElementById('discount-code-input').value = '';
+        document.getElementById('discount-input-row').style.display = 'none';
+
+        const appliedRow   = document.getElementById('discount-applied-row');
+        const appliedLabel = document.getElementById('discount-applied-label');
+        let labelText      = `${code}`;
+        if (res.freeShipping)       labelText += ' — Free shipping';
+        else if (res.discountAmount > 0) labelText += ` — $${res.discountAmount.toFixed(2)} off`;
+        appliedLabel.textContent   = labelText;
+        appliedRow.style.display   = 'flex';
+
+        msgEl.textContent   = '';
+        msgEl.style.display = 'none';
+        renderSummary();
+      }
+    } catch(e) {
+      msgEl.textContent   = 'Unable to verify code. Please try again.';
+      msgEl.style.color   = 'var(--red)';
+      msgEl.style.display = 'block';
+    }
+    btn.disabled = false; btn.textContent = 'Apply';
+  };
+
+  window.removeDiscountCode = () => {
+    appliedDiscount = null;
+    document.getElementById('discount-code-input').value  = '';
+    document.getElementById('discount-input-row').style.display   = 'flex';
+    document.getElementById('discount-applied-row').style.display = 'none';
+    document.getElementById('sum-discount-row').style.display     = 'none';
+    renderSummary();
+  };
+
   window.submitOrder = async () => {
     clearError();
     if (!validate()) return;
@@ -604,6 +703,13 @@
         paymentMethod,
         orderNotes:      notes,
         storefrontName:  storefront?.name || '',
+        ...(appliedDiscount ? {
+          discountCodeId:     appliedDiscount.codeId,
+          discountCode:       appliedDiscount.code,
+          discountType:       appliedDiscount.type,
+          discountAmount,
+          discountedSubtotal,
+        } : {}),
       };
 
       let squarePaymentId = null;
