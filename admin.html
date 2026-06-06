@@ -920,6 +920,23 @@
 
       <!-- Users tab -->
       <div class="detail-panel" id="sftab-users">
+        <div class="card" style="padding:16px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px">Add existing portal user to this storefront</div>
+          <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end">
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--mid-gray);display:block;margin-bottom:4px">Firebase UID</label>
+              <input type="text" id="add-sf-user-uid" placeholder="Paste UID from client info tab…" style="font-family:monospace;font-size:12px;width:100%">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--mid-gray);display:block;margin-bottom:4px">Location (optional)</label>
+              <select id="add-sf-user-location" style="font-size:13px;padding:8px;border-radius:6px;border:1px solid var(--border)">
+                <option value="">— No location —</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addSFUserByUID()">Add user</button>
+          </div>
+          <div id="add-sf-user-error" style="font-size:12px;color:var(--red);margin-top:8px;display:none"></div>
+        </div>
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
             <thead><tr><th>Name</th><th>Email</th><th>Location</th><th>Registered via</th><th>Last login</th><th>Status</th><th>UID</th><th></th></tr></thead>
@@ -5068,6 +5085,66 @@ window.markShipped = async () => {
   renderSFOrders();
 };
 
+window.addSFUserByUID = async () => {
+  const uid      = document.getElementById('add-sf-user-uid').value.trim();
+  const locSel   = document.getElementById('add-sf-user-location');
+  const locId    = locSel.value;
+  const locName  = locSel.options[locSel.selectedIndex]?.text || '';
+  const errEl    = document.getElementById('add-sf-user-error');
+  errEl.style.display = 'none';
+
+  if (!uid) { errEl.textContent = 'Please enter a UID.'; errEl.style.display = 'block'; return; }
+  if (!activeSF) return;
+
+  // Check if user already exists in this storefront
+  const existing = activeSFUsers.find(u => u.id === uid);
+  if (existing) { errEl.textContent = 'This user is already in this storefront.'; errEl.style.display = 'block'; return; }
+
+  // Fetch user info from Firebase Auth via worker to get name/email
+  let name = '', email = '';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_user_info', uid })
+    });
+    const data = await res.json();
+    if (data.ok) { name = data.name || ''; email = data.email || ''; }
+  } catch(e) { /* proceed without name/email */ }
+
+  // Write storefrontUsers record
+  const record = {
+    storefrontId:    activeSF.id,
+    uid,
+    name,
+    email,
+    locationId:      locId || null,
+    locationName:    locId ? locName : null,
+    accessCodeLabel: 'Added by admin',
+    active:          true,
+    createdAt:       new Date().toISOString(),
+    lastLoginAt:     null,
+  };
+
+  const token = await getToken();
+  const res = await fetch(`${getFS_BASE()}/storefrontUsers/${uid}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ fields: toFsFields(record) })
+  });
+
+  if (!res.ok) {
+    errEl.textContent = 'Failed to add user. Check the UID and try again.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('add-sf-user-uid').value = '';
+  locSel.value = '';
+  toast('User added to storefront!', 'success');
+  loadSFUsers();
+};
+
 async function loadSFUsers() {
   const token = await getToken();
   // List all storefrontUsers and filter client-side to avoid index requirements
@@ -5080,6 +5157,12 @@ async function loadSFUsers() {
     .filter(u => u.storefrontId === activeSF.id)
     .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
   renderSFUsers();
+  // Populate location dropdown
+  const locSel = document.getElementById('add-sf-user-location');
+  if (locSel) {
+    locSel.innerHTML = '<option value="">— No location —</option>' +
+      (activeSFLocations||[]).map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+  }
 }
 
 function renderSFUsers() {
