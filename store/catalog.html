@@ -813,18 +813,7 @@
     document.getElementById('nav-orders-link').href  = `orders.html?s=${storefrontId}`;
     document.getElementById('nav-account-link').href = `profile.html?s=${storefrontId}`;
     document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
-
-    // Render
-    renderCatalog();
-    updateCartBadge();
-
-    // If URL has a product param, go straight to detail
-    if (productParam && products.find(p => p.id === productParam)) {
-      showDetail(productParam);
-    }
-
-    // Update last login
-    callWorker('update_last_login', { uid: currentUser.uid }).catch(() => {});
+callWorker('update_last_login', { uid: currentUser.uid }).catch(() => {});
 
   } catch(e) {
     if (e.message === 'Not authenticated') {
@@ -841,14 +830,13 @@
   }
 </script>
 
-
   <footer class="sf-footer" id="sf-footer">
     <div class="sf-footer-links">
-      <a id="footer-catalog" href="#">Catalog</a>
-      <a id="footer-orders"  href="#">My Orders</a>
-      <a id="footer-account" href="#">My Account</a>
+      <a class="sf-footer-dyn" data-page="catalog.html">Catalog</a>
+      <a class="sf-footer-dyn" data-page="orders.html">My Orders</a>
+      <a class="sf-footer-dyn" data-page="profile.html">My Account</a>
       <span class="sf-footer-dot">·</span>
-      <a id="footer-faq"     href="#">FAQ</a>
+      <a class="sf-footer-dyn" data-page="faq.html">FAQ</a>
       <a href="privacy.html">Privacy Policy</a>
       <a href="terms.html">Terms of Service</a>
     </div>
@@ -857,5 +845,14 @@
     </div>
     <div class="sf-footer-copy">© 2026 Common Print Co.</div>
   </footer>
+  <script>
+    // Inline non-module script runs synchronously after footer is parsed
+    (function() {
+      var s = new URLSearchParams(window.location.search).get('s') || '';
+      document.querySelectorAll('.sf-footer-dyn').forEach(function(a) {
+        a.href = a.dataset.page + (s ? '?s=' + s : '');
+      });
+    })();
+  </script>
 </body>
 </html>
