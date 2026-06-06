@@ -4669,7 +4669,7 @@ function renderSFOrders() {
         <td style="font-size:12px;font-family:monospace">${esc(o.id.slice(0,8).toUpperCase())}</td>
         <td style="font-size:13px">${esc(o.locationName||'—')}</td>
         <td style="font-weight:500">${esc(o.name||o.email||'—')}</td>
-        <td>$${((o.orderTotal||0)/100).toFixed(2)}</td>
+        <td>$${Number(o.orderTotal||0).toFixed(2)}</td>
         <td>${o.paymentMethod==='pay_now'?'💳 Card':'📄 Invoice'}</td>
         <td>${badge(o.status||'pending')}</td>
         <td>${fmtDate(o.createdAt)}</td>
@@ -4685,7 +4685,15 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-status-badge').innerHTML= badge(o.status||'pending');
   document.getElementById('sford-customer').textContent  = o.name||o.email||'—';
   document.getElementById('sford-location').textContent  = o.locationName||'—';
-  document.getElementById('sford-payment').textContent = o.paymentMethod==='pay_now'?'💳 Paid by card':'📄 Invoice requested';
+  if (o.paymentMethod === 'pay_now') {
+    const brand = o.cardBrand ? o.cardBrand.charAt(0).toUpperCase() + o.cardBrand.slice(1).toLowerCase() : 'Card';
+    const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
+    document.getElementById('sford-payment').textContent = `💳 ${brand}${last4}`;
+  } else {
+    document.getElementById('sford-payment').innerHTML = o.squareInvoiceId
+      ? `📄 Invoice — <a href="https://squareup.com/dashboard/invoices/${esc(o.squareInvoiceId)}" target="_blank" style="color:var(--green);text-decoration:none">${esc(o.squareInvoiceId)}</a>`
+      : '📄 Invoice requested';
+  }
   const sqPayWrap = document.getElementById('sford-square-payment-wrap');
   if (o.squarePaymentId && sqPayWrap) {
     document.getElementById('sford-square-payment-id').textContent = o.squarePaymentId;
@@ -4695,7 +4703,8 @@ window.openSFOrderModal = (orderId) => {
   }
   document.getElementById('sford-date').textContent      = fmtDate(o.createdAt);
   const addr=o.shippingAddress||{};
-  document.getElementById('sford-address').textContent   = [addr.street,addr.city,addr.state,addr.zip].filter(Boolean).join(', ')||'—';
+  const addrName = [addr.firstName, addr.lastName].filter(Boolean).join(' ');
+  document.getElementById('sford-address').textContent = [addrName, addr.street, addr.city, [addr.state, addr.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—';
   const items=o.lineItems||[];
   document.getElementById('sford-lines').innerHTML = items.map(li=>`
     <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
@@ -4704,7 +4713,7 @@ window.openSFOrderModal = (orderId) => {
       <div style="font-weight:500">$${Number(li.lineTotal||0).toFixed(2)}</div>
     </div>`).join('')+`
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--mid-gray)"><span>Subtotal</span><span>$${Number(o.subtotal||0).toFixed(2)}</span></div>
-    ${o.discountAmount>0?`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#194A4E"><span>${esc(o.discountCode||'Discount')}</span><span>-$${Number(o.discountAmount||0).toFixed(2)}</span></div>`:''}
+    ${(o.discountCode||o.discountAmount>0)?`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#194A4E"><span>${esc(o.discountCode||'Discount')}</span><span>${o.discountAmount>0?'-$'+Number(o.discountAmount||0).toFixed(2):o.discountType==='free_shipping'?'Free shipping':''}</span></div>`:''}
     <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:var(--mid-gray)"><span>Shipping</span><span>${o.shippingFee===0?'Free':'$'+Number(o.shippingFee||0).toFixed(2)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:15px;font-weight:600;border-top:2px solid var(--border);margin-top:4px"><span>Total</span><span>$${Number(o.orderTotal||0).toFixed(2)}</span></div>`;
   if (o.orderNotes) { document.getElementById('sford-notes').textContent=o.orderNotes; document.getElementById('sford-notes-row').classList.remove('hidden'); }
