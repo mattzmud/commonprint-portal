@@ -183,6 +183,7 @@ const WORKER_URL = 'https://print-portal-api.matt-zmud.workers.dev';
 
 let auth;
 let oobCode = '';
+let continueUrl = '';
 
 function show(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -193,7 +194,7 @@ async function init() {
   // Get oobCode from URL — Firebase appends this when the reset link is clicked
   const params = new URLSearchParams(window.location.search);
   oobCode = params.get('oobCode') || '';
-  const continueUrl = params.get('continueUrl') || '';
+  continueUrl = params.get('continueUrl') || '';
 
   if (!oobCode) { show('view-error'); return; }
 
