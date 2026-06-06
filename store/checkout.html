@@ -824,9 +824,12 @@
     const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
     const appName = `storefront-${storefrontId}`;
-    const app  = getApps().find(a=>a.name===appName) || initializeApp(config, appName);
+    const existingApp = getApps().find(a => a.name === appName);
+    const app  = existingApp || initializeApp(config, appName);
     auth = getAuth(app);
-    await setPersistence(auth, browserSessionPersistence);
+    if (!existingApp) {
+      await setPersistence(auth, browserSessionPersistence);
+    }
 
     currentUser = await new Promise((resolve, reject) => {
       const unsub = onAuthStateChanged(auth, user => {
@@ -861,6 +864,16 @@
     document.getElementById('nav-orders-link').href  = `orders.html?s=${storefrontId}`;
     document.getElementById('nav-account-link').href = `profile.html?s=${storefrontId}`;
     document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
+// Wire footer links
+    const footerLinks = {
+      'footer-catalog': `catalog.html?s=${storefrontId}`,
+      'footer-orders':  `orders.html?s=${storefrontId}`,
+      'footer-account': `profile.html?s=${storefrontId}`,
+      'footer-faq':     `faq.html?s=${storefrontId}`,
+    };
+    Object.entries(footerLinks).forEach(([id, href]) => {
+      const el = document.getElementById(id); if (el) el.href = href;
+    });
     document.getElementById('back-link').href        = `cart.html?s=${storefrontId}`;
 
     // Cart
@@ -895,14 +908,13 @@
   }
 </script>
 
-
   <footer class="sf-footer" id="sf-footer">
     <div class="sf-footer-links">
-      <a id="footer-catalog" href="#">Catalog</a>
-      <a id="footer-orders"  href="#">My Orders</a>
-      <a id="footer-account" href="#">My Account</a>
+      <a class="sf-footer-dyn" data-page="catalog.html">Catalog</a>
+      <a class="sf-footer-dyn" data-page="orders.html">My Orders</a>
+      <a class="sf-footer-dyn" data-page="profile.html">My Account</a>
       <span class="sf-footer-dot">·</span>
-      <a id="footer-faq"     href="#">FAQ</a>
+      <a class="sf-footer-dyn" data-page="faq.html">FAQ</a>
       <a href="privacy.html">Privacy Policy</a>
       <a href="terms.html">Terms of Service</a>
     </div>
@@ -911,5 +923,14 @@
     </div>
     <div class="sf-footer-copy">© 2026 Common Print Co.</div>
   </footer>
+  <script>
+    (function() {
+      var s = new URLSearchParams(window.location.search).get('s') || '';
+      var links = document.getElementsByClassName('sf-footer-dyn');
+      for (var i = 0; i < links.length; i++) {
+        links[i].href = links[i].getAttribute('data-page') + (s ? '?s=' + s : '');
+      }
+    })();
+  </script>
 </body>
 </html>
