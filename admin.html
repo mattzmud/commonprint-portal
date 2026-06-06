@@ -869,6 +869,7 @@
         <button class="detail-tab"        onclick="showSFTab('orders')"    data-sftab="orders">Orders</button>
         <button class="detail-tab"        onclick="showSFTab('users')"     data-sftab="users">Users</button>
         <button class="detail-tab"        onclick="showSFTab('discounts')" data-sftab="discounts">Discounts</button>
+        <button class="detail-tab"        onclick="showSFTab('templates')" data-sftab="templates">Pricing Templates</button>
       </div>
 
       <!-- Products tab -->
@@ -938,6 +939,13 @@
             <tbody id="sf-discounts-tbody"></tbody>
           </table>
         </div>
+      </div>
+      <div class="detail-panel" id="sftab-templates">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;color:var(--mid-gray)">Create reusable pricing tier sets to quickly populate new products.</div>
+          <button class="btn btn-primary btn-sm" onclick="openPricingTemplateModal()">+ New template</button>
+        </div>
+        <div id="sf-templates-list"></div>
       </div>
       </div>
     </div>
@@ -1167,7 +1175,13 @@
     <div style="margin-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="font-size:12px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase">Pricing tiers</div>
-        <button class="btn btn-ghost btn-sm" onclick="addPricingTier()">+ Add tier</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="pricing-template-select" onchange="loadPricingTemplate(this.value)"
+            style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);color:var(--body);background:#fff;cursor:pointer">
+            <option value="">Load template…</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="addPricingTier()">+ Add tier</button>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:6px">
         <div style="font-size:11px;font-weight:600;color:var(--mid-gray)">Min quantity</div>
@@ -4417,6 +4431,7 @@ window.showSFTab = (tab) => {
   if (tab === 'orders')    loadSFOrders();
   if (tab === 'users')     loadSFUsers();
   if (tab === 'discounts') loadSFDiscounts();
+  if (tab === 'templates') loadSFTemplates();
 };
 
 async function loadSFProducts() {
@@ -4454,6 +4469,7 @@ function renderSFProducts() {
 
 window.openNewProductModal = () => {
   editingProductId = null; pricingTiers = [{ minQty: 1, unitPrice: 0 }]; productImageFile = null;
+  populateTemplateDropdown();
   document.getElementById('prod-modal-title').textContent = 'New product';
   document.getElementById('prod-save-btn').textContent    = 'Save product';
   ['prod-name','prod-desc','prod-size'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -4482,6 +4498,7 @@ window.openEditProductModal = (productId) => {
   document.getElementById('prod-active').checked= p.active!==false;
   document.getElementById('prod-error').classList.add('hidden');
   pricingTiers = p.pricingTiers ? [...p.pricingTiers] : [{ minQty:1, unitPrice:0 }];
+  populateTemplateDropdown();
   if (p.imageUrl) { document.getElementById('prod-img-thumb').src=p.imageUrl; document.getElementById('prod-img-preview').classList.remove('hidden'); }
   else { document.getElementById('prod-img-preview').classList.add('hidden'); }
   renderPricingTiers(); openModal('modal-product');
@@ -4510,6 +4527,133 @@ function renderPricingTiers() {
         ${pricingTiers.length<=1?'disabled':''}>×</button>
     </div>`).join('');
 }
+
+// ── PRICING TEMPLATES ────────────────────────────────────────────────────────
+
+let pricingTemplates = [];
+
+window.loadSFTemplates = async () => {
+  if (!activeSF) return;
+  const list = document.getElementById('sf-templates-list');
+  list.innerHTML = '<div style="color:var(--mid-gray);font-size:13px">Loading…</div>';
+  pricingTemplates = await fbList(`storefronts/${activeSF.id}/pricingTemplates`);
+  if (!pricingTemplates.length) {
+    list.innerHTML = '<div class="empty-state">No pricing templates yet. Create one to speed up product setup.</div>';
+    return;
+  }
+  list.innerHTML = pricingTemplates.map(t => `
+    <div class="card" style="padding:16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:600;font-size:15px">${esc(t.name)}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openPricingTemplateModal('${t.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePricingTemplate('${t.id}')">Delete</button>
+        </div>
+      </div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;color:var(--mid-gray);font-weight:600;padding:4px 8px 4px 0">Min qty</th>
+          <th style="text-align:left;color:var(--mid-gray);font-weight:600;padding:4px 0">Unit price</th>
+        </tr></thead>
+        <tbody>${(t.tiers||[]).sort((a,b)=>a.minQty-b.minQty).map(tier => `
+          <tr>
+            <td style="padding:3px 8px 3px 0">${tier.minQty}+</td>
+            <td style="padding:3px 0">$${Number(tier.unitPrice).toFixed(2)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`).join('');
+};
+
+window.openPricingTemplateModal = (templateId = null) => {
+  const t = templateId ? pricingTemplates.find(x => x.id === templateId) : null;
+  const tiers = t ? t.tiers : [{ minQty: 1, unitPrice: 0 }, { minQty: 10, unitPrice: 0 }];
+
+  const tiersHtml = () => tiers.map((tier, i) => `
+    <div class="tier-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px">
+      <input type="number" placeholder="Min qty" value="${tier.minQty}" min="0" class="tmpl-qty" data-i="${i}">
+      <input type="number" placeholder="Unit price" value="${tier.unitPrice}" min="0" step="0.01" class="tmpl-price" data-i="${i}">
+      <button onclick="removeTmplTier(${i})" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:0 8px;font-size:16px;color:var(--mid-gray)"
+        ${tiers.length <= 1 ? 'disabled' : ''}>×</button>
+    </div>`).join('');
+
+  openModal('modal-pricing-template');
+  document.getElementById('tmpl-name').value = t ? t.name : '';
+  document.getElementById('tmpl-tiers-list').innerHTML = tiersHtml();
+  document.getElementById('tmpl-save-btn').onclick = () => savePricingTemplate(templateId);
+
+  window.removeTmplTier = (i) => {
+    syncTmplTiers();
+    if (tmplTiers.length > 1) { tmplTiers.splice(i, 1); renderTmplTiers(); }
+  };
+  window.addTmplTier = () => {
+    syncTmplTiers();
+    tmplTiers.push({ minQty: 0, unitPrice: 0 });
+    renderTmplTiers();
+  };
+
+  tmplTiers = [...tiers];
+};
+
+let tmplTiers = [];
+
+function syncTmplTiers() {
+  document.querySelectorAll('#tmpl-tiers-list .tier-row').forEach((row, i) => {
+    if (!tmplTiers[i]) return;
+    tmplTiers[i].minQty    = parseFloat(row.querySelector('.tmpl-qty').value)   || 0;
+    tmplTiers[i].unitPrice = parseFloat(row.querySelector('.tmpl-price').value) || 0;
+  });
+}
+
+function renderTmplTiers() {
+  document.getElementById('tmpl-tiers-list').innerHTML = tmplTiers.map((tier, i) => `
+    <div class="tier-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px">
+      <input type="number" placeholder="Min qty" value="${tier.minQty}" min="0" class="tmpl-qty" data-i="${i}">
+      <input type="number" placeholder="Unit price" value="${tier.unitPrice}" min="0" step="0.01" class="tmpl-price" data-i="${i}">
+      <button onclick="removeTmplTier(${i})" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:0 8px;font-size:16px;color:var(--mid-gray)"
+        ${tmplTiers.length <= 1 ? 'disabled' : ''}>×</button>
+    </div>`).join('');
+}
+
+window.savePricingTemplate = async (templateId) => {
+  syncTmplTiers();
+  const name = document.getElementById('tmpl-name').value.trim();
+  if (!name) { toast('Please enter a template name', 'error'); return; }
+  if (!tmplTiers.length) { toast('Add at least one tier', 'error'); return; }
+  const id   = templateId || `tmpl-${Date.now()}`;
+  await fbSet(`storefronts/${activeSF.id}/pricingTemplates/${id}`, { name, tiers: tmplTiers, updatedAt: new Date().toISOString() });
+  closeModal('modal-pricing-template');
+  toast('Template saved!', 'success');
+  loadSFTemplates();
+  // Refresh template dropdown in product modal
+  populateTemplateDropdown();
+};
+
+window.deletePricingTemplate = async (id) => {
+  if (!confirm('Delete this pricing template?')) return;
+  await fbDelete(`storefronts/${activeSF.id}/pricingTemplates/${id}`);
+  toast('Template deleted', 'success');
+  loadSFTemplates();
+  populateTemplateDropdown();
+};
+
+window.populateTemplateDropdown = async () => {
+  const sel = document.getElementById('pricing-template-select');
+  if (!sel || !activeSF) return;
+  pricingTemplates = await fbList(`storefronts/${activeSF.id}/pricingTemplates`);
+  sel.innerHTML = '<option value="">Load template…</option>' +
+    pricingTemplates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+};
+
+window.loadPricingTemplate = (templateId) => {
+  if (!templateId) return;
+  const t = pricingTemplates.find(x => x.id === templateId);
+  if (!t) return;
+  pricingTiers = t.tiers.map(tier => ({ ...tier }));
+  renderPricingTiers();
+  document.getElementById('pricing-template-select').value = '';
+  toast(`Loaded "${t.name}"`, 'success');
+};
 
 window.addPricingTier    = () => { syncTiersFromDOM(); pricingTiers.push({minQty:0,unitPrice:0}); renderPricingTiers(); };
 window.removePricingTier = (i) => { if(pricingTiers.length>1){pricingTiers.splice(i,1);renderPricingTiers();} };
@@ -5367,5 +5511,33 @@ document.addEventListener('keydown', e => {
   if (e.key==='Enter' && document.getElementById('login-screen').style.display!=='none') window.doLogin();
 });
 </script>
+
+  <!-- Pricing Template Modal -->
+  <div class="modal-backdrop" id="modal-pricing-template">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header">
+        <h3 class="modal-title">Pricing Template</h3>
+        <button class="modal-close" onclick="closeModal('modal-pricing-template')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field" style="margin-bottom:16px">
+          <label>Template name</label>
+          <input type="text" id="tmpl-name" placeholder="e.g. Standard Sticker Pricing">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:6px">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray)">Min quantity</div>
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray)">Unit price ($)</div>
+          <div></div>
+        </div>
+        <div id="tmpl-tiers-list"></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="addTmplTier()">+ Add tier</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-pricing-template')">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="tmpl-save-btn">Save template</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
