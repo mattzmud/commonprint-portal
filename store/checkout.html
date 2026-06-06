@@ -715,6 +715,7 @@
       const lineItems = cart.map(i => ({
         productId:   i.productId,
         productName: i.productName,
+        imageUrl:    i.imageUrl || null,
         qty:         i.qty,
         unitPrice:   i.unitPrice,
         lineTotal:   i.lineTotal,

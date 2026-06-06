@@ -332,9 +332,9 @@
         : `<div class="totals-row"><span>Shipping</span><span>${fmtD(o.shippingFee)}</span></div>`;
 
       const notesHtml = o.orderNotes
-        ? `<div class="detail-section">
+        ? `<div class="detail-section" style="padding:14px 0">
             <div class="detail-label">Order notes</div>
-            <div style="font-size:13px;color:var(--gray)">${esc(o.orderNotes)}</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:4px">${esc(o.orderNotes)}</div>
           </div>` : '';
 
       return `
@@ -392,9 +392,6 @@
                 </div>
               </div>`;
             })() : ''}
-            <div style="display:none"><!-- end grid --></div
-              </div>
-            </div>
             ${notesHtml}
           </div>
         </div>`;
