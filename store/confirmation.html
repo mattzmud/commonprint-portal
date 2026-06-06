@@ -353,7 +353,7 @@
 
   function renderOrder(order, method) {
     // Order ID
-    document.getElementById('confirm-order-id').textContent = `Order #${(order.id||'').slice(0,8).toUpperCase()}`;
+    document.getElementById('confirm-order-id').textContent = `Order #${(order.id||'').slice(0,12).toUpperCase()}`;
 
     // Status banner
     const banner     = document.getElementById('status-banner');

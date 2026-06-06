@@ -342,7 +342,7 @@
         <div class="order-card" onclick="toggleOrder('${o.id}')">
           <div class="order-header">
             <div>
-              <div class="order-id">#${(o.id||'').slice(0,8).toUpperCase()}</div>
+              <div class="order-id">#${(o.id||'').slice(0,12).toUpperCase()}</div>
               <div class="order-date">${fmtDate(o.createdAt)}</div>
             </div>
             <div style="display:flex;align-items:center;gap:12px">
