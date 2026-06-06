@@ -1258,6 +1258,11 @@
       <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
         <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Payment</div>
         <div style="font-size:14px;font-weight:500" id="sford-payment"></div>
+        <div id="sford-square-payment-wrap" style="display:none;margin-top:6px">
+          <span style="font-size:11px;color:var(--mid-gray)">Square payment ID: </span>
+          <span id="sford-square-payment-id" style="font-size:11px;font-family:monospace;color:var(--charcoal)"></span>
+          <button onclick="copyToClipboard(document.getElementById('sford-square-payment-id').textContent)" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:11px;margin-left:4px" title="Copy">📋</button>
+        </div>
       </div>
       <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
         <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Date</div>
@@ -4680,7 +4685,14 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-status-badge').innerHTML= badge(o.status||'pending');
   document.getElementById('sford-customer').textContent  = o.name||o.email||'—';
   document.getElementById('sford-location').textContent  = o.locationName||'—';
-  document.getElementById('sford-payment').textContent   = o.paymentMethod==='pay_now'?'💳 Paid by card':'📄 Invoice requested';
+  document.getElementById('sford-payment').textContent = o.paymentMethod==='pay_now'?'💳 Paid by card':'📄 Invoice requested';
+  const sqPayWrap = document.getElementById('sford-square-payment-wrap');
+  if (o.squarePaymentId && sqPayWrap) {
+    document.getElementById('sford-square-payment-id').textContent = o.squarePaymentId;
+    sqPayWrap.style.display = 'block';
+  } else if (sqPayWrap) {
+    sqPayWrap.style.display = 'none';
+  }
   document.getElementById('sford-date').textContent      = fmtDate(o.createdAt);
   const addr=o.shippingAddress||{};
   document.getElementById('sford-address').textContent   = [addr.street,addr.city,addr.state,addr.zip].filter(Boolean).join(', ')||'—';
