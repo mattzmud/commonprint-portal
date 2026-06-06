@@ -780,9 +780,13 @@
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
 
     const appName = `storefront-${storefrontId}`;
-    const app = getApps().find(a => a.name === appName) || initializeApp(config, appName);
+    const existingApp = getApps().find(a => a.name === appName);
+    const app = existingApp || initializeApp(config, appName);
     auth = getAuth(app);
-    await setPersistence(auth, browserSessionPersistence);
+    // Only set persistence on first init — calling it on existing app disrupts auth state
+    if (!existingApp) {
+      await setPersistence(auth, browserSessionPersistence);
+    }
 
     // Require auth — session persistence means only storefront logins count
     currentUser = await new Promise((resolve, reject) => {
@@ -813,18 +817,28 @@
     document.getElementById('nav-orders-link').href  = `orders.html?s=${storefrontId}`;
     document.getElementById('nav-account-link').href = `profile.html?s=${storefrontId}`;
     document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
-callWorker('update_last_login', { uid: currentUser.uid }).catch(() => {});
+
+    // Render catalog
+    renderCatalog();
+    updateCartBadge();
+
+    // If URL has a product param, go straight to detail
+    if (productParam && products.find(p => p.id === productParam)) {
+      showDetail(productParam);
+    }
+
+    callWorker('update_last_login', { uid: currentUser.uid }).catch(() => {});
 
   } catch(e) {
     if (e.message === 'Not authenticated') {
       window.location.href = `index.html?s=${storefrontId || ''}`;
     } else {
-      console.error('Catalog error:', e.message);
+      console.error('Catalog error:', e.message, e.stack);
       document.getElementById('catalog-content').innerHTML = `
         <div class="sf-empty">
           <div class="sf-empty-icon">⚠️</div>
-          <h3>Something went wrong</h3>
-          <p>Unable to load the catalog. Please refresh the page or contact Common Print Co.</p>
+          <h3>Error: ${e.message}</h3>
+          <pre style="font-size:11px;text-align:left;padding:12px;background:#f5f5f5;border-radius:8px;overflow:auto">${e.stack}</pre>
         </div>`;
     }
   }
@@ -846,12 +860,12 @@ callWorker('update_last_login', { uid: currentUser.uid }).catch(() => {});
     <div class="sf-footer-copy">© 2026 Common Print Co.</div>
   </footer>
   <script>
-    // Inline non-module script runs synchronously after footer is parsed
     (function() {
       var s = new URLSearchParams(window.location.search).get('s') || '';
-      document.querySelectorAll('.sf-footer-dyn').forEach(function(a) {
-        a.href = a.dataset.page + (s ? '?s=' + s : '');
-      });
+      var links = document.getElementsByClassName('sf-footer-dyn');
+      for (var i = 0; i < links.length; i++) {
+        links[i].href = links[i].getAttribute('data-page') + (s ? '?s=' + s : '');
+      }
     })();
   </script>
 </body>
