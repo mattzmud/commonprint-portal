@@ -249,6 +249,7 @@
               <div class="field"><label>First name</label><input type="text" id="sh-first" autocomplete="given-name"></div>
               <div class="field"><label>Last name</label><input type="text" id="sh-last"  autocomplete="family-name"></div>
             </div>
+            <div class="field"><label>Company / Organization <span style="font-weight:400;color:var(--mid-gray)">(optional)</span></label><input type="text" id="sh-company" autocomplete="organization"></div>
             <div class="field"><label>Street address</label><input type="text" id="sh-street" autocomplete="street-address"></div>
             <div class="field"><label>Apt / Suite (optional)</label><input type="text" id="sh-apt" autocomplete="address-line2"></div>
             <div class="field-row-3">
@@ -495,9 +496,10 @@
     const saved = sfUser?.savedAddresses || [];
     const addr  = saved.find(a => a.id === val);
     if (!addr) return;
-    document.getElementById('sh-first').value  = addr.firstName || '';
-    document.getElementById('sh-last').value   = addr.lastName  || '';
-    document.getElementById('sh-street').value = addr.street    || '';
+    document.getElementById('sh-first').value   = addr.firstName || '';
+    document.getElementById('sh-last').value    = addr.lastName  || '';
+    document.getElementById('sh-company').value = addr.company   || '';
+    document.getElementById('sh-street').value  = addr.street    || '';
     document.getElementById('sh-apt').value    = addr.apt       || '';
     document.getElementById('sh-city').value   = addr.city      || '';
     document.getElementById('sh-state').value  = (addr.state||'').toUpperCase();
@@ -505,7 +507,7 @@
   };
 
   function clearAddrForm() {
-    ['sh-first','sh-last','sh-street','sh-apt','sh-city','sh-state','sh-zip']
+    ['sh-first','sh-last','sh-company','sh-street','sh-apt','sh-city','sh-state','sh-zip']
       .forEach(id => { document.getElementById(id).value = ''; });
   }
 
@@ -610,14 +612,15 @@
 
   // ── VALIDATE ──────────────────────────────────────────────────────────
   function getShippingAddress() {
-    const first  = document.getElementById('sh-first').value.trim();
-    const last   = document.getElementById('sh-last').value.trim();
-    const street = document.getElementById('sh-street').value.trim();
-    const city   = document.getElementById('sh-city').value.trim();
-    const state  = document.getElementById('sh-state').value.trim().toUpperCase();
-    const zip    = document.getElementById('sh-zip').value.trim();
-    const apt    = document.getElementById('sh-apt').value.trim();
-    return { firstName:first, lastName:last, street, apt, city, state, zip };
+    const first   = document.getElementById('sh-first').value.trim();
+    const last    = document.getElementById('sh-last').value.trim();
+    const company = document.getElementById('sh-company').value.trim();
+    const street  = document.getElementById('sh-street').value.trim();
+    const city    = document.getElementById('sh-city').value.trim();
+    const state   = document.getElementById('sh-state').value.trim().toUpperCase();
+    const zip     = document.getElementById('sh-zip').value.trim();
+    const apt     = document.getElementById('sh-apt').value.trim();
+    return { firstName:first, lastName:last, company, street, apt, city, state, zip };
   }
 
   function validate() {

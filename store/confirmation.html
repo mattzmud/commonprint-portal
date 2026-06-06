@@ -410,7 +410,7 @@
     // Address
     const addr = order.shippingAddress || {};
     const addrLines = [
-      `${addr.firstName||''} ${addr.lastName||''}`.trim(),
+      `${addr.firstName||''} ${addr.lastName||''}${addr.company ? '\n'+addr.company : ''}`.trim(),
       addr.street, addr.apt,
       `${addr.city||''}${addr.city&&addr.state?', ':''}${addr.state||''} ${addr.zip||''}`.trim(),
     ].filter(Boolean);

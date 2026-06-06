@@ -221,6 +221,7 @@
               <div class="field"><label>First name</label><input type="text" id="na-first"></div>
               <div class="field"><label>Last name</label><input type="text" id="na-last"></div>
             </div>
+            <div class="field"><label>Company / Organization <span style="font-weight:400;color:var(--mid-gray)">(optional)</span></label><input type="text" id="na-company"></div>
             <div class="field"><label>Street address</label><input type="text" id="na-street"></div>
             <div class="field"><label>Apt / Suite (optional)</label><input type="text" id="na-apt"></div>
             <div class="field-row-3">
@@ -438,7 +439,7 @@
     form.classList.toggle('open', !isOpen);
     btn.textContent = isOpen ? '+ Add new address' : 'Cancel';
     if (isOpen) {
-      ['na-first','na-last','na-street','na-apt','na-city','na-state','na-zip']
+      ['na-first','na-last','na-company','na-street','na-apt','na-city','na-state','na-zip']
         .forEach(id => { document.getElementById(id).value = ''; });
       clearAlerts('na-error');
     }
@@ -446,9 +447,10 @@
 
   window.saveNewAddress = async () => {
     clearAlerts('na-error');
-    const first  = document.getElementById('na-first').value.trim();
-    const last   = document.getElementById('na-last').value.trim();
-    const street = document.getElementById('na-street').value.trim();
+    const first   = document.getElementById('na-first').value.trim();
+    const last    = document.getElementById('na-last').value.trim();
+    const company = document.getElementById('na-company').value.trim();
+    const street  = document.getElementById('na-street').value.trim();
     const city   = document.getElementById('na-city').value.trim();
     const state  = document.getElementById('na-state').value.trim().toUpperCase();
     const zip    = document.getElementById('na-zip').value.trim();
@@ -460,7 +462,7 @@
     if (!state)  { showAlert('na-error','Please enter a state.'); return; }
     if (!zip)    { showAlert('na-error','Please enter a ZIP code.'); return; }
 
-    const newAddr  = { id:`addr-${Date.now()}`, firstName:first, lastName:last, street, apt, city, state, zip };
+    const newAddr  = { id:`addr-${Date.now()}`, firstName:first, lastName:last, company, street, apt, city, state, zip };
     const existing = sfUser.savedAddresses || [];
     const updated  = [...existing, newAddr];
     try {
