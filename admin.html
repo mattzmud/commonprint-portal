@@ -1280,11 +1280,12 @@
     </div>
     <!-- Invoice + Shipping -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
-      <div class="field">
-        <label>Square invoice ID</label>
+      <div class="field" style="grid-column:1/-1">
+        <label>Square invoice share link</label>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="sford-invoice-id" placeholder="e.g. inv_xxxx"
-            style="font-family:monospace;font-size:12px;flex:1">
+          <input type="text" id="sford-invoice-url" placeholder="https://app.squareup.com/pay-invoice/invtmp:..."
+            style="font-family:monospace;font-size:11px;flex:1"
+            oninput="updateSFInvoiceLink(this.value)">
           <div id="sford-invoice-status" style="display:none"></div>
         </div>
         <div id="sford-invoice-link-wrap" style="display:none;margin-top:6px">
@@ -1294,7 +1295,9 @@
           </a>
         </div>
       </div>
-      <div></div>
+      <div class="field" style="display:none">
+        <input type="text" id="sford-invoice-id" placeholder="invoice id">
+      </div>
       <div class="field">
         <label>Carrier</label>
         <select id="sford-carrier">
@@ -4701,7 +4704,7 @@ window.openSFOrderModal = (orderId) => {
     document.getElementById('sford-payment').textContent = `💳 ${brand}${last4}`;
   } else {
     document.getElementById('sford-payment').innerHTML = o.squareInvoiceId
-      ? `📄 Invoice — <a href="https://app.squareup.com/pay-invoice/${esc(o.squareInvoiceId)}" target="_blank" style="color:var(--green);text-decoration:none">${esc(o.squareInvoiceId)}</a>`
+      ? `📄 Invoice — <a href="${esc(o.squarePaymentUrl||'#')}" target="_blank" style="color:var(--green);text-decoration:none">Invoice #${esc(o.squareInvoiceId||'—')}</a>`
       : '📄 Invoice requested';
   }
   const sqPayWrap = document.getElementById('sford-square-payment-wrap');
@@ -4730,13 +4733,15 @@ window.openSFOrderModal = (orderId) => {
   else { document.getElementById('sford-notes-row').classList.add('hidden'); }
   document.getElementById('sford-admin-notes').value  = o.adminNotes  || '';
   document.getElementById('sford-invoice-id').value   = o.squareInvoiceId || '';
+  document.getElementById('sford-invoice-url').value  = o.squarePaymentUrl || '';
+  updateSFInvoiceLink(o.squarePaymentUrl || '');
   // Invoice link + status
   const invLinkWrap  = document.getElementById('sford-invoice-link-wrap');
   const invLink      = document.getElementById('sford-invoice-link');
   const invStatus    = document.getElementById('sford-invoice-status');
   if (o.squareInvoiceId) {
     invLinkWrap.style.display = 'block';
-    invLink.href = `https://app.squareup.com/pay-invoice/${o.squareInvoiceId}`;
+    invLink.href = o.squarePaymentUrl || `https://app.squareup.com/pay-invoice/${o.squareInvoiceId}`;
     // Show payment status based on order status
     const statusMap = {
       pending:    { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
@@ -4764,18 +4769,30 @@ window.openSFOrderModal = (orderId) => {
   openModal('modal-sf-order');
 };
 
+window.updateSFInvoiceLink = (url) => {
+  const wrap = document.getElementById('sford-invoice-link-wrap');
+  const link = document.getElementById('sford-invoice-link');
+  if (url && url.startsWith('http')) {
+    wrap.style.display = 'block';
+    link.href = url;
+  } else {
+    wrap.style.display = 'none';
+  }
+};
+
 window.saveSFOrderDetails = async () => {
   if (!activeSFOrderId||!activeSF) return;
   const adminNotes      = document.getElementById('sford-admin-notes').value;
-  const squareInvoiceId = document.getElementById('sford-invoice-id').value.trim();
-  const carrier         = document.getElementById('sford-carrier').value;
-  const trackingNumber  = document.getElementById('sford-tracking').value.trim();
+  const squareInvoiceId  = document.getElementById('sford-invoice-id').value.trim();
+  const squarePaymentUrl = document.getElementById('sford-invoice-url').value.trim();
+  const carrier          = document.getElementById('sford-carrier').value;
+  const trackingNumber   = document.getElementById('sford-tracking').value.trim();
   const updateData = {
     updatedAt: new Date().toISOString(),
-    ...(adminNotes      ? { adminNotes }      : {}),
-    ...(squareInvoiceId ? { squareInvoiceId } : {}),
-    ...(carrier         ? { carrier }         : {}),
-    ...(trackingNumber  ? { trackingNumber }  : {}),
+    ...(adminNotes       ? { adminNotes }       : {}),
+    ...(squarePaymentUrl ? { squarePaymentUrl } : {}),
+    ...(carrier          ? { carrier }          : {}),
+    ...(trackingNumber   ? { trackingNumber }   : {}),
   };
   await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`, updateData);
   const o = activeSFOrders.find(x=>x.id===activeSFOrderId);
@@ -4788,11 +4805,13 @@ window.saveSFOrderDetails = async () => {
 window.updateSFOrderStatus = async (status) => {
   if (!activeSFOrderId||!activeSF) return;
   const adminNotes    = document.getElementById('sford-admin-notes').value;
-  const squareInvoiceId = document.getElementById('sford-invoice-id').value.trim();
-  const carrier       = document.getElementById('sford-carrier').value;
-  const trackingNumber= document.getElementById('sford-tracking').value.trim();
-  const updateData    = { status, adminNotes, updatedAt:new Date().toISOString(),
-    ...(squareInvoiceId ? { squareInvoiceId } : {}),
+  const squareInvoiceId  = document.getElementById('sford-invoice-id').value.trim();
+  const squarePaymentUrl = document.getElementById('sford-invoice-url').value.trim();
+  const carrier          = document.getElementById('sford-carrier').value;
+  const trackingNumber   = document.getElementById('sford-tracking').value.trim();
+  const updateData       = { status, adminNotes, updatedAt:new Date().toISOString(),
+    ...(squarePaymentUrl ? { squarePaymentUrl } : {}),
+    ...(squareInvoiceId  ? { squareInvoiceId }  : {}),
     ...(carrier         ? { carrier }         : {}),
     ...(trackingNumber  ? { trackingNumber }  : {}),
   };
