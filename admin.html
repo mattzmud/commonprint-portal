@@ -4704,7 +4704,9 @@ window.openSFOrderModal = (orderId) => {
     document.getElementById('sford-payment').textContent = `💳 ${brand}${last4}`;
   } else {
     document.getElementById('sford-payment').innerHTML = o.squareInvoiceId
-      ? `📄 Invoice — <a href="${esc(o.squarePaymentUrl||'#')}" target="_blank" style="color:var(--green);text-decoration:none">Invoice #${esc(o.squareInvoiceId||'—')}</a>`
+      ? (o.squarePaymentUrl
+            ? `📄 Invoice — <a href="${esc(o.squarePaymentUrl)}" target="_blank" style="color:var(--green);text-decoration:none">Invoice #${esc(o.squareInvoiceId||'—')}</a>`
+            : `📄 Invoice ${o.squareInvoiceId ? '#'+esc(o.squareInvoiceId) : 'requested'}`)
       : '📄 Invoice requested';
   }
   const sqPayWrap = document.getElementById('sford-square-payment-wrap');
@@ -4741,7 +4743,8 @@ window.openSFOrderModal = (orderId) => {
   const invStatus    = document.getElementById('sford-invoice-status');
   if (o.squareInvoiceId) {
     invLinkWrap.style.display = 'block';
-    invLink.href = o.squarePaymentUrl || `https://app.squareup.com/pay-invoice/${o.squareInvoiceId}`;
+    invLink.href = o.squarePaymentUrl || '#';
+    if (!o.squarePaymentUrl) invLinkWrap.style.display = 'none';
     // Show payment status based on order status
     const statusMap = {
       pending:    { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
