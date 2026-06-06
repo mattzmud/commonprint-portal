@@ -255,6 +255,11 @@
             <div class="field"><label>Full name</label><input type="text" id="co-name" autocomplete="name"></div>
             <div class="field"><label>Email</label><input type="email" id="co-email" autocomplete="email"></div>
           </div>
+          <div class="field" style="max-width:220px">
+            <label>Phone number</label>
+            <input type="tel" id="co-phone" placeholder="(734) 555-0100" autocomplete="tel"
+              oninput="this.value=fmtPhone(this.value)">
+          </div>
         </div>
 
         <!-- Order notes -->
@@ -424,6 +429,7 @@
   function getCart()       { try { return JSON.parse(sessionStorage.getItem(CART_KEY)||'[]'); } catch { return []; } }
   function clearCart()     { sessionStorage.removeItem(CART_KEY); }
   function fmtD(n)         { return '$' + Number(n).toFixed(2); }
+  function fmtPhone(v)     { const d=v.replace(/\D/g,'').slice(0,10); if(d.length<=3) return d; if(d.length<=6) return `(${d.slice(0,3)}) ${d.slice(3)}`; return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; }
   function esc(str)        { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function toast(msg, type='success') {
@@ -604,6 +610,8 @@
     const email = document.getElementById('co-email').value.trim();
     if (!name)              { showError('Please enter your name.');          return false; }
     if (!email)             { showError('Please enter your email address.');  return false; }
+    const phone = document.getElementById('co-phone').value.trim();
+    if (!phone)             { showError('Please enter your phone number.');       return false; }
     if (!paymentMethod)     { showError('Please select a payment method.');  return false; }
     if (cart.length === 0)  { showError('Your cart is empty.');              return false; }
     return true;
@@ -693,6 +701,7 @@
         userId:          currentUser.uid,
         name,
         email,
+        phone,
         locationId:      sfUser?.locationId   || '',
         locationName:    sfUser?.locationName  || '',
         shippingAddress: addr,
@@ -838,6 +847,7 @@
 
     // Pre-fill contact from user profile
     if (sfUser?.name)  document.getElementById('co-name').value  = sfUser.name;
+    if (sfUser?.phone) document.getElementById('co-phone').value = sfUser.phone;
     if (sfUser?.email) document.getElementById('co-email').value = sfUser.email || currentUser.email;
     else               document.getElementById('co-email').value = currentUser.email;
 
