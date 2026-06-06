@@ -4696,7 +4696,7 @@ async function loadSFUsers() {
 function renderSFUsers() {
   const tbody=document.getElementById('sf-users-tbody'); if(!tbody) return;
   tbody.innerHTML=activeSFUsers.length===0
-    ? `<tr><td colspan="7"><div class="empty">No registered users yet.</div></td></tr>`
+    ? `<tr><td colspan="8"><div class="empty">No registered users yet.</div></td></tr>`
     : activeSFUsers.map(u=>`
       <tr>
         <td style="font-weight:500">${esc(u.name||'—')}</td>
@@ -4705,6 +4705,10 @@ function renderSFUsers() {
         <td style="font-size:12px;color:var(--mid-gray)">${esc(u.accessCodeLabel||'—')}</td>
         <td>${fmtDateTime(u.lastLoginAt)}</td>
         <td>${u.active!==false?badge('active'):badge('changes')}</td>
+        <td>
+          <span style="font-size:11px;font-family:monospace;color:var(--mid-gray)">${u.id}</span>
+          <button onclick="copyToClipboard('${u.id}')" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:12px;margin-left:4px" title="Copy UID">📋</button>
+        </td>
         <td>${u.active!==false
           ?`<button class="btn btn-ghost btn-sm" onclick="toggleSFUser('${u.id}',false)">Deactivate</button>`
           :`<button class="btn btn-ghost btn-sm" onclick="toggleSFUser('${u.id}',true)">Reactivate</button>`}
