@@ -766,7 +766,7 @@
           sourceId:     result.token,
           amountCents,
           orderId:      `storefront-${Date.now()}`,
-          note:         `${storefront?.name || 'Storefront'} order — ${name}`,
+          note:         `${storefront?.name || 'Storefront'} order — ${name}`.slice(0, 45),
         });
 
         if (!payRes.ok) {
