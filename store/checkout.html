@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:      #3a3a3a;
+      --primary-dark: #1a1a1a;
+      --primary-light:#f0f0f0;
+      --accent:       #888888;
+      --nav-bg:       #2c2c2c;
+      --success:      #194A4E;
+      --success-light:#DCE7E8;
+      --ink:          #2D2926;
+      --gray:         #575451;
+      --mid-gray:     #888780;
+      --near-black:   #1a1818;
+      --border:       #e0e0e0;
+      --bg:           #f5f5f5;
+      --card-bg:      #FFFFFF;
+      --pale:         #f9f9f9;
+      --red:          #C0392B;
+      --font-body:    'Jost', system-ui, sans-serif;
+      --radius:       10px;
+      --shadow:       0 2px 12px rgba(45,41,38,0.10);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+
+    /* ── NAV ── */
+    .sf-nav {
+      background:var(--nav-bg); padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between;
+      height:60px; position:sticky; top:0; z-index:100;
+      box-shadow:0 2px 8px rgba(0,0,0,0.2);
+    }
+    .sf-nav-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+    .sf-nav-logo  { height:36px; width:36px; object-fit:contain; border-radius:50%; background:#fff; padding:3px; }
+    .sf-nav-title { font-size:14px; font-weight:600; color:rgba(255,255,255,0.9); max-width:280px; line-height:1.3; }
+    .sf-nav-right { display:flex; align-items:center; gap:4px; }
+    .sf-nav-link  { color:rgba(255,255,255,0.7); font-size:13px; padding:6px 12px; border-radius:6px; text-decoration:none; transition:all .15s; }
+    .sf-nav-link:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .sf-cart-btn  {
+      display:flex; align-items:center; gap:6px;
+      background:var(--primary); color:#fff; border:none;
+      padding:8px 16px; border-radius:8px; font-family:var(--font-body);
+      font-size:13px; font-weight:500; cursor:pointer;
+      transition:background .15s; margin-left:8px; text-decoration:none;
+    }
+    .sf-cart-btn:hover { background:var(--primary-dark); color:#fff; }
+    .cart-badge { background:#fff; color:var(--primary); border-radius:50%; font-size:11px; font-weight:700; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+
+    /* ── PAGE ── */
+    .sf-page { max-width:960px; margin:0 auto; padding:40px 32px; }
+    .page-title { font-size:24px; font-weight:700; color:var(--near-black); margin-bottom:32px; }
+
+    /* ── LAYOUT ── */
+    .checkout-layout { display:grid; grid-template-columns:1fr 340px; gap:32px; align-items:start; }
+
+    /* ── SECTION CARD ── */
+    .section-card {
+      background:#fff; border:1px solid var(--border);
+      border-radius:14px; padding:24px; margin-bottom:20px;
+    }
+    .section-title {
+      font-size:15px; font-weight:600; color:var(--near-black);
+      margin-bottom:18px; padding-bottom:12px;
+      border-bottom:1px solid var(--border);
+    }
+
+    /* ── FORM FIELDS ── */
+    .field { margin-bottom:14px; }
+    .field label { display:block; font-size:12px; font-weight:600; color:var(--gray); margin-bottom:5px; }
+    .field input, .field select, .field textarea {
+      width:100%; padding:10px 14px;
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      font-family:var(--font-body); font-size:14px; color:var(--ink);
+      background:#fff; outline:none; transition:border-color .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--primary); }
+    .field textarea { resize:vertical; min-height:80px; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field-row-3 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px; }
+
+    /* ── ADDRESS SELECTOR ── */
+    .addr-selector {
+      background:var(--bg); border:1.5px solid var(--border);
+      border-radius:var(--radius); padding:12px 14px;
+      margin-bottom:16px; cursor:pointer; transition:border-color .15s;
+    }
+    .addr-selector:hover { border-color:var(--primary); }
+    .addr-selector select {
+      width:100%; background:transparent; border:none; outline:none;
+      font-family:var(--font-body); font-size:14px; color:var(--ink);
+      cursor:pointer;
+    }
+
+    /* ── SAVE ADDRESS ── */
+    .save-addr-wrap {
+      margin-top:10px;
+    }
+    .save-addr-wrap label {
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; color:var(--gray); cursor:pointer;
+    }
+
+    /* ── PAYMENT OPTIONS ── */
+    .payment-option {
+      border:2px solid var(--border); border-radius:var(--radius);
+      padding:16px 20px; cursor:pointer; transition:all .15s; margin-bottom:10px;
+    }
+    .payment-option:hover  { border-color:var(--primary); }
+    .payment-option.selected { border-color:var(--primary); background:var(--primary-light); }
+    .payment-option-header { display:flex; align-items:center; gap:10px; }
+    .payment-option-radio  { width:18px; height:18px; accent-color:var(--primary); flex-shrink:0; }
+    .payment-option-title  { font-size:15px; font-weight:600; color:var(--near-black); }
+    .payment-option-desc   { font-size:13px; color:var(--mid-gray); margin-top:4px; margin-left:28px; line-height:1.5; }
+    .payment-option-badge  { font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:var(--success-light); color:var(--success); margin-left:auto; }
+
+    /* ── SQUARE CARD FORM ── */
+    #square-card-container {
+      margin-top:16px; margin-left:28px; display:none;
+    }
+    #card-element {
+      min-height:90px; background:#fff;
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      padding:12px;
+    }
+    #card-errors {
+      color:var(--red); font-size:13px; margin-top:8px;
+      display:none;
+    }
+
+    /* ── INVOICE NOTE ── */
+    #invoice-note {
+      margin-top:12px; margin-left:28px;
+      background:var(--bg); border-left:3px solid var(--accent);
+      border-radius:4px; padding:10px 14px;
+      font-size:13px; color:var(--gray); line-height:1.6;
+      display:none;
+    }
+
+    /* ── ORDER SUMMARY ── */
+    .summary-card {
+      background:#fff; border:1px solid var(--border);
+      border-radius:14px; padding:24px; position:sticky; top:80px;
+    }
+    .summary-title { font-size:16px; font-weight:600; color:var(--near-black); margin-bottom:16px; }
+    .summary-item  { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+    .summary-item:last-of-type { border-bottom:none; }
+    .summary-item-img { width:48px; height:48px; border-radius:6px; object-fit:contain; background:var(--bg); flex-shrink:0; padding:2px; }
+    .summary-item-img-ph { width:48px; height:48px; border-radius:6px; background:var(--bg); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .summary-item-info { flex:1; }
+    .summary-item-name { font-size:13px; font-weight:500; color:var(--near-black); }
+    .summary-item-meta { font-size:12px; color:var(--mid-gray); margin-top:2px; }
+    .summary-item-price{ font-size:13px; font-weight:600; color:var(--near-black); white-space:nowrap; }
+    .summary-row { display:flex; justify-content:space-between; font-size:13px; color:var(--gray); padding:5px 0; }
+    .summary-row.total { font-size:16px; font-weight:700; color:var(--near-black); border-top:2px solid var(--border); margin-top:8px; padding-top:12px; }
+    .summary-row.free  { color:var(--success); font-weight:500; }
+    hr.sum-divider { border:none; border-top:1px solid var(--border); margin:10px 0; }
+
+    /* ── SUBMIT BUTTON ── */
+    .submit-btn {
+      width:100%; padding:14px; background:var(--primary); color:#fff;
+      border:none; border-radius:var(--radius); font-family:var(--font-body);
+      font-size:16px; font-weight:600; cursor:pointer; transition:all .18s;
+      margin-top:20px;
+    }
+    .submit-btn:hover   { background:var(--primary-dark); }
+    .submit-btn:disabled{ opacity:.55; cursor:not-allowed; }
+    .back-link { display:block; text-align:center; margin-top:12px; font-size:13px; color:var(--mid-gray); text-decoration:none; }
+    .back-link:hover { color:var(--primary); }
+
+    /* ── TOAST ── */
+    .sf-toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:500; z-index:9999; opacity:0; transform:translateY(8px); transition:all .25s; }
+    .sf-toast.show  { opacity:1; transform:translateY(0); }
+    .sf-toast.success { background:var(--success); color:#fff; }
+    .sf-toast.error   { background:var(--red); color:#fff; }
+
+    @media (max-width:700px) {
+      .sf-nav { padding:0 16px; }
+      .sf-nav-title, .sf-nav-link { display:none; }
+      .sf-page { padding:24px 16px; }
+      .checkout-layout { grid-template-columns:1fr; }
+      .summary-card { position:static; }
+      .field-row, .field-row-3 { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sf-nav">
+    <a class="sf-nav-brand" id="nav-brand" href="#">
+      <img class="sf-nav-logo hidden" id="nav-logo" src="" alt="Logo">
+      <span class="sf-nav-title" id="nav-title">Store</span>
+    </a>
+    <div class="sf-nav-right">
+      <a class="sf-nav-link" id="nav-catalog-link" href="#">Catalog</a>
+      <a class="sf-nav-link" id="nav-orders-link"  href="#">My Orders</a>
+      <a class="sf-nav-link" id="nav-account-link" href="#">My Account</a>
+      <a class="sf-cart-btn" id="cart-btn" href="#">
+        🛒 Cart <span class="cart-badge" id="cart-count">0</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="sf-page">
+    <div class="page-title">Checkout</div>
+    <div class="checkout-layout">
+
+      <!-- Left column -->
+      <div>
+
+        <!-- Shipping address -->
+        <div class="section-card">
+          <div class="section-title">Shipping address</div>
+
+          <div class="addr-selector" id="addr-selector-wrap" style="display:none">
+            <select id="addr-selector" onchange="onAddrSelect(this.value)">
+              <option value="">— Select a saved address —</option>
+              <option value="new">+ Enter a new address</option>
+            </select>
+          </div>
+
+          <div id="addr-form">
+            <div class="field-row">
+              <div class="field"><label>First name</label><input type="text" id="sh-first" autocomplete="given-name"></div>
+              <div class="field"><label>Last name</label><input type="text" id="sh-last"  autocomplete="family-name"></div>
+            </div>
+            <div class="field"><label>Street address</label><input type="text" id="sh-street" autocomplete="street-address"></div>
+            <div class="field"><label>Apt / Suite (optional)</label><input type="text" id="sh-apt" autocomplete="address-line2"></div>
+            <div class="field-row-3">
+              <div class="field"><label>City</label><input type="text" id="sh-city" autocomplete="address-level2"></div>
+              <div class="field"><label>State</label><input type="text" id="sh-state" maxlength="2" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" autocomplete="address-level1"></div>
+              <div class="field"><label>ZIP</label><input type="text" id="sh-zip" maxlength="10" autocomplete="postal-code"></div>
+            </div>
+
+            <div class="save-addr-wrap">
+              <label>
+                <input type="checkbox" id="save-addr-chk">
+                Save this address to my account
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="section-card">
+          <div class="section-title">Contact</div>
+          <div class="field-row">
+            <div class="field"><label>Full name</label><input type="text" id="co-name" autocomplete="name"></div>
+            <div class="field"><label>Email</label><input type="email" id="co-email" autocomplete="email"></div>
+          </div>
+        </div>
+
+        <!-- Order notes -->
+        <div class="section-card">
+          <div class="section-title">Order notes <span style="font-size:12px;font-weight:400;color:var(--mid-gray)">(optional)</span></div>
+          <div class="field">
+            <textarea id="order-notes" placeholder="Special instructions, delivery notes, etc."></textarea>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="section-card">
+          <div class="section-title">Payment method</div>
+
+          <div class="payment-option" id="opt-pay-now" onclick="selectPayment('pay_now')">
+            <div class="payment-option-header">
+              <input class="payment-option-radio" type="radio" name="payment" id="radio-pay-now">
+              <div class="payment-option-title">Pay now</div>
+              <span class="payment-option-badge">Instant</span>
+            </div>
+            <div class="payment-option-desc">Pay securely by card. Your order goes straight into production once payment is confirmed.</div>
+            <div id="square-card-container">
+              <div id="card-element"></div>
+              <div id="card-errors"></div>
+            </div>
+          </div>
+
+          <div class="payment-option" id="opt-invoice" onclick="selectPayment('invoice_me')">
+            <div class="payment-option-header">
+              <input class="payment-option-radio" type="radio" name="payment" id="radio-invoice">
+              <div class="payment-option-title">Invoice me</div>
+            </div>
+            <div class="payment-option-desc">Submit your order now and receive a Square invoice by email within 24 hours. Production begins once the invoice is paid.</div>
+            <div id="invoice-note">
+              📋 You'll receive a payment link by email within 24 hours. Note: production of your order won't begin until the invoice is paid.
+            </div>
+          </div>
+        </div>
+
+        <!-- Error display -->
+        <div id="checkout-error" style="display:none;background:#FDF0F0;border:1px solid #F5C6C6;border-radius:var(--radius);padding:12px 16px;font-size:14px;color:var(--red);margin-bottom:16px"></div>
+
+        <button class="submit-btn" id="submit-btn" onclick="submitOrder()" disabled>
+          Place order
+        </button>
+        <a class="back-link" id="back-link" href="#">← Back to cart</a>
+      </div>
+
+      <!-- Right column — order summary -->
+      <div class="summary-card">
+        <div class="summary-title">Order summary</div>
+        <div id="summary-items"></div>
+        <hr class="sum-divider">
+        <div class="summary-row"><span>Subtotal</span><span id="sum-subtotal">—</span></div>
+        <div class="summary-row" id="sum-ship-row"><span>Shipping</span><span id="sum-shipping">—</span></div>
+        <div class="summary-row total"><span>Total</span><span id="sum-total">—</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sf-toast" id="sf-toast"></div>
+
+<script type="module">
+  import { VERSION } from '../shared/version.js';
+
+  const WORKER_URL    = 'https://storefront-api.matt-zmud.workers.dev';
+  const SQUARE_APP_ID = 'sq0idp-FwLPuMhgzq4X3Xo1ESHDnQ';
+  const FS_BASE       = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
+  const CART_KEY      = 'sf_cart';
+
+  let storefrontId  = null;
+  let storefront    = null;
+  let auth          = null;
+  let currentUser   = null;
+  let sfUser        = null;
+  let cart          = [];
+  let paymentMethod = null;
+  let squareCard    = null;
+  let squarePayments= null;
+
+  // ── HELPERS ──────────────────────────────────────────────────────────
+  function ff(fields = {}) {
+    return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
+      if (v.stringValue  !== undefined) return [k, v.stringValue];
+      if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+      if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+      if (v.booleanValue !== undefined) return [k, v.booleanValue];
+      if (v.nullValue    !== undefined) return [k, null];
+      if (v.arrayValue)  return [k, (v.arrayValue.values||[]).map(i => ff({_:i})._)];
+      if (v.mapValue)    return [k, ff(v.mapValue.fields||{})];
+      return [k, null];
+    }));
+  }
+
+  async function fsGetPublic(path) {
+    const res = await fetch(`${FS_BASE}/${path}`);
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
+  async function fsGetAuth(path) {
+    const token = await currentUser.getIdToken();
+    const res   = await fetch(`${FS_BASE}/${path}`, { headers:{ Authorization:`Bearer ${token}` } });
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
+  async function fsUpdateAuth(path, data) {
+    const token  = await currentUser.getIdToken();
+    const fields = toFsFields(data);
+    const mask   = Object.keys(fields).map(k=>`updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+    await fetch(`${FS_BASE}/${path}?${mask}`, {
+      method:'PATCH',
+      headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ fields })
+    });
+  }
+
+  function toFsValue(v) {
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === 'boolean')  return { booleanValue: v };
+    if (typeof v === 'number')   return Number.isInteger(v) ? { integerValue: v } : { doubleValue: v };
+    if (typeof v === 'string')   return { stringValue: v };
+    if (Array.isArray(v))        return { arrayValue: { values: v.map(toFsValue) } };
+    if (typeof v === 'object')   return { mapValue: { fields: toFsFields(v) } };
+    return { stringValue: String(v) };
+  }
+  function toFsFields(obj) {
+    return Object.fromEntries(Object.entries(obj).map(([k,v]) => [k, toFsValue(v)]));
+  }
+
+  async function callWorker(action, data = {}) {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action, ...data })
+    });
+    return res.json();
+  }
+
+  function getCart()       { try { return JSON.parse(sessionStorage.getItem(CART_KEY)||'[]'); } catch { return []; } }
+  function clearCart()     { sessionStorage.removeItem(CART_KEY); }
+  function fmtD(n)         { return '$' + Number(n).toFixed(2); }
+  function esc(str)        { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function toast(msg, type='success') {
+    const el = document.getElementById('sf-toast');
+    el.textContent = msg; el.className = `sf-toast ${type}`;
+    setTimeout(()=>el.classList.add('show'),10);
+    setTimeout(()=>el.classList.remove('show'),4000);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('checkout-error');
+    el.textContent = msg; el.style.display = 'block';
+    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+  function clearError() { document.getElementById('checkout-error').style.display = 'none'; }
+
+  function applyBranding(sf) {
+    const brand = sf.brand || {};
+    const root  = document.documentElement.style;
+    if (brand.nav)             root.setProperty('--nav-bg',       brand.nav);
+    if (brand.primary)         root.setProperty('--primary',      brand.primary);
+    if (brand['primary-dark']) root.setProperty('--primary-dark', brand['primary-dark']);
+    if (brand.accent)          root.setProperty('--accent',       brand.accent);
+    if (brand.bg)              root.setProperty('--bg',           brand.bg);
+    if (brand.card)            root.setProperty('--card-bg',      brand.card);
+    if (brand.border)          root.setProperty('--border',       brand.border);
+    document.getElementById('nav-title').textContent = sf.name || 'Store';
+    if (sf.logoUrl) {
+      const logo = document.getElementById('nav-logo');
+      logo.src = sf.logoUrl; logo.classList.remove('hidden');
+    }
+    document.title = `Checkout — ${sf.name || 'Store'}`;
+  }
+
+  // ── ADDRESS SELECTOR ─────────────────────────────────────────────────
+  window.onAddrSelect = (val) => {
+    if (!val || val === 'new') {
+      clearAddrForm();
+      return;
+    }
+    const saved = sfUser?.savedAddresses || [];
+    const addr  = saved.find(a => a.id === val);
+    if (!addr) return;
+    document.getElementById('sh-first').value  = addr.firstName || '';
+    document.getElementById('sh-last').value   = addr.lastName  || '';
+    document.getElementById('sh-street').value = addr.street    || '';
+    document.getElementById('sh-apt').value    = addr.apt       || '';
+    document.getElementById('sh-city').value   = addr.city      || '';
+    document.getElementById('sh-state').value  = (addr.state||'').toUpperCase();
+    document.getElementById('sh-zip').value    = addr.zip       || '';
+  };
+
+  function clearAddrForm() {
+    ['sh-first','sh-last','sh-street','sh-apt','sh-city','sh-state','sh-zip']
+      .forEach(id => { document.getElementById(id).value = ''; });
+  }
+
+  function populateAddrSelector(addresses) {
+    const wrap = document.getElementById('addr-selector-wrap');
+    const sel  = document.getElementById('addr-selector');
+    if (!addresses || addresses.length === 0) return;
+    addresses.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value       = a.id;
+      opt.textContent = `${a.firstName} ${a.lastName} — ${a.street}, ${a.city}`;
+      sel.insertBefore(opt, sel.lastElementChild); // before "Enter new"
+    });
+    wrap.style.display = 'block';
+  }
+
+  // ── PAYMENT SELECTION ─────────────────────────────────────────────────
+  window.selectPayment = async (method) => {
+    paymentMethod = method;
+    document.getElementById('opt-pay-now').classList.toggle('selected', method==='pay_now');
+    document.getElementById('opt-invoice').classList.toggle('selected', method==='invoice_me');
+    document.getElementById('radio-pay-now').checked  = method==='pay_now';
+    document.getElementById('radio-invoice').checked  = method==='invoice_me';
+    document.getElementById('square-card-container').style.display = method==='pay_now'    ? 'block' : 'none';
+    document.getElementById('invoice-note').style.display          = method==='invoice_me' ? 'block' : 'none';
+    document.getElementById('submit-btn').disabled = false;
+
+    // Init Square card form if Pay Now selected
+    if (method === 'pay_now' && !squareCard) {
+      await initSquare();
+    }
+  };
+
+  async function initSquare() {
+    if (!window.Square) {
+      showError('Square payments could not load. Please refresh and try again.');
+      return;
+    }
+    try {
+      squarePayments = window.Square.payments(SQUARE_APP_ID, 'LT11X23Z53Y4H');
+      squareCard     = await squarePayments.card();
+      await squareCard.attach('#card-element');
+    } catch(e) {
+      console.error('Square init error:', e);
+      showError('Unable to load payment form. Please try again.');
+    }
+  }
+
+  // ── ORDER SUMMARY ─────────────────────────────────────────────────────
+  function renderSummary() {
+    const subtotal    = cart.reduce((s, i) => s + i.lineTotal, 0);
+    const shippingRate= storefront?.shippingRate || 0;
+    const threshold   = storefront?.freeShippingThreshold || 0;
+    const freeShip    = threshold > 0 && subtotal >= threshold;
+    const shippingFee = freeShip ? 0 : shippingRate;
+    const total       = subtotal + shippingFee;
+
+    document.getElementById('summary-items').innerHTML = cart.map(item => `
+      <div class="summary-item">
+        ${item.imageUrl
+          ? `<img class="summary-item-img" src="${esc(item.imageUrl)}" alt="${esc(item.productName)}">`
+          : `<div class="summary-item-img-ph">🖼️</div>`}
+        <div class="summary-item-info">
+          <div class="summary-item-name">${esc(item.productName)}</div>
+          <div class="summary-item-meta">Qty: ${item.qty} × ${fmtD(item.unitPrice)}</div>
+        </div>
+        <div class="summary-item-price">${fmtD(item.lineTotal)}</div>
+      </div>`).join('');
+
+    document.getElementById('sum-subtotal').textContent = fmtD(subtotal);
+    const shipRow  = document.getElementById('sum-ship-row');
+    const shipSpan = document.getElementById('sum-shipping');
+    if (freeShip) {
+      shipRow.classList.add('free'); shipSpan.textContent = 'Free';
+    } else {
+      shipRow.classList.remove('free');
+      shipSpan.textContent = shippingRate > 0 ? fmtD(shippingFee) : 'Calculated';
+    }
+    document.getElementById('sum-total').textContent = fmtD(total);
+
+    return { subtotal, shippingFee, total };
+  }
+
+  // ── VALIDATE ──────────────────────────────────────────────────────────
+  function getShippingAddress() {
+    const first  = document.getElementById('sh-first').value.trim();
+    const last   = document.getElementById('sh-last').value.trim();
+    const street = document.getElementById('sh-street').value.trim();
+    const city   = document.getElementById('sh-city').value.trim();
+    const state  = document.getElementById('sh-state').value.trim().toUpperCase();
+    const zip    = document.getElementById('sh-zip').value.trim();
+    const apt    = document.getElementById('sh-apt').value.trim();
+    return { firstName:first, lastName:last, street, apt, city, state, zip };
+  }
+
+  function validate() {
+    const addr = getShippingAddress();
+    if (!addr.firstName)    { showError('Please enter your first name.');    return false; }
+    if (!addr.lastName)     { showError('Please enter your last name.');     return false; }
+    if (!addr.street)       { showError('Please enter your street address.'); return false; }
+    if (!addr.city)         { showError('Please enter your city.');          return false; }
+    if (!addr.state)        { showError('Please enter your state.');         return false; }
+    if (!addr.zip)          { showError('Please enter your ZIP code.');      return false; }
+    const name  = document.getElementById('co-name').value.trim();
+    const email = document.getElementById('co-email').value.trim();
+    if (!name)              { showError('Please enter your name.');          return false; }
+    if (!email)             { showError('Please enter your email address.');  return false; }
+    if (!paymentMethod)     { showError('Please select a payment method.');  return false; }
+    if (cart.length === 0)  { showError('Your cart is empty.');              return false; }
+    return true;
+  }
+
+  // ── SUBMIT ────────────────────────────────────────────────────────────
+  window.submitOrder = async () => {
+    clearError();
+    if (!validate()) return;
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = paymentMethod === 'pay_now' ? 'Processing payment…' : 'Placing order…';
+
+    try {
+      const addr      = getShippingAddress();
+      const name      = document.getElementById('co-name').value.trim();
+      const email     = document.getElementById('co-email').value.trim();
+      const notes     = document.getElementById('order-notes').value.trim();
+      const { subtotal, shippingFee, total } = renderSummary();
+
+      const lineItems = cart.map(i => ({
+        productId:   i.productId,
+        productName: i.productName,
+        qty:         i.qty,
+        unitPrice:   i.unitPrice,
+        lineTotal:   i.lineTotal,
+      }));
+
+      const orderBase = {
+        userId:          currentUser.uid,
+        name,
+        email,
+        locationId:      sfUser?.locationId   || '',
+        locationName:    sfUser?.locationName  || '',
+        shippingAddress: addr,
+        lineItems,
+        subtotal,
+        shippingFee,
+        orderTotal:      total,
+        paymentMethod,
+        orderNotes:      notes,
+        storefrontName:  storefront?.name || '',
+      };
+
+      let squarePaymentId = null;
+
+      // ── PAY NOW ───────────────────────────────────────────────────────
+      if (paymentMethod === 'pay_now') {
+        if (!squareCard) { showError('Payment form not ready. Please wait a moment and try again.'); btn.disabled=false; btn.textContent='Place order'; return; }
+
+        const result = await squareCard.tokenize();
+        if (result.status !== 'OK') {
+          const errMsg = result.errors?.map(e=>e.message).join(', ') || 'Card error. Please check your details.';
+          document.getElementById('card-errors').textContent = errMsg;
+          document.getElementById('card-errors').style.display = 'block';
+          showError(errMsg);
+          btn.disabled=false; btn.textContent='Place order';
+          return;
+        }
+
+        // Charge via worker
+        const amountCents = Math.round(total * 100);
+        const payRes = await callWorker('create_payment', {
+          sourceId:     result.token,
+          amountCents,
+          orderId:      `storefront-${Date.now()}`,
+          note:         `${storefront?.name || 'Storefront'} order — ${name}`,
+        });
+
+        if (!payRes.ok) {
+          showError(payRes.error || 'Payment failed. Please try again.');
+          btn.disabled=false; btn.textContent='Place order';
+          return;
+        }
+
+        squarePaymentId = payRes.payment?.id || null;
+      }
+
+      // ── SAVE ORDER ────────────────────────────────────────────────────
+      const orderRes = await callWorker('place_order', {
+        storefrontId,
+        order: {
+          ...orderBase,
+          ...(squarePaymentId ? { squarePaymentId, status:'paid' } : { status:'pending' }),
+        }
+      });
+
+      if (!orderRes.ok) throw new Error(orderRes.error || 'Order save failed');
+
+      // ── SAVE ADDRESS ──────────────────────────────────────────────────
+      if (document.getElementById('save-addr-chk').checked) {
+        const existing = sfUser?.savedAddresses || [];
+        const newAddr  = { ...addr, id: `addr-${Date.now()}` };
+        await fsUpdateAuth(`storefrontUsers/${currentUser.uid}`, {
+          savedAddresses: [...existing, newAddr]
+        });
+      }
+
+      // ── SUCCESS ───────────────────────────────────────────────────────
+      clearCart();
+      window.location.href = `confirmation.html?s=${storefrontId}&order=${orderRes.orderId}&method=${paymentMethod}`;
+
+    } catch(e) {
+      console.error('Checkout error:', e);
+      showError(e.message || 'Something went wrong. Please try again.');
+      btn.disabled=false; btn.textContent='Place order';
+    }
+  };
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  try {
+    const params = new URLSearchParams(window.location.search);
+    storefrontId  = params.get('s');
+    if (!storefrontId) throw new Error('No storefront');
+
+    // Auth
+    const config = await callWorker('get_config');
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    const appName = `storefront-${storefrontId}`;
+    const app  = getApps().find(a=>a.name===appName) || initializeApp(config, appName);
+    auth = getAuth(app);
+    await setPersistence(auth, browserSessionPersistence);
+
+    currentUser = await new Promise((resolve, reject) => {
+      const unsub = onAuthStateChanged(auth, user => {
+        unsub();
+        if (user) resolve(user);
+        else reject(new Error('Not authenticated'));
+      });
+    });
+
+    // Load storefront + user profile in parallel
+    [storefront, sfUser] = await Promise.all([
+      fsGetPublic(`storefronts/${storefrontId}`),
+      fsGetAuth(`storefrontUsers/${currentUser.uid}`),
+    ]);
+
+    if (!storefront || storefront.active === false) throw new Error('Storefront not found');
+
+    // Load Square SDK
+    await new Promise((resolve, reject) => {
+      const script  = document.createElement('script');
+      script.src    = 'https://web.squarecdn.com/v1/square.js';
+      script.onload = resolve;
+      script.onerror= () => reject(new Error('Square SDK failed to load'));
+      document.head.appendChild(script);
+    });
+
+    applyBranding(storefront);
+
+    // Wire nav
+    document.getElementById('nav-brand').href        = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-catalog-link').href = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-orders-link').href  = `orders.html?s=${storefrontId}`;
+    document.getElementById('nav-account-link').href = `profile.html?s=${storefrontId}`;
+    document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
+    document.getElementById('back-link').href        = `cart.html?s=${storefrontId}`;
+
+    // Cart
+    cart = getCart();
+    if (cart.length === 0) {
+      window.location.href = `cart.html?s=${storefrontId}`;
+      throw new Error('REDIRECT');
+    }
+    document.getElementById('cart-count').textContent = cart.length;
+
+    // Pre-fill contact from user profile
+    if (sfUser?.name)  document.getElementById('co-name').value  = sfUser.name;
+    if (sfUser?.email) document.getElementById('co-email').value = sfUser.email || currentUser.email;
+    else               document.getElementById('co-email').value = currentUser.email;
+
+    // Saved addresses
+    populateAddrSelector(sfUser?.savedAddresses || []);
+
+    // Render summary
+    renderSummary();
+
+  } catch(e) {
+    if (e.message === 'Not authenticated') {
+      window.location.href = `index.html?s=${storefrontId || ''}`;
+    } else if (e.message === 'REDIRECT') {
+      // Already redirected
+    } else {
+      console.error('Checkout init error:', e.message);
+      showError('Unable to load checkout. Please refresh the page.');
+    }
+  }
+</script>
+
+</body>
+</html>
