@@ -1282,8 +1282,17 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
       <div class="field">
         <label>Square invoice ID</label>
-        <input type="text" id="sford-invoice-id" placeholder="e.g. inv_xxxx"
-          style="font-family:monospace;font-size:12px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="sford-invoice-id" placeholder="e.g. inv_xxxx"
+            style="font-family:monospace;font-size:12px;flex:1">
+          <div id="sford-invoice-status" style="display:none"></div>
+        </div>
+        <div id="sford-invoice-link-wrap" style="display:none;margin-top:6px">
+          <a id="sford-invoice-link" href="#" target="_blank"
+            style="font-size:12px;color:var(--green);text-decoration:none">
+            View customer invoice →
+          </a>
+        </div>
       </div>
       <div></div>
       <div class="field">
@@ -4691,7 +4700,7 @@ window.openSFOrderModal = (orderId) => {
     document.getElementById('sford-payment').textContent = `💳 ${brand}${last4}`;
   } else {
     document.getElementById('sford-payment').innerHTML = o.squareInvoiceId
-      ? `📄 Invoice — <a href="https://squareup.com/dashboard/invoices/${esc(o.squareInvoiceId)}" target="_blank" style="color:var(--green);text-decoration:none">${esc(o.squareInvoiceId)}</a>`
+      ? `📄 Invoice — <a href="https://squareup.com/invoice/${esc(o.squareInvoiceId)}" target="_blank" style="color:var(--green);text-decoration:none">${esc(o.squareInvoiceId)}</a>`
       : '📄 Invoice requested';
   }
   const sqPayWrap = document.getElementById('sford-square-payment-wrap');
@@ -4720,6 +4729,29 @@ window.openSFOrderModal = (orderId) => {
   else { document.getElementById('sford-notes-row').classList.add('hidden'); }
   document.getElementById('sford-admin-notes').value  = o.adminNotes  || '';
   document.getElementById('sford-invoice-id').value   = o.squareInvoiceId || '';
+  // Invoice link + status
+  const invLinkWrap  = document.getElementById('sford-invoice-link-wrap');
+  const invLink      = document.getElementById('sford-invoice-link');
+  const invStatus    = document.getElementById('sford-invoice-status');
+  if (o.squareInvoiceId) {
+    invLinkWrap.style.display = 'block';
+    invLink.href = `https://squareup.com/invoice/${o.squareInvoiceId}`;
+    // Show payment status based on order status
+    const statusMap = {
+      pending:    { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
+      paid:       { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+      processing: { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+      shipped:    { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+      completed:  { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+      cancelled:  { label: 'Cancelled',        color: '#C0392B', bg: '#FDECEA' },
+    };
+    const st = statusMap[o.status] || statusMap.pending;
+    invStatus.style.display = 'inline-block';
+    invStatus.innerHTML = `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${st.bg};color:${st.color}">${st.label}</span>`;
+  } else {
+    invLinkWrap.style.display = 'none';
+    invStatus.style.display   = 'none';
+  }
   document.getElementById('sford-carrier').value       = o.carrier     || '';
   document.getElementById('sford-tracking').value      = o.trackingNumber || '';
   const isDone    = o.status==='completed'||o.status==='cancelled';
