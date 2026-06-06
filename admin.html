@@ -4719,7 +4719,7 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-date').textContent      = fmtDate(o.createdAt);
   const addr=o.shippingAddress||{};
   const addrName = [addr.firstName, addr.lastName].filter(Boolean).join(' ');
-  document.getElementById('sford-address').textContent = [addrName, addr.street, addr.city, [addr.state, addr.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—';
+  document.getElementById('sford-address').textContent = [addrName, addr.company, addr.street, addr.city, [addr.state, addr.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—';
   const items=o.lineItems||[];
   document.getElementById('sford-lines').innerHTML = items.map(li=>`
     <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
