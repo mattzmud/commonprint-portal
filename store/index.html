@@ -504,6 +504,7 @@
       await callWorker('send_password_reset', {
         email,
         storefrontName: storefront?.name || 'Store',
+        storefrontId,
       });
       sucEl.style.display = 'block';
       btn.textContent = 'Sent!';
