@@ -309,7 +309,8 @@
 
       const summaryText = items.map(li => `${li.qty}× ${esc(li.productName)}`).join(', ');
       const addr = o.shippingAddress || {};
-      const addrStr = [addr.street, addr.city, `${addr.state||''} ${addr.zip||''}`.trim()].filter(Boolean).join(', ');
+      const addrName = [addr.firstName, addr.lastName].filter(Boolean).join(' ');
+      const addrStr = [addrName, addr.street, addr.city, `${addr.state||''} ${addr.zip||''}`.trim()].filter(Boolean).join(', ');
 
       // Line items detail
       const lineItemsHtml = items.map(li => `
@@ -373,7 +374,19 @@
                 </div>
                 <div>
                   <div class="detail-label">Payment</div>
-                  <div class="detail-info-val">${o.paymentMethod==='pay_now' ? '💳 Paid by card' : '📄 Invoice'}</div>
+                  <div class="detail-info-val">${(() => {
+                    if (o.paymentMethod === 'pay_now') {
+                      const brand = o.cardBrand ? o.cardBrand.charAt(0).toUpperCase() + o.cardBrand.slice(1).toLowerCase() : 'Card';
+                      const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
+                      return `💳 ${brand}${last4}`;
+                    } else {
+                      if (o.squareInvoiceId) {
+                        const invoiceUrl = `https://squareup.com/dashboard/invoices/${o.squareInvoiceId}`;
+                        return `📄 <a href="${invoiceUrl}" target="_blank" style="color:var(--primary);text-decoration:none">Invoice #${esc(o.squareInvoiceId)}</a>`;
+                      }
+                      return '📄 Invoice';
+                    }
+                  })()}</div>
                 </div>
               </div>
             </div>

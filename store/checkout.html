@@ -777,6 +777,8 @@
         }
 
         squarePaymentId = payRes.payment?.id || null;
+        const cardBrand = payRes.payment?.card_details?.card?.card_brand || null;
+        const cardLast4 = payRes.payment?.card_details?.card?.last_4 || null;
       }
 
       // ── SAVE ORDER ────────────────────────────────────────────────────
@@ -784,7 +786,7 @@
         storefrontId,
         order: {
           ...orderBase,
-          ...(squarePaymentId ? { squarePaymentId, status:'paid' } : { status:'pending' }),
+          ...(squarePaymentId ? { squarePaymentId, status:'paid', ...(cardBrand?{cardBrand}:{}), ...(cardLast4?{cardLast4}:{}) } : { status:'pending' }),
         }
       });
 
