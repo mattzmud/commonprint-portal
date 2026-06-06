@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:      #3a3a3a;
+      --primary-dark: #1a1a1a;
+      --primary-light:#f0f0f0;
+      --accent:       #888888;
+      --nav-bg:       #2c2c2c;
+      --success:      #194A4E;
+      --success-light:#DCE7E8;
+      --ink:          #2D2926;
+      --gray:         #575451;
+      --mid-gray:     #888780;
+      --near-black:   #1a1818;
+      --border:       #e0e0e0;
+      --bg:           #f5f5f5;
+      --card-bg:      #FFFFFF;
+      --pale:         #f9f9f9;
+      --red:          #C0392B;
+      --font-body:    'Jost', system-ui, sans-serif;
+      --radius:       10px;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+
+    /* ── NAV ── */
+    .sf-nav { background:var(--nav-bg); padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+    .sf-nav-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+    .sf-nav-logo  { height:36px; width:36px; object-fit:contain; border-radius:50%; background:#fff; padding:3px; }
+    .sf-nav-title { font-size:14px; font-weight:600; color:rgba(255,255,255,0.9); max-width:280px; line-height:1.3; }
+    .sf-nav-right { display:flex; align-items:center; gap:4px; }
+    .sf-nav-link  { color:rgba(255,255,255,0.7); font-size:13px; padding:6px 12px; border-radius:6px; text-decoration:none; transition:all .15s; }
+    .sf-nav-link:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .sf-nav-link.active { color:#fff; background:rgba(255,255,255,0.15); }
+    .sf-cart-btn  { display:flex; align-items:center; gap:6px; background:var(--primary); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-family:var(--font-body); font-size:13px; font-weight:500; cursor:pointer; transition:background .15s; margin-left:8px; text-decoration:none; }
+    .sf-cart-btn:hover { background:var(--primary-dark); color:#fff; }
+    .cart-badge { background:#fff; color:var(--primary); border-radius:50%; font-size:11px; font-weight:700; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+
+    /* ── PAGE ── */
+    .sf-page { max-width:640px; margin:0 auto; padding:40px 32px; }
+    .page-title { font-size:24px; font-weight:700; color:var(--near-black); margin-bottom:28px; }
+
+    /* ── COLLAPSIBLE CARDS ── */
+    .prof-card { background:#fff; border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:12px; }
+    .prof-card-header {
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      padding:16px 20px; background:none; border:none; cursor:pointer;
+      font-family:var(--font-body); transition:background .12s;
+    }
+    .prof-card-header:hover { background:var(--pale); }
+    .prof-card-title { font-size:15px; font-weight:500; color:var(--near-black); }
+    .prof-card-chevron { color:var(--mid-gray); font-size:18px; transition:transform .2s; }
+    .prof-card-body { padding:0 20px 20px; }
+
+    /* ── FIELDS ── */
+    .field { margin-bottom:14px; }
+    .field label { display:block; font-size:12px; font-weight:600; color:var(--gray); margin-bottom:5px; }
+    .field input {
+      width:100%; padding:10px 14px;
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      font-family:var(--font-body); font-size:14px; color:var(--ink);
+      background:#fff; outline:none; transition:border-color .15s;
+    }
+    .field input:focus  { border-color:var(--primary); }
+    .field input:disabled { background:var(--pale); color:var(--mid-gray); cursor:not-allowed; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field-row-3 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding:10px 20px; border:none; border-radius:var(--radius);
+      font-family:var(--font-body); font-size:14px; font-weight:500;
+      cursor:pointer; transition:all .18s;
+    }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:var(--primary-dark); }
+    .btn-ghost { background:transparent; color:var(--gray); border:1.5px solid var(--border); }
+    .btn-ghost:hover { background:var(--pale); color:var(--ink); }
+    .btn-danger { background:var(--red); color:#fff; }
+    .btn-sm { padding:7px 14px; font-size:13px; }
+
+    /* ── ALERTS ── */
+    .alert { font-size:13px; padding:10px 14px; border-radius:var(--radius); margin-top:10px; display:none; }
+    .alert.show { display:block; }
+    .alert-error   { background:#FDF0F0; border:1px solid #F5C6C6; color:var(--red); }
+    .alert-success { background:var(--success-light); border:1px solid #b2d4d8; color:var(--success); }
+
+    /* ── ADDRESS CARDS ── */
+    .addr-card {
+      border:1.5px solid var(--border); border-radius:var(--radius);
+      padding:14px 16px; margin-bottom:10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    }
+    .addr-card-text { font-size:14px; color:var(--near-black); line-height:1.6; flex:1; }
+    .addr-card-actions { display:flex; gap:6px; flex-shrink:0; }
+
+    /* ── ADD ADDRESS FORM ── */
+    .add-addr-form { margin-top:16px; padding-top:16px; border-top:1px solid var(--border); display:none; }
+    .add-addr-form.open { display:block; }
+
+    /* ── SIGN OUT ── */
+    .signout-wrap { text-align:center; margin-top:24px; }
+    .signout-link { font-size:14px; color:var(--mid-gray); cursor:pointer; text-decoration:underline; background:none; border:none; font-family:var(--font-body); }
+    .signout-link:hover { color:var(--red); }
+
+    /* ── LOADING ── */
+    .sf-loading { display:flex; align-items:center; justify-content:center; min-height:300px; }
+    .sf-spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── TOAST ── */
+    .sf-toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:500; z-index:9999; opacity:0; transform:translateY(8px); transition:all .25s; }
+    .sf-toast.show { opacity:1; transform:translateY(0); }
+    .sf-toast.success { background:var(--success); color:#fff; }
+    .sf-toast.error   { background:var(--red); color:#fff; }
+
+    @media (max-width:700px) {
+      .sf-nav { padding:0 16px; }
+      .sf-nav-title, .sf-nav-link { display:none; }
+      .sf-page { padding:24px 16px; }
+      .field-row, .field-row-3 { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sf-nav">
+    <a class="sf-nav-brand" id="nav-brand" href="#">
+      <img class="sf-nav-logo hidden" id="nav-logo" src="" alt="Logo">
+      <span class="sf-nav-title" id="nav-title">Store</span>
+    </a>
+    <div class="sf-nav-right">
+      <a class="sf-nav-link" id="nav-catalog-link" href="#">Catalog</a>
+      <a class="sf-nav-link" id="nav-orders-link"  href="#">My Orders</a>
+      <a class="sf-nav-link active" href="#">My Account</a>
+      <a class="sf-cart-btn" id="cart-btn" href="#">
+        🛒 Cart <span class="cart-badge" id="cart-count">0</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="sf-page">
+    <div class="page-title">My Account</div>
+
+    <div id="profile-loading" class="sf-loading"><div class="sf-spinner"></div></div>
+
+    <div id="profile-content" style="display:none">
+
+      <!-- Account info -->
+      <div class="prof-card">
+        <button class="prof-card-header" onclick="toggleCard('account')">
+          <span class="prof-card-title">Account information</span>
+          <span class="prof-card-chevron" id="chevron-account">›</span>
+        </button>
+        <div class="prof-card-body" id="body-account" style="display:none">
+          <div class="field-row">
+            <div class="field"><label>First name</label><input type="text" id="acc-first"></div>
+            <div class="field"><label>Last name</label><input type="text" id="acc-last"></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Email address</label>
+              <input type="email" id="acc-email" disabled>
+            </div>
+            <div class="field">
+              <label>Phone number</label>
+              <input type="tel" id="acc-phone" placeholder="(734) 555-0100"
+                oninput="this.value=fmtPhone(this.value)">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Location</label>
+              <input type="text" id="acc-location" disabled>
+            </div>
+          </div>
+          <div class="alert alert-error"   id="acc-error"></div>
+          <div class="alert alert-success" id="acc-success"></div>
+          <div style="margin-top:4px">
+            <button class="btn btn-primary btn-sm" onclick="saveAccountInfo()">Save changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved addresses -->
+      <div class="prof-card">
+        <button class="prof-card-header" onclick="toggleCard('addresses')">
+          <span class="prof-card-title">Saved addresses</span>
+          <span class="prof-card-chevron" id="chevron-addresses">›</span>
+        </button>
+        <div class="prof-card-body" id="body-addresses" style="display:none">
+          <div id="addr-list"></div>
+          <button class="btn btn-ghost btn-sm" onclick="toggleAddAddrForm()" id="add-addr-btn">+ Add new address</button>
+          <div class="add-addr-form" id="add-addr-form">
+            <div class="field-row">
+              <div class="field"><label>First name</label><input type="text" id="na-first"></div>
+              <div class="field"><label>Last name</label><input type="text" id="na-last"></div>
+            </div>
+            <div class="field"><label>Street address</label><input type="text" id="na-street"></div>
+            <div class="field"><label>Apt / Suite (optional)</label><input type="text" id="na-apt"></div>
+            <div class="field-row-3">
+              <div class="field"><label>City</label><input type="text" id="na-city"></div>
+              <div class="field"><label>State</label><input type="text" id="na-state" maxlength="2" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+              <div class="field"><label>ZIP</label><input type="text" id="na-zip" maxlength="10"></div>
+            </div>
+            <div class="alert alert-error" id="na-error"></div>
+            <div style="display:flex;gap:10px;margin-top:4px">
+              <button class="btn btn-ghost btn-sm" onclick="toggleAddAddrForm()">Cancel</button>
+              <button class="btn btn-primary btn-sm" onclick="saveNewAddress()">Save address</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change password -->
+      <div class="prof-card">
+        <button class="prof-card-header" onclick="toggleCard('password')">
+          <span class="prof-card-title">Change password</span>
+          <span class="prof-card-chevron" id="chevron-password">›</span>
+        </button>
+        <div class="prof-card-body" id="body-password" style="display:none">
+          <div class="field"><label>Current password</label><input type="password" id="pw-current" placeholder="••••••••"></div>
+          <div class="field"><label>New password</label><input type="password" id="pw-new" placeholder="At least 8 characters"></div>
+          <div class="field"><label>Confirm new password</label><input type="password" id="pw-confirm" placeholder="Re-enter new password"></div>
+          <div class="alert alert-error"   id="pw-error"></div>
+          <div class="alert alert-success" id="pw-success"></div>
+          <div style="margin-top:4px">
+            <button class="btn btn-primary btn-sm" onclick="savePassword()">Update password</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sign out -->
+      <div class="signout-wrap">
+        <button class="signout-link" onclick="doSignOut()">Sign out</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sf-toast" id="sf-toast"></div>
+
+<script type="module">
+  import { VERSION } from '../shared/version.js';
+
+  const WORKER_URL = 'https://storefront-api.matt-zmud.workers.dev';
+  const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
+  const CART_KEY   = 'sf_cart';
+
+  let storefrontId = null;
+  let storefront   = null;
+  let auth         = null;
+  let currentUser  = null;
+  let sfUser       = null;
+
+  // ── HELPERS ──────────────────────────────────────────────────────────
+  function ff(fields = {}) {
+    return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
+      if (v.stringValue  !== undefined) return [k, v.stringValue];
+      if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+      if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+      if (v.booleanValue !== undefined) return [k, v.booleanValue];
+      if (v.nullValue    !== undefined) return [k, null];
+      if (v.arrayValue)  return [k, (v.arrayValue.values||[]).map(i => ff({_:i})._)];
+      if (v.mapValue)    return [k, ff(v.mapValue.fields||{})];
+      return [k, null];
+    }));
+  }
+
+  function toFsValue(v) {
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === 'boolean')  return { booleanValue: v };
+    if (typeof v === 'number')   return Number.isInteger(v) ? { integerValue: v } : { doubleValue: v };
+    if (typeof v === 'string')   return { stringValue: v };
+    if (Array.isArray(v))        return { arrayValue: { values: v.map(toFsValue) } };
+    if (typeof v === 'object')   return { mapValue: { fields: toFsFields(v) } };
+    return { stringValue: String(v) };
+  }
+  function toFsFields(obj) { return Object.fromEntries(Object.entries(obj).map(([k,v])=>[k,toFsValue(v)])); }
+
+  async function getToken() { return currentUser.getIdToken(); }
+
+  async function fsGetAuth(path) {
+    const token = await getToken();
+    const res   = await fetch(`${FS_BASE}/${path}`, { headers:{ Authorization:`Bearer ${token}` } });
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
+  async function fsUpdateAuth(path, data) {
+    const token  = await getToken();
+    const fields = toFsFields(data);
+    const mask   = Object.keys(fields).map(k=>`updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+    const res    = await fetch(`${FS_BASE}/${path}?${mask}`, {
+      method:'PATCH', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ fields })
+    });
+    if (!res.ok) throw new Error('Save failed');
+  }
+
+  async function callWorker(action, data = {}) {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action, ...data })
+    });
+    return res.json();
+  }
+
+  function fmtPhone(v) {
+    const d = v.replace(/\D/g,'').slice(0,10);
+    if (d.length<=3) return d;
+    if (d.length<=6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
+    return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  }
+
+  function esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function toast(msg, type='success') {
+    const el = document.getElementById('sf-toast');
+    el.textContent = msg; el.className = `sf-toast ${type}`;
+    setTimeout(()=>el.classList.add('show'), 10);
+    setTimeout(()=>el.classList.remove('show'), 3500);
+  }
+
+  function showAlert(id, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'), 4000);
+  }
+  function clearAlerts(...ids) { ids.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('show'); }); }
+
+  function applyBranding(sf) {
+    const brand = sf.brand || {};
+    const root  = document.documentElement.style;
+    if (brand.nav)             root.setProperty('--nav-bg',       brand.nav);
+    if (brand.primary)         root.setProperty('--primary',      brand.primary);
+    if (brand['primary-dark']) root.setProperty('--primary-dark', brand['primary-dark']);
+    if (brand.accent)          root.setProperty('--accent',       brand.accent);
+    if (brand.bg)              root.setProperty('--bg',           brand.bg);
+    if (brand.card)            root.setProperty('--card-bg',      brand.card);
+    if (brand.border)          root.setProperty('--border',       brand.border);
+    document.getElementById('nav-title').textContent = sf.name || 'Store';
+    if (sf.logoUrl) {
+      const logo = document.getElementById('nav-logo');
+      logo.src = sf.logoUrl; logo.classList.remove('hidden');
+    }
+    document.title = `My Account — ${sf.name || 'Store'}`;
+  }
+
+  // ── COLLAPSIBLE CARDS ─────────────────────────────────────────────────
+  window.toggleCard = (id) => {
+    const body    = document.getElementById(`body-${id}`);
+    const chevron = document.getElementById(`chevron-${id}`);
+    const isOpen  = body.style.display !== 'none';
+    body.style.display    = isOpen ? 'none' : 'block';
+    chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+  };
+
+  // ── POPULATE PROFILE ──────────────────────────────────────────────────
+  function populateProfile() {
+    const nameParts = (sfUser.name || '').split(' ');
+    document.getElementById('acc-first').value    = nameParts[0] || '';
+    document.getElementById('acc-last').value     = nameParts.slice(1).join(' ') || '';
+    document.getElementById('acc-email').value    = sfUser.email || currentUser.email;
+    document.getElementById('acc-phone').value    = sfUser.phone || '';
+    document.getElementById('acc-location').value = sfUser.locationName || '';
+    renderAddresses();
+  }
+
+  // ── SAVE ACCOUNT INFO ─────────────────────────────────────────────────
+  window.saveAccountInfo = async () => {
+    clearAlerts('acc-error','acc-success');
+    const first = document.getElementById('acc-first').value.trim();
+    const last  = document.getElementById('acc-last').value.trim();
+    const phone = document.getElementById('acc-phone').value.trim();
+    if (!first) { showAlert('acc-error','Please enter your first name.'); return; }
+    if (!last)  { showAlert('acc-error','Please enter your last name.'); return; }
+    const name = `${first} ${last}`.trim();
+    try {
+      await fsUpdateAuth(`storefrontUsers/${currentUser.uid}`, { name, phone });
+      sfUser.name = name; sfUser.phone = phone;
+      showAlert('acc-success', 'Account information saved!');
+    } catch(e) { showAlert('acc-error', 'Save failed. Please try again.'); }
+  };
+
+  // ── ADDRESSES ─────────────────────────────────────────────────────────
+  function renderAddresses() {
+    const list = document.getElementById('addr-list');
+    const addrs = sfUser.savedAddresses || [];
+    if (addrs.length === 0) {
+      list.innerHTML = '<p style="font-size:13px;color:var(--mid-gray);margin-bottom:14px">No saved addresses yet.</p>';
+      return;
+    }
+    list.innerHTML = addrs.map((a, i) => `
+      <div class="addr-card">
+        <div class="addr-card-text">
+          ${esc(a.firstName||'')} ${esc(a.lastName||'')}<br>
+          ${esc(a.street||'')}${a.apt ? ', '+esc(a.apt) : ''}<br>
+          ${esc(a.city||'')}, ${esc(a.state||'')} ${esc(a.zip||'')}
+        </div>
+        <div class="addr-card-actions">
+          <button class="btn btn-ghost btn-sm" onclick="deleteAddress('${a.id}')">Remove</button>
+        </div>
+      </div>`).join('');
+  }
+
+  window.toggleAddAddrForm = () => {
+    const form = document.getElementById('add-addr-form');
+    const btn  = document.getElementById('add-addr-btn');
+    const isOpen = form.classList.contains('open');
+    form.classList.toggle('open', !isOpen);
+    btn.textContent = isOpen ? '+ Add new address' : 'Cancel';
+    if (isOpen) {
+      ['na-first','na-last','na-street','na-apt','na-city','na-state','na-zip']
+        .forEach(id => { document.getElementById(id).value = ''; });
+      clearAlerts('na-error');
+    }
+  };
+
+  window.saveNewAddress = async () => {
+    clearAlerts('na-error');
+    const first  = document.getElementById('na-first').value.trim();
+    const last   = document.getElementById('na-last').value.trim();
+    const street = document.getElementById('na-street').value.trim();
+    const city   = document.getElementById('na-city').value.trim();
+    const state  = document.getElementById('na-state').value.trim().toUpperCase();
+    const zip    = document.getElementById('na-zip').value.trim();
+    const apt    = document.getElementById('na-apt').value.trim();
+    if (!first)  { showAlert('na-error','Please enter a first name.'); return; }
+    if (!last)   { showAlert('na-error','Please enter a last name.');  return; }
+    if (!street) { showAlert('na-error','Please enter a street address.'); return; }
+    if (!city)   { showAlert('na-error','Please enter a city.'); return; }
+    if (!state)  { showAlert('na-error','Please enter a state.'); return; }
+    if (!zip)    { showAlert('na-error','Please enter a ZIP code.'); return; }
+
+    const newAddr  = { id:`addr-${Date.now()}`, firstName:first, lastName:last, street, apt, city, state, zip };
+    const existing = sfUser.savedAddresses || [];
+    const updated  = [...existing, newAddr];
+    try {
+      await fsUpdateAuth(`storefrontUsers/${currentUser.uid}`, { savedAddresses: updated });
+      sfUser.savedAddresses = updated;
+      renderAddresses();
+      toggleAddAddrForm();
+      toast('Address saved!');
+    } catch(e) { showAlert('na-error','Save failed. Please try again.'); }
+  };
+
+  window.deleteAddress = async (addrId) => {
+    const updated = (sfUser.savedAddresses || []).filter(a => a.id !== addrId);
+    try {
+      await fsUpdateAuth(`storefrontUsers/${currentUser.uid}`, { savedAddresses: updated });
+      sfUser.savedAddresses = updated;
+      renderAddresses();
+      toast('Address removed.');
+    } catch(e) { toast('Failed to remove address.','error'); }
+  };
+
+  // ── CHANGE PASSWORD ───────────────────────────────────────────────────
+  window.savePassword = async () => {
+    clearAlerts('pw-error','pw-success');
+    const current = document.getElementById('pw-current').value;
+    const newPw   = document.getElementById('pw-new').value;
+    const confirm = document.getElementById('pw-confirm').value;
+    if (!current)      { showAlert('pw-error','Please enter your current password.'); return; }
+    if (newPw.length < 8) { showAlert('pw-error','New password must be at least 8 characters.'); return; }
+    if (newPw !== confirm) { showAlert('pw-error',"Passwords don't match."); return; }
+    try {
+      const { signInWithEmailAndPassword, updatePassword } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const cred = await signInWithEmailAndPassword(auth, currentUser.email, current);
+      await updatePassword(cred.user, newPw);
+      showAlert('pw-success','Password updated successfully!');
+      ['pw-current','pw-new','pw-confirm'].forEach(id => { document.getElementById(id).value = ''; });
+    } catch(e) {
+      const msg = (e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')
+        ? 'Current password is incorrect.' : 'Failed to update password. Please try again.';
+      showAlert('pw-error', msg);
+    }
+  };
+
+  // ── SIGN OUT ──────────────────────────────────────────────────────────
+  window.doSignOut = async () => {
+    const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    await signOut(auth);
+    sessionStorage.removeItem(CART_KEY);
+    window.location.href = `index.html?s=${storefrontId}`;
+  };
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  try {
+    const params = new URLSearchParams(window.location.search);
+    storefrontId  = params.get('s');
+    if (!storefrontId) throw new Error('No storefront specified');
+
+    const config = await callWorker('get_config');
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    const appName = `storefront-${storefrontId}`;
+    const app  = getApps().find(a=>a.name===appName) || initializeApp(config, appName);
+    auth = getAuth(app);
+    await setPersistence(auth, browserSessionPersistence);
+
+    currentUser = await new Promise((resolve, reject) => {
+      const unsub = onAuthStateChanged(auth, user => {
+        unsub();
+        if (user) resolve(user);
+        else reject(new Error('Not authenticated'));
+      });
+    });
+
+    // Load storefront + user profile in parallel
+    const [sf, user] = await Promise.all([
+      fetch(`${FS_BASE}/storefronts/${storefrontId}`).then(r=>r.json()).then(d=>d.fields?{id:d.name.split('/').pop(),...ff(d.fields)}:null),
+      fsGetAuth(`storefrontUsers/${currentUser.uid}`),
+    ]);
+
+    if (!sf || sf.active === false) throw new Error('Storefront not found');
+    storefront = sf;
+    sfUser     = user || { email: currentUser.email, savedAddresses: [] };
+
+    applyBranding(sf);
+
+    // Wire nav
+    document.getElementById('nav-brand').href        = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-catalog-link').href = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-orders-link').href  = `orders.html?s=${storefrontId}`;
+    document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
+
+    // Cart count
+    try {
+      const cart = JSON.parse(sessionStorage.getItem(CART_KEY)||'[]');
+      document.getElementById('cart-count').textContent = cart.length;
+    } catch {}
+
+    populateProfile();
+
+    document.getElementById('profile-loading').style.display = 'none';
+    document.getElementById('profile-content').style.display = 'block';
+
+  } catch(e) {
+    if (e.message === 'Not authenticated') {
+      window.location.href = `index.html?s=${storefrontId || ''}`;
+    } else {
+      console.error('Profile error:', e.message);
+      document.getElementById('profile-loading').style.display = 'none';
+      document.getElementById('profile-content').innerHTML =
+        '<p style="text-align:center;color:var(--mid-gray);padding:40px">Unable to load profile. Please refresh the page.</p>';
+      document.getElementById('profile-content').style.display = 'block';
+    }
+  }
+</script>
+
+</body>
+</html>
