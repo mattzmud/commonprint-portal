@@ -710,7 +710,7 @@
       const email     = document.getElementById('co-email').value.trim();
       const phone     = document.getElementById('co-phone').value.trim();
       const notes     = document.getElementById('order-notes').value.trim();
-      const { subtotal, shippingFee, total } = renderSummary();
+      const { subtotal, shippingFee, total, discountAmount, discountedSubtotal } = renderSummary();
 
       const lineItems = cart.map(i => ({
         productId:   i.productId,
