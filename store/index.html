@@ -106,7 +106,7 @@
     .tabs {
       display:flex; border:1px solid var(--border);
       border-radius:var(--radius); padding:3px; gap:3px;
-      margin-bottom:24px; background:var(--pale);
+      margin-bottom:24px; background:#f0ede8;
     }
     .tab-btn {
       flex:1; padding:8px; border:none;
@@ -129,7 +129,7 @@
       width:100%; padding:11px 14px;
       border:1.5px solid var(--border); border-radius:var(--radius);
       font-family:var(--font); font-size:14px; color:var(--ink);
-      background:var(--pale); outline:none; transition:border-color .15s;
+      background:#fff; outline:none; transition:border-color .15s;
     }
     .field input:focus { border-color:var(--primary); background:#fff; }
 
@@ -143,7 +143,7 @@
     .btn-primary:hover { background:var(--primary-dark); }
     .btn-primary:disabled { opacity:.6; cursor:not-allowed; }
     .btn-ghost {
-      background:var(--pale); color:var(--gray);
+      background:#f5f2ee; color:var(--gray);
       border:1.5px solid var(--border); padding:11px; font-size:14px;
     }
     .btn-ghost:hover { background:#eee; color:var(--ink); }
@@ -232,16 +232,32 @@
 
         <!-- Sign In -->
         <div id="panel-signin">
-          <div class="field">
-            <label>Email address</label>
-            <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
+          <div id="forgot-flow" style="display:none">
+            <p style="font-size:14px;color:var(--gray);margin-bottom:14px;line-height:1.6">Enter your email address and we'll send you a link to reset your password.</p>
+            <div class="field">
+              <label>Email address</label>
+              <input type="email" id="forgot-email" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <div class="err" id="forgot-error"></div>
+            <div id="forgot-success" style="display:none;font-size:13px;color:#194A4E;background:#DCE7E8;padding:10px 14px;border-radius:8px;margin-bottom:10px">
+              Check your inbox — a reset link is on its way.
+            </div>
+            <button class="btn btn-primary" id="forgot-btn" onclick="doForgotPassword()">Send reset link</button>
+            <button onclick="showForgot(false)" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--mid-gray);margin-top:10px;font-family:var(--font);display:block">← Back to sign in</button>
           </div>
-          <div class="field">
-            <label>Password</label>
-            <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password">
+          <div id="signin-flow">
+            <div class="field">
+              <label>Email address</label>
+              <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password">
+            </div>
+            <div class="err" id="si-error"></div>
+            <button class="btn btn-primary" id="si-btn" onclick="doSignIn()">Sign in</button>
+            <button onclick="showForgot(true)" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--mid-gray);margin-top:12px;font-family:var(--font);display:block">Forgot your password?</button>
           </div>
-          <div class="err" id="si-error"></div>
-          <button class="btn btn-primary" id="si-btn" onclick="doSignIn()">Sign in</button>
         </div>
 
         <!-- Register -->
@@ -465,6 +481,37 @@
     if (!name)        { errEl.textContent='Please enter your name.';      errEl.classList.add('show'); return; }
     if (!selectedLoc) { errEl.textContent='Please select your location.'; errEl.classList.add('show'); return; }
     goStep(3);
+  };
+
+  window.showForgot = (show) => {
+    document.getElementById('forgot-flow').style.display   = show ? 'block' : 'none';
+    document.getElementById('signin-flow').style.display   = show ? 'none'  : 'block';
+    document.getElementById('forgot-error').classList.remove('show');
+    document.getElementById('forgot-success').style.display = 'none';
+    document.getElementById('forgot-email').value = '';
+  };
+
+  window.doForgotPassword = async () => {
+    const email  = document.getElementById('forgot-email').value.trim();
+    const errEl  = document.getElementById('forgot-error');
+    const sucEl  = document.getElementById('forgot-success');
+    const btn    = document.getElementById('forgot-btn');
+    errEl.classList.remove('show');
+    sucEl.style.display = 'none';
+    if (!email) { errEl.textContent = 'Please enter your email address.'; errEl.classList.add('show'); return; }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      await callWorker('send_password_reset', {
+        email,
+        storefrontName: storefront?.name || 'Store',
+      });
+      sucEl.style.display = 'block';
+      btn.textContent = 'Sent!';
+    } catch(e) {
+      errEl.textContent = 'Something went wrong. Please try again.';
+      errEl.classList.add('show');
+      btn.disabled = false; btn.textContent = 'Send reset link';
+    }
   };
 
   window.doSignIn = async () => {
