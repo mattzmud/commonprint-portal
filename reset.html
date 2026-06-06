@@ -159,7 +159,7 @@
       <div class="success-icon">✓</div>
       <h2>Password updated.</h2>
       <p class="intro">Your password has been changed successfully.</p>
-      <a href="index.html" class="btn">Sign in to your portal →</a>
+      <a id="success-btn" href="index.html" class="btn">Sign in →</a>
     </div>
   </div>
 
@@ -193,6 +193,7 @@ async function init() {
   // Get oobCode from URL — Firebase appends this when the reset link is clicked
   const params = new URLSearchParams(window.location.search);
   oobCode = params.get('oobCode') || '';
+  const continueUrl = params.get('continueUrl') || '';
 
   if (!oobCode) { show('view-error'); return; }
 
@@ -269,6 +270,10 @@ window.submitReset = async () => {
   try {
     await confirmPasswordReset(auth, oobCode, password);
     show('view-success');
+    if (continueUrl) {
+      const btn = document.getElementById('success-btn');
+      if (btn) { btn.href = continueUrl; btn.textContent = 'Sign in to your store →'; }
+    }
   } catch(e) {
     btn.disabled    = false;
     btn.textContent = 'Set new password';
