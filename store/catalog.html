@@ -205,13 +205,18 @@
       overflow: hidden;
       border: 1px solid var(--border);
       background: var(--card-bg, #fff);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .detail-img {
-      width: 100%;
-      aspect-ratio: 1;
+      max-width: calc(100% - 40px);
+      max-height: calc(100% - 40px);
+      width: auto;
+      height: auto;
       object-fit: contain;
       display: block;
-      padding: 20px;
     }
     .detail-img-placeholder {
       width: 100%;
