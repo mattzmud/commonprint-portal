@@ -112,8 +112,8 @@
     }
 
     /* ── PAGE ── */
-    body { background: var(--bg); min-height: 100vh; margin: 0; font-family: var(--font-body); }
-    .sf-page { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+    body { background: var(--bg); min-height: 100vh; margin: 0; font-family: var(--font-body); display: flex; flex-direction: column; }
+    .sf-page { max-width: 1100px; margin: 0 auto; padding: 40px 32px; flex: 1; width: 100%; }
 
     /* ── LOADING / EMPTY ── */
     .sf-loading { display: flex; align-items: center; justify-content: center; min-height: 300px; }
@@ -350,7 +350,7 @@
 
     /* ── STOREFRONT FOOTER ── */
     .sf-footer {
-      background:var(--nav-bg); margin-top:48px;
+      background:var(--nav-bg); margin-top:auto;
       padding:20px 32px; text-align:center;
     }
     .sf-footer-links { margin-bottom:8px; }

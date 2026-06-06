@@ -29,7 +29,7 @@
       --shadow:       0 2px 12px rgba(45,41,38,0.10);
     }
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); display:flex; flex-direction:column; }
 
     /* ── NAV ── */
     .sf-nav {
@@ -55,7 +55,7 @@
     .cart-badge { background:#fff; color:var(--primary); border-radius:50%; font-size:11px; font-weight:700; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
 
     /* ── PAGE ── */
-    .sf-page { max-width:960px; margin:0 auto; padding:40px 32px; }
+    .sf-page { max-width:960px; margin:0 auto; padding:40px 32px; flex:1; width:100%; }
     .page-title { font-size:24px; font-weight:700; color:var(--near-black); margin-bottom:32px; }
 
     /* ── LAYOUT ── */
@@ -192,7 +192,7 @@
 
     /* ── STOREFRONT FOOTER ── */
     .sf-footer {
-      background:var(--nav-bg); margin-top:48px;
+      background:var(--nav-bg); margin-top:auto;
       padding:20px 32px; text-align:center;
     }
     .sf-footer-links { margin-bottom:8px; }

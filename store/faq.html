@@ -25,7 +25,7 @@
       --radius:       10px;
     }
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); display:flex; flex-direction:column; }
 
     /* ── NAV ── */
     .sf-nav { background:var(--nav-bg); padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
@@ -40,7 +40,7 @@
     .cart-badge { background:#fff; color:var(--primary); border-radius:50%; font-size:11px; font-weight:700; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
 
     /* ── PAGE ── */
-    .sf-page { max-width:720px; margin:0 auto; padding:48px 32px; }
+    .sf-page { max-width:720px; margin:0 auto; padding:48px 32px; flex:1; width:100%; }
     .page-title { font-size:28px; font-weight:700; color:var(--near-black); margin-bottom:6px; }
     .page-sub   { font-size:15px; color:var(--mid-gray); margin-bottom:40px; line-height:1.6; }
 
@@ -81,7 +81,7 @@
     /* ── FOOTER ── */
     .sf-footer {
       background:var(--nav-bg); color:rgba(255,255,255,0.5);
-      text-align:center; padding:20px 32px; font-size:13px; margin-top:40px;
+      text-align:center; padding:20px 32px; font-size:13px; margin-top:auto;
     }
     .sf-footer a { color:rgba(255,255,255,0.6); margin:0 8px; text-decoration:none; }
     .sf-footer a:hover { color:#fff; }
