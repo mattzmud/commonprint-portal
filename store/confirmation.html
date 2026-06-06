@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:      #3a3a3a;
+      --primary-dark: #1a1a1a;
+      --primary-light:#f0f0f0;
+      --accent:       #888888;
+      --nav-bg:       #2c2c2c;
+      --success:      #194A4E;
+      --success-light:#DCE7E8;
+      --ink:          #2D2926;
+      --gray:         #575451;
+      --mid-gray:     #888780;
+      --near-black:   #1a1818;
+      --border:       #e0e0e0;
+      --bg:           #f5f5f5;
+      --card-bg:      #FFFFFF;
+      --pale:         #f9f9f9;
+      --red:          #C0392B;
+      --amber:        #AD5309;
+      --amber-light:  #FFF3E0;
+      --font-body:    'Jost', system-ui, sans-serif;
+      --radius:       10px;
+      --shadow:       0 2px 12px rgba(45,41,38,0.10);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+
+    /* ── NAV ── */
+    .sf-nav {
+      background:var(--nav-bg); padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between;
+      height:60px; position:sticky; top:0; z-index:100;
+      box-shadow:0 2px 8px rgba(0,0,0,0.2);
+    }
+    .sf-nav-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+    .sf-nav-logo  { height:36px; width:36px; object-fit:contain; border-radius:50%; background:#fff; padding:3px; }
+    .sf-nav-title { font-size:14px; font-weight:600; color:rgba(255,255,255,0.9); max-width:280px; line-height:1.3; }
+    .sf-nav-right { display:flex; align-items:center; gap:4px; }
+    .sf-nav-link  { color:rgba(255,255,255,0.7); font-size:13px; padding:6px 12px; border-radius:6px; text-decoration:none; transition:all .15s; }
+    .sf-nav-link:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .sf-cart-btn  {
+      display:flex; align-items:center; gap:6px;
+      background:var(--primary); color:#fff; border:none;
+      padding:8px 16px; border-radius:8px; font-family:var(--font-body);
+      font-size:13px; font-weight:500; cursor:pointer;
+      transition:background .15s; margin-left:8px; text-decoration:none;
+    }
+    .sf-cart-btn:hover { background:var(--primary-dark); color:#fff; }
+
+    /* ── PAGE ── */
+    .sf-page { max-width:680px; margin:0 auto; padding:40px 32px; }
+
+    /* ── SUCCESS HEADER ── */
+    .confirm-header {
+      text-align:center; margin-bottom:32px;
+    }
+    .confirm-icon {
+      width:72px; height:72px; border-radius:50%;
+      background:var(--success-light); display:flex;
+      align-items:center; justify-content:center;
+      margin:0 auto 16px; font-size:32px;
+    }
+    .confirm-title { font-size:28px; font-weight:700; color:var(--near-black); margin-bottom:6px; }
+    .confirm-sub   { font-size:15px; color:var(--mid-gray); }
+    .confirm-order-id {
+      display:inline-block; margin-top:10px;
+      background:var(--pale); border:1px solid var(--border);
+      border-radius:6px; padding:4px 12px;
+      font-size:12px; font-family:monospace; color:var(--gray);
+    }
+
+    /* ── STATUS BANNER ── */
+    .status-banner {
+      border-radius:var(--radius); padding:16px 20px;
+      margin-bottom:24px; line-height:1.6;
+    }
+    .status-banner.paid {
+      background:var(--success-light);
+      border-left:4px solid var(--success);
+    }
+    .status-banner.invoice {
+      background:var(--amber-light);
+      border-left:4px solid var(--amber);
+    }
+    .status-banner-title { font-size:15px; font-weight:600; margin-bottom:4px; }
+    .status-banner.paid   .status-banner-title { color:var(--success); }
+    .status-banner.invoice .status-banner-title { color:var(--amber); }
+    .status-banner-body { font-size:14px; color:var(--gray); }
+
+    /* ── CARDS ── */
+    .card {
+      background:#fff; border:1px solid var(--border);
+      border-radius:14px; padding:24px; margin-bottom:16px;
+    }
+    .card-title {
+      font-size:13px; font-weight:600; color:var(--mid-gray);
+      letter-spacing:.06em; text-transform:uppercase;
+      margin-bottom:16px; padding-bottom:12px;
+      border-bottom:1px solid var(--border);
+    }
+
+    /* ── LINE ITEMS ── */
+    .line-item {
+      display:flex; align-items:center; gap:14px;
+      padding:12px 0; border-bottom:1px solid var(--border);
+    }
+    .line-item:last-of-type { border-bottom:none; }
+    .line-thumb {
+      width:56px; height:56px; border-radius:8px;
+      object-fit:contain; background:var(--bg);
+      flex-shrink:0; padding:4px;
+    }
+    .line-thumb-ph {
+      width:56px; height:56px; border-radius:8px;
+      background:var(--bg); flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:22px;
+    }
+    .line-info { flex:1; }
+    .line-name { font-size:14px; font-weight:500; color:var(--near-black); }
+    .line-meta { font-size:12px; color:var(--mid-gray); margin-top:2px; }
+    .line-total{ font-size:15px; font-weight:600; color:var(--near-black); white-space:nowrap; }
+
+    /* ── TOTALS ── */
+    .totals-row {
+      display:flex; justify-content:space-between;
+      font-size:14px; color:var(--gray); padding:5px 0;
+    }
+    .totals-row.discount { color:var(--success); }
+    .totals-row.free     { color:var(--success); }
+    .totals-row.grand    {
+      font-size:17px; font-weight:700; color:var(--near-black);
+      border-top:2px solid var(--border); margin-top:8px; padding-top:12px;
+    }
+
+    /* ── INFO GRID ── */
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .info-block-label { font-size:11px; font-weight:600; color:var(--mid-gray); letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
+    .info-block-val   { font-size:14px; color:var(--near-black); line-height:1.6; }
+
+    /* ── ACTIONS ── */
+    .confirm-actions {
+      display:flex; gap:12px; margin-top:8px;
+    }
+    .btn {
+      flex:1; padding:13px; border:none; border-radius:var(--radius);
+      font-family:var(--font-body); font-size:15px; font-weight:600;
+      cursor:pointer; transition:all .18s; text-align:center; text-decoration:none;
+      display:block;
+    }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:var(--primary-dark); color:#fff; }
+    .btn-ghost {
+      background:transparent; color:var(--gray);
+      border:1.5px solid var(--border);
+    }
+    .btn-ghost:hover { background:var(--pale); color:var(--ink); }
+
+    /* ── LOADING / ERROR ── */
+    .sf-loading { display:flex; align-items:center; justify-content:center; min-height:300px; }
+    .sf-spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .sf-error { text-align:center; padding:60px 24px; }
+    .sf-error h3 { font-size:20px; color:var(--gray); margin-bottom:8px; }
+    .sf-error p  { font-size:14px; color:var(--mid-gray); }
+
+    @media (max-width:700px) {
+      .sf-nav { padding:0 16px; }
+      .sf-nav-title, .sf-nav-link { display:none; }
+      .sf-page { padding:24px 16px; }
+      .info-grid { grid-template-columns:1fr; }
+      .confirm-actions { flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sf-nav">
+    <a class="sf-nav-brand" id="nav-brand" href="#">
+      <img class="sf-nav-logo hidden" id="nav-logo" src="" alt="Logo">
+      <span class="sf-nav-title" id="nav-title">Store</span>
+    </a>
+    <div class="sf-nav-right">
+      <a class="sf-nav-link" id="nav-catalog-link" href="#">Catalog</a>
+      <a class="sf-nav-link" id="nav-orders-link"  href="#">My Orders</a>
+      <a class="sf-nav-link" id="nav-account-link" href="#">My Account</a>
+      <a class="sf-cart-btn" id="cart-btn" href="#">🛒 Cart</a>
+    </div>
+  </nav>
+
+  <div class="sf-page">
+
+    <!-- Loading -->
+    <div id="loading-state" class="sf-loading">
+      <div class="sf-spinner"></div>
+    </div>
+
+    <!-- Error -->
+    <div id="error-state" style="display:none" class="sf-error">
+      <h3>Order not found</h3>
+      <p>We couldn't load this order. Please check your email for your confirmation, or contact Common Print Co.</p>
+    </div>
+
+    <!-- Confirmation -->
+    <div id="confirm-state" style="display:none">
+
+      <!-- Header -->
+      <div class="confirm-header">
+        <div class="confirm-icon">✓</div>
+        <div class="confirm-title">Order received!</div>
+        <div class="confirm-sub">Thank you — we've got your order and you'll hear from us soon.</div>
+        <div class="confirm-order-id" id="confirm-order-id"></div>
+      </div>
+
+      <!-- Status banner -->
+      <div class="status-banner" id="status-banner">
+        <div class="status-banner-title" id="status-title"></div>
+        <div class="status-banner-body" id="status-body"></div>
+      </div>
+
+      <!-- Line items -->
+      <div class="card">
+        <div class="card-title">Items ordered</div>
+        <div id="line-items"></div>
+        <div style="margin-top:16px">
+          <div class="totals-row"><span>Subtotal</span><span id="tot-subtotal"></span></div>
+          <div class="totals-row discount" id="tot-discount-row" style="display:none">
+            <span id="tot-discount-label">Discount</span>
+            <span id="tot-discount-amt"></span>
+          </div>
+          <div class="totals-row" id="tot-ship-row"><span>Shipping</span><span id="tot-shipping"></span></div>
+          <div class="totals-row grand"><span>Total</span><span id="tot-total"></span></div>
+        </div>
+      </div>
+
+      <!-- Shipping + Contact -->
+      <div class="card">
+        <div class="card-title">Delivery & contact</div>
+        <div class="info-grid">
+          <div>
+            <div class="info-block-label">Ship to</div>
+            <div class="info-block-val" id="info-address"></div>
+          </div>
+          <div>
+            <div class="info-block-label">Contact</div>
+            <div class="info-block-val" id="info-contact"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="confirm-actions">
+        <a class="btn btn-ghost" id="btn-orders" href="#">View my orders</a>
+        <a class="btn btn-primary" id="btn-catalog" href="#">Continue shopping</a>
+      </div>
+
+    </div>
+  </div>
+
+<script type="module">
+  import { VERSION } from '../shared/version.js';
+
+  const WORKER_URL = 'https://storefront-api.matt-zmud.workers.dev';
+  const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
+
+  let storefrontId = null;
+  let storefront   = null;
+  let auth         = null;
+  let currentUser  = null;
+
+  // ── HELPERS ──────────────────────────────────────────────────────────
+  function ff(fields = {}) {
+    return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
+      if (v.stringValue  !== undefined) return [k, v.stringValue];
+      if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+      if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+      if (v.booleanValue !== undefined) return [k, v.booleanValue];
+      if (v.nullValue    !== undefined) return [k, null];
+      if (v.arrayValue)  return [k, (v.arrayValue.values||[]).map(i => ff({_:i})._)];
+      if (v.mapValue)    return [k, ff(v.mapValue.fields||{})];
+      return [k, null];
+    }));
+  }
+
+  async function fsGetAuth(path) {
+    const token = await currentUser.getIdToken();
+    const res   = await fetch(`${FS_BASE}/${path}`, { headers:{ Authorization:`Bearer ${token}` } });
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
+  async function fsGetPublic(path) {
+    const res = await fetch(`${FS_BASE}/${path}`);
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
+  async function callWorker(action, data = {}) {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action, ...data })
+    });
+    return res.json();
+  }
+
+  function fmtD(n)  { return '$' + Number(n||0).toFixed(2); }
+  function esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function applyBranding(sf) {
+    const brand = sf.brand || {};
+    const root  = document.documentElement.style;
+    if (brand.nav)             root.setProperty('--nav-bg',       brand.nav);
+    if (brand.primary)         root.setProperty('--primary',      brand.primary);
+    if (brand['primary-dark']) root.setProperty('--primary-dark', brand['primary-dark']);
+    if (brand.accent)          root.setProperty('--accent',       brand.accent);
+    if (brand.bg)              root.setProperty('--bg',           brand.bg);
+    if (brand.card)            root.setProperty('--card-bg',      brand.card);
+    if (brand.border)          root.setProperty('--border',       brand.border);
+    document.getElementById('nav-title').textContent = sf.name || 'Store';
+    if (sf.logoUrl) {
+      const logo = document.getElementById('nav-logo');
+      logo.src = sf.logoUrl; logo.classList.remove('hidden');
+    }
+    document.title = `Order Confirmed — ${sf.name || 'Store'}`;
+  }
+
+  function renderOrder(order, method) {
+    // Order ID
+    document.getElementById('confirm-order-id').textContent = `Order #${(order.id||'').slice(0,8).toUpperCase()}`;
+
+    // Status banner
+    const banner     = document.getElementById('status-banner');
+    const bannerTitle= document.getElementById('status-title');
+    const bannerBody = document.getElementById('status-body');
+    const isPaid     = method === 'pay_now' || order.status === 'paid';
+
+    if (isPaid) {
+      banner.classList.add('paid');
+      bannerTitle.textContent = '✓ Payment confirmed';
+      bannerBody.textContent  = 'Your payment has been received and your order is going into production. You\'ll receive updates by email as your order progresses.';
+    } else {
+      banner.classList.add('invoice');
+      bannerTitle.textContent = '📋 Invoice on the way';
+      bannerBody.textContent  = 'You\'ll receive an invoice with a payment link by email within 24 hours. Production of your order won\'t begin until the invoice is paid.';
+    }
+
+    // Line items
+    const items = order.lineItems || [];
+    document.getElementById('line-items').innerHTML = items.map(li => `
+      <div class="line-item">
+        ${li.imageUrl
+          ? `<img class="line-thumb" src="${esc(li.imageUrl)}" alt="${esc(li.productName)}">`
+          : `<div class="line-thumb-ph">🖼️</div>`}
+        <div class="line-info">
+          <div class="line-name">${esc(li.productName||'')}</div>
+          <div class="line-meta">Qty: ${li.qty} × ${fmtD(li.unitPrice)}</div>
+        </div>
+        <div class="line-total">${fmtD(li.lineTotal)}</div>
+      </div>`).join('');
+
+    // Totals
+    document.getElementById('tot-subtotal').textContent = fmtD(order.subtotal);
+
+    if (order.discountAmount > 0 || order.discountCode) {
+      const discRow = document.getElementById('tot-discount-row');
+      discRow.style.display = 'flex';
+      document.getElementById('tot-discount-label').textContent =
+        order.discountCode ? `${order.discountCode}` : 'Discount';
+      document.getElementById('tot-discount-amt').textContent =
+        order.discountAmount > 0 ? `-${fmtD(order.discountAmount)}` : 'Free shipping';
+    }
+
+    const shipRow  = document.getElementById('tot-ship-row');
+    const shipSpan = document.getElementById('tot-shipping');
+    if (order.shippingFee === 0) {
+      shipRow.classList.add('free');
+      shipSpan.textContent = 'Free';
+    } else {
+      shipSpan.textContent = fmtD(order.shippingFee);
+    }
+    document.getElementById('tot-total').textContent = fmtD(order.orderTotal);
+
+    // Address
+    const addr = order.shippingAddress || {};
+    const addrLines = [
+      `${addr.firstName||''} ${addr.lastName||''}`.trim(),
+      addr.street, addr.apt,
+      `${addr.city||''}${addr.city&&addr.state?', ':''}${addr.state||''} ${addr.zip||''}`.trim(),
+    ].filter(Boolean);
+    document.getElementById('info-address').innerHTML = addrLines.map(l => esc(l)).join('<br>');
+
+    // Contact
+    const contactLines = [order.name, order.email, order.phone].filter(Boolean);
+    document.getElementById('info-contact').innerHTML = contactLines.map(l => esc(l)).join('<br>');
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  try {
+    const params  = new URLSearchParams(window.location.search);
+    storefrontId  = params.get('s');
+    const orderId = params.get('order');
+    const method  = params.get('method') || 'invoice_me';
+
+    if (!storefrontId || !orderId) throw new Error('Missing parameters');
+
+    // Auth
+    const config = await callWorker('get_config');
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    const appName = `storefront-${storefrontId}`;
+    const app  = getApps().find(a=>a.name===appName) || initializeApp(config, appName);
+    auth = getAuth(app);
+    await setPersistence(auth, browserSessionPersistence);
+
+    currentUser = await new Promise((resolve, reject) => {
+      const unsub = onAuthStateChanged(auth, user => {
+        unsub();
+        if (user) resolve(user);
+        else reject(new Error('Not authenticated'));
+      });
+    });
+
+    // Load storefront + order in parallel
+    [storefront] = await Promise.all([
+      fsGetPublic(`storefronts/${storefrontId}`),
+    ]);
+
+    if (!storefront) throw new Error('Storefront not found');
+    applyBranding(storefront);
+
+    // Wire nav
+    document.getElementById('nav-brand').href        = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-catalog-link').href = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-orders-link').href  = `orders.html?s=${storefrontId}`;
+    document.getElementById('nav-account-link').href = `profile.html?s=${storefrontId}`;
+    document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
+    document.getElementById('btn-catalog').href      = `catalog.html?s=${storefrontId}`;
+    document.getElementById('btn-orders').href       = `orders.html?s=${storefrontId}`;
+
+    // Load order
+    const order = await fsGetAuth(`storefronts/${storefrontId}/orders/${orderId}`);
+    if (!order) throw new Error('Order not found');
+
+    // Render
+    renderOrder(order, method);
+    document.getElementById('loading-state').style.display  = 'none';
+    document.getElementById('confirm-state').style.display  = 'block';
+
+  } catch(e) {
+    if (e.message === 'Not authenticated') {
+      window.location.href = `index.html?s=${storefrontId || ''}`;
+    } else {
+      console.error('Confirmation error:', e.message);
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('error-state').style.display   = 'block';
+    }
+  }
+</script>
+
+</body>
+</html>
