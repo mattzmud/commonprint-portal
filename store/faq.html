@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:      #3a3a3a;
+      --primary-dark: #1a1a1a;
+      --nav-bg:       #2c2c2c;
+      --success:      #194A4E;
+      --success-light:#DCE7E8;
+      --ink:          #2D2926;
+      --gray:         #575451;
+      --mid-gray:     #888780;
+      --near-black:   #1a1818;
+      --border:       #e0e0e0;
+      --bg:           #f5f5f5;
+      --card-bg:      #FFFFFF;
+      --pale:         #f9f9f9;
+      --font-body:    'Jost', system-ui, sans-serif;
+      --radius:       10px;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+
+    /* ── NAV ── */
+    .sf-nav { background:var(--nav-bg); padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+    .sf-nav-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+    .sf-nav-logo  { height:36px; width:36px; object-fit:contain; border-radius:50%; background:#fff; padding:3px; }
+    .sf-nav-title { font-size:14px; font-weight:600; color:rgba(255,255,255,0.9); max-width:280px; line-height:1.3; }
+    .sf-nav-right { display:flex; align-items:center; gap:4px; }
+    .sf-nav-link  { color:rgba(255,255,255,0.7); font-size:13px; padding:6px 12px; border-radius:6px; text-decoration:none; transition:all .15s; }
+    .sf-nav-link:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .sf-cart-btn  { display:flex; align-items:center; gap:6px; background:var(--primary); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-family:var(--font-body); font-size:13px; font-weight:500; cursor:pointer; transition:background .15s; margin-left:8px; text-decoration:none; }
+    .sf-cart-btn:hover { background:var(--primary-dark); color:#fff; }
+    .cart-badge { background:#fff; color:var(--primary); border-radius:50%; font-size:11px; font-weight:700; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+
+    /* ── PAGE ── */
+    .sf-page { max-width:720px; margin:0 auto; padding:48px 32px; }
+    .page-title { font-size:28px; font-weight:700; color:var(--near-black); margin-bottom:6px; }
+    .page-sub   { font-size:15px; color:var(--mid-gray); margin-bottom:40px; line-height:1.6; }
+
+    /* ── FAQ SECTIONS ── */
+    .faq-section { margin-bottom:40px; }
+    .faq-section-title {
+      font-size:13px; font-weight:600; color:var(--mid-gray);
+      letter-spacing:.08em; text-transform:uppercase;
+      margin-bottom:14px; padding-bottom:10px;
+      border-bottom:2px solid var(--border);
+    }
+
+    /* ── FAQ ITEMS ── */
+    .faq-item {
+      border:1px solid var(--border); border-radius:var(--radius);
+      margin-bottom:10px; overflow:hidden;
+      background:#fff;
+    }
+    .faq-q {
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      padding:16px 20px; background:none; border:none; cursor:pointer;
+      font-family:var(--font-body); text-align:left; gap:12px;
+      transition:background .12s;
+    }
+    .faq-q:hover { background:var(--pale); }
+    .faq-q-text { font-size:15px; font-weight:500; color:var(--near-black); line-height:1.4; }
+    .faq-chevron { color:var(--mid-gray); font-size:18px; flex-shrink:0; transition:transform .2s; }
+    .faq-a {
+      display:none; padding:0 20px 18px;
+      font-size:14px; color:var(--gray); line-height:1.8;
+    }
+    .faq-a.open { display:block; }
+    .faq-a a { color:var(--primary); }
+    .faq-a a:hover { color:var(--primary-dark); }
+    .faq-a p { margin-bottom:10px; }
+    .faq-a p:last-child { margin-bottom:0; }
+
+    /* ── FOOTER ── */
+    .sf-footer {
+      background:var(--nav-bg); color:rgba(255,255,255,0.5);
+      text-align:center; padding:20px 32px; font-size:13px; margin-top:40px;
+    }
+    .sf-footer a { color:rgba(255,255,255,0.6); margin:0 8px; text-decoration:none; }
+    .sf-footer a:hover { color:#fff; }
+
+    /* ── LOADING ── */
+    .sf-loading { display:flex; align-items:center; justify-content:center; min-height:300px; }
+    .sf-spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media (max-width:700px) {
+      .sf-nav { padding:0 16px; }
+      .sf-nav-title, .sf-nav-link { display:none; }
+      .sf-page { padding:24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sf-nav">
+    <a class="sf-nav-brand" id="nav-brand" href="#">
+      <img class="sf-nav-logo hidden" id="nav-logo" src="" alt="Logo">
+      <span class="sf-nav-title" id="nav-title">Store</span>
+    </a>
+    <div class="sf-nav-right">
+      <a class="sf-nav-link" id="nav-catalog-link" href="#">Catalog</a>
+      <a class="sf-nav-link" id="nav-orders-link"  href="#">My Orders</a>
+      <a class="sf-nav-link" id="nav-account-link" href="#">My Account</a>
+      <a class="sf-cart-btn" id="cart-btn" href="#">
+        🛒 Cart <span class="cart-badge" id="cart-count">0</span>
+      </a>
+    </div>
+  </nav>
+
+  <div id="faq-loading" class="sf-loading"><div class="sf-spinner"></div></div>
+
+  <div id="faq-content" style="display:none">
+    <div class="sf-page">
+      <div class="page-title">Frequently asked questions</div>
+      <p class="page-sub">Have a question that's not answered here? Reach out to us at <a href="mailto:hello@commonprintco.com" style="color:var(--primary)">hello@commonprintco.com</a> — we're happy to help.</p>
+      <div id="faq-sections"></div>
+    </div>
+    <footer class="sf-footer" id="sf-footer">
+      <a id="footer-catalog"  href="#">Catalog</a>
+      <a id="footer-orders"   href="#">My Orders</a>
+      <a id="footer-account"  href="#">My Account</a>
+      <span style="margin:0 8px">·</span>
+      <a href="faq.html">FAQ</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <div style="margin-top:8px">© 2026 Common Print Co.</div>
+    </footer>
+  </div>
+
+<script type="module">
+  import { VERSION } from '../shared/version.js';
+
+  const WORKER_URL = 'https://storefront-api.matt-zmud.workers.dev';
+  const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
+  const CART_KEY   = 'sf_cart';
+
+  let storefrontId = null;
+
+  function ff(fields = {}) {
+    return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
+      if (v.stringValue  !== undefined) return [k, v.stringValue];
+      if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+      if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+      if (v.booleanValue !== undefined) return [k, v.booleanValue];
+      if (v.nullValue    !== undefined) return [k, null];
+      if (v.arrayValue)  return [k, (v.arrayValue.values||[]).map(i => ff({_:i})._)];
+      if (v.mapValue)    return [k, ff(v.mapValue.fields||{})];
+      return [k, null];
+    }));
+  }
+
+  function applyBranding(sf) {
+    const brand = sf.brand || {};
+    const root  = document.documentElement.style;
+    if (brand.nav)             root.setProperty('--nav-bg',       brand.nav);
+    if (brand.primary)         root.setProperty('--primary',      brand.primary);
+    if (brand['primary-dark']) root.setProperty('--primary-dark', brand['primary-dark']);
+    if (brand.accent)          root.setProperty('--accent',       brand.accent);
+    if (brand.bg)              root.setProperty('--bg',           brand.bg);
+    if (brand.card)            root.setProperty('--card-bg',      brand.card);
+    if (brand.border)          root.setProperty('--border',       brand.border);
+    document.getElementById('nav-title').textContent = sf.name || 'Store';
+    if (sf.logoUrl) {
+      const logo = document.getElementById('nav-logo');
+      logo.src = sf.logoUrl; logo.classList.remove('hidden');
+    }
+    document.title = `FAQ — ${sf.name || 'Store'}`;
+  }
+
+  window.toggleFaq = (id) => {
+    const answer  = document.getElementById(`a-${id}`);
+    const chevron = document.getElementById(`c-${id}`);
+    const isOpen  = answer.classList.contains('open');
+    // Close all others
+    document.querySelectorAll('.faq-a').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.faq-chevron').forEach(el => el.style.transform = '');
+    if (!isOpen) {
+      answer.classList.add('open');
+      chevron.style.transform = 'rotate(90deg)';
+    }
+  };
+
+  function faqItem(id, q, aHtml) {
+    return `
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq('${id}')">
+          <span class="faq-q-text">${q}</span>
+          <span class="faq-chevron" id="c-${id}">›</span>
+        </button>
+        <div class="faq-a" id="a-${id}">${aHtml}</div>
+      </div>`;
+  }
+
+  function buildFaq(sf) {
+    const customOrdersNote = sf.customOrdersNote || '';
+    const customOrdersAnswer = customOrdersNote
+      ? `<p>${customOrdersNote}</p>`
+      : `<p>Absolutely! If you don't see what you're looking for in the catalog, we'd love to help. Reach out to us at <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a> or <a href="https://www.commonprintco.com/contact" target="_blank">submit a quote request</a> and we'll be in touch soon.</p>`;
+
+    const sections = [
+      {
+        title: 'Ordering',
+        items: [
+          faqItem('custom-orders',
+            'Can I order a design that\'s not currently in the catalog?',
+            customOrdersAnswer
+          ),
+          faqItem('order-change',
+            'Can I change or cancel my order?',
+            `<p>If you need to make a change or cancel your order, please contact us at <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a> as soon as possible. We can accommodate changes and cancellations before production begins — once your order is in production, we may not be able to make adjustments. We'll always do our best to help.</p>`
+          ),
+          faqItem('min-qty',
+            'Is there a minimum order quantity?',
+            `<p>Yes — minimum order quantities vary by product and are shown on each product's detail page. If you need a smaller quantity than what's listed, feel free to reach out to us at <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a> and we'll see what we can do.</p>`
+          ),
+        ]
+      },
+      {
+        title: 'Payment',
+        items: [
+          faqItem('payment-options',
+            'What payment options are available?',
+            `<p>We offer two ways to pay:</p>
+            <p><strong>Pay Now</strong> — pay securely by credit or debit card at checkout. Your card is charged immediately and production begins right away.</p>
+            <p><strong>Invoice Me</strong> — submit your order now and we'll send you an invoice by email within 24 hours. Production begins once the invoice is paid.</p>`
+          ),
+          faqItem('payment-security',
+            'Is my payment information secure?',
+            `<p>Yes — absolutely. All card payments are processed by <a href="https://squareup.com/security" target="_blank">Square</a>, a PCI DSS-compliant payment processor trusted by millions of businesses. Your card number, expiration date, and CVV are transmitted directly to Square and never pass through or get stored on our servers. We only receive a payment confirmation once your transaction is complete.</p>`
+          ),
+          faqItem('invoice-timing',
+            'How long until I receive my invoice?',
+            `<p>We typically send invoices within 24 business hours of receiving your order. Once you receive your invoice, you'll have a secure payment link to pay by card directly through Square. If you haven't received your invoice after 24 hours, please check your spam folder and then reach out to us at <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a>.</p>`
+          ),
+        ]
+      },
+      {
+        title: 'Shipping & delivery',
+        items: [
+          faqItem('turnaround',
+            'How long will my order take?',
+            `<p>Orders are typically completed and shipped within one week of payment confirmation. If you're working against a deadline or need a rush order, please contact us at <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a> before placing your order and we'll do our best to accommodate you.</p>`
+          ),
+          faqItem('carriers',
+            'Which carriers do you ship with?',
+            `<p>We ship via USPS and UPS. The carrier used for your specific order will be noted in your shipping confirmation email along with your tracking number.</p>`
+          ),
+          faqItem('tracking',
+            'How do I track my order?',
+            `<p>Once your order ships, you'll receive a shipping confirmation email with your carrier and tracking number. You can click the tracking link in that email to follow your package's progress. Please allow up to 24 hours after receiving your confirmation for tracking details to become active in the carrier's system.</p>`
+          ),
+          faqItem('shipping-cost',
+            'How is shipping calculated?',
+            `<p>Shipping is a flat rate per order. If your order total reaches the free shipping threshold set by your organization's storefront, shipping is on us. You'll see the exact shipping amount (or confirmation that it's free) at checkout before you complete your order.</p>`
+          ),
+        ]
+      },
+      {
+        title: 'Returns & quality',
+        items: [
+          faqItem('returns',
+            'Do you accept returns or offer refunds?',
+            `<p>Because our products are custom-printed, we don't accept returns or offer refunds or exchanges for change-of-mind or ordering errors. That said, we stand behind the quality of our work — if your order arrives damaged or you're unhappy with the quality of what you received, please reach out to us at <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a> and we'll make it right.</p>`
+          ),
+          faqItem('damaged',
+            'My order arrived damaged. What should I do?',
+            `<p>We're sorry to hear that — please reach out to us at <a href="mailto:hello@commonprintco.com">hello@commonprintco.com</a> as soon as possible. To help us resolve the issue quickly, please include:</p>
+            <p>• A photo of the damaged product<br>
+            • A photo of the damaged packaging<br>
+            • A photo clearly showing the shipping label on the packaging</p>
+            <p>Once we receive those, we'll get back to you promptly with next steps.</p>`
+          ),
+        ]
+      },
+    ];
+
+    document.getElementById('faq-sections').innerHTML = sections.map(s => `
+      <div class="faq-section">
+        <div class="faq-section-title">${s.title}</div>
+        ${s.items.join('')}
+      </div>`).join('');
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  try {
+    const params = new URLSearchParams(window.location.search);
+    storefrontId  = params.get('s');
+    if (!storefrontId) throw new Error('No storefront');
+
+    const sfRes = await fetch(`${FS_BASE}/storefronts/${storefrontId}`);
+    const sfDoc = await sfRes.json();
+    const sf    = sfDoc.fields ? { id: sfDoc.name.split('/').pop(), ...ff(sfDoc.fields) } : null;
+    if (!sf || sf.active === false) throw new Error('Storefront not found');
+
+    applyBranding(sf);
+    buildFaq(sf);
+
+    // Wire nav
+    const links = {
+      'nav-brand':        `catalog.html?s=${storefrontId}`,
+      'nav-catalog-link': `catalog.html?s=${storefrontId}`,
+      'nav-orders-link':  `orders.html?s=${storefrontId}`,
+      'nav-account-link': `profile.html?s=${storefrontId}`,
+      'cart-btn':         `cart.html?s=${storefrontId}`,
+      'footer-catalog':   `catalog.html?s=${storefrontId}`,
+      'footer-orders':    `orders.html?s=${storefrontId}`,
+      'footer-account':   `profile.html?s=${storefrontId}`,
+    };
+    Object.entries(links).forEach(([id, href]) => {
+      const el = document.getElementById(id);
+      if (el) el.href = href;
+    });
+
+    // Cart count
+    try {
+      const cart = JSON.parse(sessionStorage.getItem(CART_KEY)||'[]');
+      document.getElementById('cart-count').textContent = cart.length;
+    } catch {}
+
+    document.getElementById('faq-loading').style.display  = 'none';
+    document.getElementById('faq-content').style.display  = 'block';
+
+  } catch(e) {
+    console.error('FAQ error:', e.message);
+    document.getElementById('faq-loading').style.display = 'none';
+    document.getElementById('faq-content').style.display = 'block';
+    document.getElementById('faq-sections').innerHTML =
+      '<p style="color:var(--mid-gray);text-align:center;padding:40px 0">Unable to load FAQ. Please try again later.</p>';
+  }
+</script>
+
+</body>
+</html>
