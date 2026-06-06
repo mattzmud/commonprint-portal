@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:      #3a3a3a;
+      --primary-dark: #1a1a1a;
+      --primary-light:#f0f0f0;
+      --accent:       #888888;
+      --nav-bg:       #2c2c2c;
+      --success:      #194A4E;
+      --success-light:#DCE7E8;
+      --ink:          #2D2926;
+      --gray:         #575451;
+      --mid-gray:     #888780;
+      --near-black:   #1a1818;
+      --border:       #e0e0e0;
+      --bg:           #f5f5f5;
+      --card-bg:      #FFFFFF;
+      --pale:         #f9f9f9;
+      --red:          #C0392B;
+      --amber:        #AD5309;
+      --font-body:    'Jost', system-ui, sans-serif;
+      --radius:       10px;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--font-body); background:var(--bg); min-height:100vh; color:var(--ink); }
+
+    /* ── NAV ── */
+    .sf-nav { background:var(--nav-bg); padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+    .sf-nav-brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+    .sf-nav-logo  { height:36px; width:36px; object-fit:contain; border-radius:50%; background:#fff; padding:3px; }
+    .sf-nav-title { font-size:14px; font-weight:600; color:rgba(255,255,255,0.9); max-width:280px; line-height:1.3; }
+    .sf-nav-right { display:flex; align-items:center; gap:4px; }
+    .sf-nav-link  { color:rgba(255,255,255,0.7); font-size:13px; padding:6px 12px; border-radius:6px; text-decoration:none; transition:all .15s; }
+    .sf-nav-link:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .sf-nav-link.active { color:#fff; background:rgba(255,255,255,0.15); }
+    .sf-cart-btn  { display:flex; align-items:center; gap:6px; background:var(--primary); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-family:var(--font-body); font-size:13px; font-weight:500; cursor:pointer; transition:background .15s; margin-left:8px; text-decoration:none; }
+    .sf-cart-btn:hover { background:var(--primary-dark); color:#fff; }
+    .cart-badge { background:#fff; color:var(--primary); border-radius:50%; font-size:11px; font-weight:700; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+
+    /* ── PAGE ── */
+    .sf-page { max-width:780px; margin:0 auto; padding:40px 32px; }
+    .page-title { font-size:24px; font-weight:700; color:var(--near-black); margin-bottom:28px; }
+
+    /* ── ORDER CARDS ── */
+    .order-card {
+      background:#fff; border:1px solid var(--border);
+      border-radius:14px; overflow:hidden;
+      margin-bottom:16px; cursor:pointer;
+      transition:box-shadow .15s;
+    }
+    .order-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+
+    .order-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px 20px; border-bottom:1px solid var(--border);
+      gap:12px;
+    }
+    .order-id    { font-size:13px; font-weight:600; font-family:monospace; color:var(--near-black); }
+    .order-date  { font-size:12px; color:var(--mid-gray); margin-top:2px; }
+    .order-total { font-size:16px; font-weight:700; color:var(--near-black); white-space:nowrap; }
+
+    .order-body { padding:14px 20px; display:flex; align-items:center; gap:12px; }
+    .order-thumbs { display:flex; gap:6px; }
+    .order-thumb {
+      width:48px; height:48px; border-radius:6px;
+      object-fit:contain; background:var(--bg);
+      border:1px solid var(--border); padding:2px; flex-shrink:0;
+    }
+    .order-thumb-ph {
+      width:48px; height:48px; border-radius:6px;
+      background:var(--bg); border:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center; font-size:18px;
+    }
+    .order-summary-text { flex:1; font-size:13px; color:var(--gray); line-height:1.5; }
+    .order-arrow { color:var(--mid-gray); font-size:18px; flex-shrink:0; }
+
+    /* ── STATUS BADGES ── */
+    .badge {
+      display:inline-flex; align-items:center;
+      padding:3px 10px; border-radius:20px;
+      font-size:12px; font-weight:500; white-space:nowrap;
+    }
+    .badge-pending    { background:#FFF3E0; color:var(--amber); }
+    .badge-processing { background:#E0EBF1; color:#004069; }
+    .badge-paid       { background:var(--success-light); color:var(--success); }
+    .badge-completed  { background:var(--success-light); color:var(--success); }
+    .badge-cancelled  { background:#FDECEA; color:var(--red); }
+    .badge-shipped    { background:#E8F4FD; color:#0066CC; }
+
+    /* ── DETAIL PANEL ── */
+    .order-detail {
+      display:none; padding:0 20px 20px;
+      border-top:1px solid var(--border);
+      background:var(--pale);
+    }
+    .order-detail.open { display:block; }
+
+    .detail-section { padding:14px 0; border-bottom:1px solid var(--border); }
+    .detail-section:last-child { border-bottom:none; }
+    .detail-label { font-size:11px; font-weight:600; color:var(--mid-gray); letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+
+    .detail-line-item { display:flex; justify-content:space-between; font-size:14px; padding:5px 0; }
+    .detail-line-name { color:var(--near-black); }
+    .detail-line-meta { font-size:12px; color:var(--mid-gray); }
+    .detail-line-total{ font-weight:600; color:var(--near-black); }
+
+    .totals-row { display:flex; justify-content:space-between; font-size:13px; color:var(--gray); padding:4px 0; }
+    .totals-row.grand { font-size:15px; font-weight:700; color:var(--near-black); border-top:1px solid var(--border); margin-top:6px; padding-top:8px; }
+    .totals-row.free  { color:var(--success); }
+    .totals-row.discount { color:var(--success); }
+
+    .detail-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .detail-info-val  { font-size:13px; color:var(--near-black); line-height:1.6; }
+
+    /* ── EMPTY ── */
+    .sf-empty { text-align:center; padding:72px 24px; }
+    .sf-empty-icon { font-size:52px; margin-bottom:16px; }
+    .sf-empty h3   { font-size:20px; color:var(--gray); margin-bottom:8px; }
+    .sf-empty p    { font-size:14px; color:var(--mid-gray); margin-bottom:24px; }
+    .btn-primary {
+      display:inline-block; padding:12px 28px; background:var(--primary); color:#fff;
+      border:none; border-radius:var(--radius); font-family:var(--font-body);
+      font-size:15px; font-weight:600; cursor:pointer; text-decoration:none;
+      transition:background .15s;
+    }
+    .btn-primary:hover { background:var(--primary-dark); color:#fff; }
+
+    /* ── LOADING ── */
+    .sf-loading { display:flex; align-items:center; justify-content:center; min-height:300px; }
+    .sf-spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media (max-width:700px) {
+      .sf-nav { padding:0 16px; }
+      .sf-nav-title, .sf-nav-link { display:none; }
+      .sf-page { padding:24px 16px; }
+      .detail-info-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sf-nav">
+    <a class="sf-nav-brand" id="nav-brand" href="#">
+      <img class="sf-nav-logo hidden" id="nav-logo" src="" alt="Logo">
+      <span class="sf-nav-title" id="nav-title">Store</span>
+    </a>
+    <div class="sf-nav-right">
+      <a class="sf-nav-link" id="nav-catalog-link" href="#">Catalog</a>
+      <a class="sf-nav-link active" href="#">My Orders</a>
+      <a class="sf-nav-link" id="nav-account-link" href="#">My Account</a>
+      <a class="sf-cart-btn" id="cart-btn" href="#">
+        🛒 Cart <span class="cart-badge" id="cart-count">0</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="sf-page">
+    <div class="page-title">My Orders</div>
+    <div id="orders-loading" class="sf-loading"><div class="sf-spinner"></div></div>
+    <div id="orders-list" style="display:none"></div>
+  </div>
+
+<script type="module">
+  import { VERSION } from '../shared/version.js';
+
+  const WORKER_URL = 'https://storefront-api.matt-zmud.workers.dev';
+  const FS_BASE    = 'https://firestore.googleapis.com/v1/projects/common-print-portal/databases/(default)/documents';
+  const CART_KEY   = 'sf_cart';
+
+  let storefrontId = null;
+  let storefront   = null;
+  let auth         = null;
+  let currentUser  = null;
+
+  // ── HELPERS ──────────────────────────────────────────────────────────
+  function ff(fields = {}) {
+    return Object.fromEntries(Object.entries(fields).map(([k, v]) => {
+      if (v.stringValue  !== undefined) return [k, v.stringValue];
+      if (v.integerValue !== undefined) return [k, parseInt(v.integerValue)];
+      if (v.doubleValue  !== undefined) return [k, v.doubleValue];
+      if (v.booleanValue !== undefined) return [k, v.booleanValue];
+      if (v.nullValue    !== undefined) return [k, null];
+      if (v.arrayValue)  return [k, (v.arrayValue.values||[]).map(i => ff({_:i})._)];
+      if (v.mapValue)    return [k, ff(v.mapValue.fields||{})];
+      return [k, null];
+    }));
+  }
+
+  async function fsGetPublic(path) {
+    const res = await fetch(`${FS_BASE}/${path}`);
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
+  async function fsQueryAuth(path) {
+    // List the collection with auth token
+    const token = await currentUser.getIdToken();
+    const res   = await fetch(`${FS_BASE}/${path}`, { headers:{ Authorization:`Bearer ${token}` } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.documents||[]).map(d => ({ id: d.name.split('/').pop(), ...ff(d.fields) }));
+  }
+
+  async function callWorker(action, data = {}) {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action, ...data })
+    });
+    return res.json();
+  }
+
+  function fmtD(n)   { return '$' + Number(n||0).toFixed(2); }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  }
+  function esc(str)  { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function statusBadge(status) {
+    const map = {
+      pending:    ['badge-pending',    'Pending'],
+      paid:       ['badge-processing', 'Paid — in production'],
+      processing: ['badge-processing', 'In production'],
+      shipped:    ['badge-shipped',    'Shipped'],
+      completed:  ['badge-completed',  'Completed'],
+      cancelled:  ['badge-cancelled',  'Cancelled'],
+    };
+    const [cls, label] = map[status] || ['badge-pending', status||'Pending'];
+    return `<span class="badge ${cls}">${label}</span>`;
+  }
+
+  function applyBranding(sf) {
+    const brand = sf.brand || {};
+    const root  = document.documentElement.style;
+    if (brand.nav)             root.setProperty('--nav-bg',       brand.nav);
+    if (brand.primary)         root.setProperty('--primary',      brand.primary);
+    if (brand['primary-dark']) root.setProperty('--primary-dark', brand['primary-dark']);
+    if (brand.accent)          root.setProperty('--accent',       brand.accent);
+    if (brand.bg)              root.setProperty('--bg',           brand.bg);
+    if (brand.card)            root.setProperty('--card-bg',      brand.card);
+    if (brand.border)          root.setProperty('--border',       brand.border);
+    document.getElementById('nav-title').textContent = sf.name || 'Store';
+    if (sf.logoUrl) {
+      const logo = document.getElementById('nav-logo');
+      logo.src = sf.logoUrl; logo.classList.remove('hidden');
+    }
+    document.title = `My Orders — ${sf.name || 'Store'}`;
+  }
+
+  // ── TOGGLE ORDER DETAIL ───────────────────────────────────────────────
+  window.toggleOrder = (orderId) => {
+    const detail = document.getElementById(`detail-${orderId}`);
+    if (!detail) return;
+    detail.classList.toggle('open');
+    const arrow = document.getElementById(`arrow-${orderId}`);
+    if (arrow) arrow.textContent = detail.classList.contains('open') ? '∧' : '›';
+  };
+
+  // ── RENDER ORDERS ─────────────────────────────────────────────────────
+  function renderOrders(orders) {
+    const list = document.getElementById('orders-list');
+
+    if (orders.length === 0) {
+      list.innerHTML = `
+        <div class="sf-empty">
+          <div class="sf-empty-icon">📦</div>
+          <h3>No orders yet</h3>
+          <p>Your order history will appear here once you've placed an order.</p>
+          <a class="btn-primary" id="empty-catalog-link" href="#">Browse catalog</a>
+        </div>`;
+      document.getElementById('empty-catalog-link').href = `catalog.html?s=${storefrontId}`;
+      return;
+    }
+
+    list.innerHTML = orders.map(o => {
+      const items    = o.lineItems || [];
+      const thumbs   = items.slice(0, 3).map(li =>
+        li.imageUrl
+          ? `<img class="order-thumb" src="${esc(li.imageUrl)}" alt="${esc(li.productName)}">`
+          : `<div class="order-thumb-ph">🖼️</div>`
+      ).join('');
+
+      const summaryText = items.map(li => `${li.qty}× ${esc(li.productName)}`).join(', ');
+      const addr = o.shippingAddress || {};
+      const addrStr = [addr.street, addr.city, `${addr.state||''} ${addr.zip||''}`.trim()].filter(Boolean).join(', ');
+
+      // Line items detail
+      const lineItemsHtml = items.map(li => `
+        <div class="detail-line-item">
+          <div>
+            <div class="detail-line-name">${esc(li.productName||'')}</div>
+            <div class="detail-line-meta">Qty: ${li.qty} × ${fmtD(li.unitPrice)}</div>
+          </div>
+          <div class="detail-line-total">${fmtD(li.lineTotal)}</div>
+        </div>`).join('');
+
+      const discountHtml = o.discountAmount > 0 || o.discountCode
+        ? `<div class="totals-row discount">
+            <span>${esc(o.discountCode||'Discount')}</span>
+            <span>${o.discountAmount > 0 ? '-'+fmtD(o.discountAmount) : 'Free shipping'}</span>
+          </div>` : '';
+
+      const shipHtml = o.shippingFee === 0
+        ? `<div class="totals-row free"><span>Shipping</span><span>Free</span></div>`
+        : `<div class="totals-row"><span>Shipping</span><span>${fmtD(o.shippingFee)}</span></div>`;
+
+      const notesHtml = o.orderNotes
+        ? `<div class="detail-section">
+            <div class="detail-label">Order notes</div>
+            <div style="font-size:13px;color:var(--gray)">${esc(o.orderNotes)}</div>
+          </div>` : '';
+
+      return `
+        <div class="order-card" onclick="toggleOrder('${o.id}')">
+          <div class="order-header">
+            <div>
+              <div class="order-id">#${(o.id||'').slice(0,8).toUpperCase()}</div>
+              <div class="order-date">${fmtDate(o.createdAt)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              ${statusBadge(o.status)}
+              <div class="order-total">${fmtD(o.orderTotal)}</div>
+              <div class="order-arrow" id="arrow-${o.id}">›</div>
+            </div>
+          </div>
+          <div class="order-body">
+            <div class="order-thumbs">${thumbs}</div>
+            <div class="order-summary-text">${summaryText}</div>
+          </div>
+          <div class="order-detail" id="detail-${o.id}">
+            <div class="detail-section">
+              <div class="detail-label">Items</div>
+              ${lineItemsHtml}
+              <div style="margin-top:10px">
+                <div class="totals-row"><span>Subtotal</span><span>${fmtD(o.subtotal)}</span></div>
+                ${discountHtml}
+                ${shipHtml}
+                <div class="totals-row grand"><span>Total</span><span>${fmtD(o.orderTotal)}</span></div>
+              </div>
+            </div>
+            <div class="detail-section">
+              <div class="detail-info-grid">
+                <div>
+                  <div class="detail-label">Ship to</div>
+                  <div class="detail-info-val">${esc(addrStr||'—')}</div>
+                </div>
+                <div>
+                  <div class="detail-label">Payment</div>
+                  <div class="detail-info-val">${o.paymentMethod==='pay_now' ? '💳 Paid by card' : '📄 Invoice'}</div>
+                </div>
+              </div>
+            </div>
+            ${o.trackingNumber ? (() => {
+              const trackUrls = {
+                USPS:  'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + o.trackingNumber,
+                UPS:   'https://www.ups.com/track?tracknum=' + o.trackingNumber,
+                FedEx: 'https://www.fedex.com/fedextrack/?trknbr=' + o.trackingNumber,
+              };
+              const url = trackUrls[o.carrier] || '';
+              return `<div class="detail-section">
+                <div class="detail-label">Shipment</div>
+                <div class="detail-info-val">
+                  ${esc(o.carrier||'')} &mdash; <span style="font-family:monospace">${esc(o.trackingNumber)}</span>
+                  ${url ? `<a href="${url}" target="_blank" style="margin-left:8px;color:var(--primary);font-size:13px;text-decoration:none">Track package →</a>` : ''}
+                </div>
+              </div>`;
+            })() : ''}
+            <div style="display:none"><!-- end grid --></div
+              </div>
+            </div>
+            ${notesHtml}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  try {
+    const params = new URLSearchParams(window.location.search);
+    storefrontId  = params.get('s');
+    if (!storefrontId) throw new Error('No storefront specified');
+
+    // Auth
+    const config = await callWorker('get_config');
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, browserSessionPersistence, setPersistence } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    const appName = `storefront-${storefrontId}`;
+    const app  = getApps().find(a=>a.name===appName) || initializeApp(config, appName);
+    auth = getAuth(app);
+    await setPersistence(auth, browserSessionPersistence);
+
+    currentUser = await new Promise((resolve, reject) => {
+      const unsub = onAuthStateChanged(auth, user => {
+        unsub();
+        if (user) resolve(user);
+        else reject(new Error('Not authenticated'));
+      });
+    });
+
+    // Load storefront branding + orders in parallel
+    const [sf, allOrders] = await Promise.all([
+      fsGetPublic(`storefronts/${storefrontId}`),
+      fsQueryAuth(`storefronts/${storefrontId}/orders`),
+    ]);
+
+    if (!sf || sf.active === false) throw new Error('Storefront not found');
+    storefront = sf;
+    applyBranding(sf);
+
+    // Filter to only this user's orders, sort newest first
+    const myOrders = allOrders
+      .filter(o => o.userId === currentUser.uid)
+      .sort((a, b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+
+    // Wire nav
+    document.getElementById('nav-brand').href        = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-catalog-link').href = `catalog.html?s=${storefrontId}`;
+    document.getElementById('nav-account-link').href = `profile.html?s=${storefrontId}`;
+    document.getElementById('cart-btn').href         = `cart.html?s=${storefrontId}`;
+
+    // Cart count
+    try {
+      const cart = JSON.parse(sessionStorage.getItem('sf_cart')||'[]');
+      document.getElementById('cart-count').textContent = cart.length;
+    } catch {}
+
+    // Render
+    document.getElementById('orders-loading').style.display = 'none';
+    document.getElementById('orders-list').style.display    = 'block';
+    renderOrders(myOrders);
+
+  } catch(e) {
+    if (e.message === 'Not authenticated') {
+      window.location.href = `index.html?s=${storefrontId || ''}`;
+    } else {
+      console.error('Orders error:', e.message);
+      document.getElementById('orders-loading').style.display = 'none';
+      document.getElementById('orders-list').style.display    = 'block';
+      document.getElementById('orders-list').innerHTML = `
+        <div class="sf-empty">
+          <div class="sf-empty-icon">⚠️</div>
+          <h3>Unable to load orders</h3>
+          <p>Please refresh the page or contact Common Print Co.</p>
+        </div>`;
+    }
+  }
+</script>
+
+</body>
+</html>
