@@ -1264,14 +1264,39 @@
       <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Order notes</div>
       <div style="font-size:14px;color:var(--charcoal)" id="sford-notes"></div>
     </div>
-    <div class="field" style="margin-top:16px">
+    <!-- Invoice + Shipping -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+      <div class="field">
+        <label>Square invoice ID</label>
+        <input type="text" id="sford-invoice-id" placeholder="e.g. inv_xxxx"
+          style="font-family:monospace;font-size:12px">
+      </div>
+      <div></div>
+      <div class="field">
+        <label>Carrier</label>
+        <select id="sford-carrier">
+          <option value="">— Select carrier —</option>
+          <option value="USPS">USPS</option>
+          <option value="UPS">UPS</option>
+          <option value="FedEx">FedEx</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tracking number</label>
+        <input type="text" id="sford-tracking" placeholder="Tracking number"
+          style="font-family:monospace;font-size:12px">
+      </div>
+    </div>
+    <div class="field">
       <label>Admin notes</label>
       <textarea id="sford-admin-notes" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;resize:vertical;min-height:60px;outline:none" placeholder="Internal notes about this order…"></textarea>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-sf-order')">Close</button>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" id="sford-process-btn" onclick="updateSFOrderStatus('processing')">Mark in process</button>
+        <button class="btn btn-ghost btn-sm" id="sford-ship-btn"    onclick="markShipped()">Mark shipped</button>
         <button class="btn btn-primary btn-sm" id="sford-complete-btn" onclick="updateSFOrderStatus('completed')">Mark complete</button>
         <button class="btn btn-danger btn-sm" id="sford-cancel-btn" onclick="updateSFOrderStatus('cancelled')">Cancel order</button>
       </div>
@@ -4229,7 +4254,7 @@ function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function fmtDate(iso) { if(!iso) return '—'; try { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch{return iso;} }
 function fmtDateTime(iso) { if(!iso) return '—'; try { return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}); } catch{return iso;} }
 function badge(status) {
-  const map = { pending:['badge-pending','Pending'], approved:['badge-approved','Approved'], changes:['badge-changes','Changes'], paid:['badge-paid','Paid'], unpaid:['badge-unpaid','Unpaid'], overdue:['badge-overdue','Overdue'], active:['badge-approved','Active'] };
+  const map = { pending:['badge-pending','Pending'], approved:['badge-approved','Approved'], changes:['badge-changes','Changes'], paid:['badge-paid','Paid'], unpaid:['badge-unpaid','Unpaid'], overdue:['badge-overdue','Overdue'], active:['badge-approved','Active'], processing:['badge-pending','In process'], shipped:['badge-approved','Shipped'], completed:['badge-approved','Completed'], cancelled:['badge-changes','Cancelled'] };
   const [cls, label] = map[status] || ['badge-pending', status||'—'];
   return `<span class="badge ${cls}">${label}</span>`;
 }
@@ -4654,17 +4679,23 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-lines').innerHTML = items.map(li=>`
     <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
       <div><div style="font-weight:500">${esc(li.productName||'')}</div>
-      <div style="font-size:12px;color:var(--mid-gray)">Qty: ${li.qty} × $${(li.unitPrice/100).toFixed(2)}</div></div>
-      <div style="font-weight:500">$${(li.lineTotal/100).toFixed(2)}</div>
+      <div style="font-size:12px;color:var(--mid-gray)">Qty: ${li.qty} × $${Number(li.unitPrice||0).toFixed(2)}</div></div>
+      <div style="font-weight:500">$${Number(li.lineTotal||0).toFixed(2)}</div>
     </div>`).join('')+`
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--mid-gray)"><span>Subtotal</span><span>$${((o.subtotal||0)/100).toFixed(2)}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:var(--mid-gray)"><span>Shipping</span><span>${o.shippingFee===0?'Free':'$'+((o.shippingFee||0)/100).toFixed(2)}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:15px;font-weight:600;border-top:2px solid var(--border);margin-top:4px"><span>Total</span><span>$${((o.orderTotal||0)/100).toFixed(2)}</span></div>`;
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--mid-gray)"><span>Subtotal</span><span>$${Number(o.subtotal||0).toFixed(2)}</span></div>
+    ${o.discountAmount>0?`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#194A4E"><span>${esc(o.discountCode||'Discount')}</span><span>-$${Number(o.discountAmount||0).toFixed(2)}</span></div>`:''}
+    <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:var(--mid-gray)"><span>Shipping</span><span>${o.shippingFee===0?'Free':'$'+Number(o.shippingFee||0).toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:15px;font-weight:600;border-top:2px solid var(--border);margin-top:4px"><span>Total</span><span>$${Number(o.orderTotal||0).toFixed(2)}</span></div>`;
   if (o.orderNotes) { document.getElementById('sford-notes').textContent=o.orderNotes; document.getElementById('sford-notes-row').classList.remove('hidden'); }
   else { document.getElementById('sford-notes-row').classList.add('hidden'); }
-  document.getElementById('sford-admin-notes').value=o.adminNotes||'';
-  const isDone=o.status==='completed'||o.status==='cancelled';
-  document.getElementById('sford-process-btn').classList.toggle('hidden', o.status==='processing'||isDone);
+  document.getElementById('sford-admin-notes').value  = o.adminNotes  || '';
+  document.getElementById('sford-invoice-id').value   = o.squareInvoiceId || '';
+  document.getElementById('sford-carrier').value       = o.carrier     || '';
+  document.getElementById('sford-tracking').value      = o.trackingNumber || '';
+  const isDone    = o.status==='completed'||o.status==='cancelled';
+  const isShipped = o.status==='shipped';
+  document.getElementById('sford-process-btn').classList.toggle('hidden', o.status==='processing'||o.status==='shipped'||isDone);
+  document.getElementById('sford-ship-btn').classList.toggle('hidden',    o.status!=='processing');
   document.getElementById('sford-complete-btn').classList.toggle('hidden', isDone);
   document.getElementById('sford-cancel-btn').classList.toggle('hidden',   isDone);
   openModal('modal-sf-order');
@@ -4672,11 +4703,76 @@ window.openSFOrderModal = (orderId) => {
 
 window.updateSFOrderStatus = async (status) => {
   if (!activeSFOrderId||!activeSF) return;
-  const adminNotes=document.getElementById('sford-admin-notes').value;
-  await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`,{ status, adminNotes, updatedAt:new Date().toISOString() });
+  const adminNotes    = document.getElementById('sford-admin-notes').value;
+  const squareInvoiceId = document.getElementById('sford-invoice-id').value.trim();
+  const carrier       = document.getElementById('sford-carrier').value;
+  const trackingNumber= document.getElementById('sford-tracking').value.trim();
+  const updateData    = { status, adminNotes, updatedAt:new Date().toISOString(),
+    ...(squareInvoiceId ? { squareInvoiceId } : {}),
+    ...(carrier         ? { carrier }         : {}),
+    ...(trackingNumber  ? { trackingNumber }  : {}),
+  };
+  await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`, updateData);
   const o=activeSFOrders.find(x=>x.id===activeSFOrderId);
-  if(o){o.status=status;o.adminNotes=adminNotes;}
+  if(o){ Object.assign(o, updateData); }
   closeModal('modal-sf-order'); toast(`Order marked as ${status}.`,'success'); renderSFOrders();
+};
+
+window.markShipped = async () => {
+  if (!activeSFOrderId||!activeSF) return;
+  const carrier       = document.getElementById('sford-carrier').value;
+  const trackingNumber= document.getElementById('sford-tracking').value.trim();
+  const adminNotes    = document.getElementById('sford-admin-notes').value;
+  const squareInvoiceId = document.getElementById('sford-invoice-id').value.trim();
+
+  if (!carrier)        { toast('Please select a carrier.',        'error'); return; }
+  if (!trackingNumber) { toast('Please enter a tracking number.', 'error'); return; }
+
+  const o = activeSFOrders.find(x=>x.id===activeSFOrderId);
+  if (!o) return;
+
+  // Build tracking URL
+  const trackingUrls = {
+    USPS:  `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
+    UPS:   `https://www.ups.com/track?tracknum=${trackingNumber}`,
+    FedEx: `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`,
+    Other: '',
+  };
+  const trackingUrl = trackingUrls[carrier] || '';
+
+  // Save to Firestore
+  const updateData = {
+    status: 'shipped', carrier, trackingNumber, adminNotes,
+    shippedAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    ...(squareInvoiceId ? { squareInvoiceId } : {}),
+  };
+  await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`, updateData);
+  if(o){ Object.assign(o, updateData); }
+
+  // Send shipment confirmation email via worker
+  try {
+    await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'send_shipment_email',
+        order: {
+          id:           activeSFOrderId,
+          email:        o.email,
+          name:         o.name,
+          carrier,
+          trackingNumber,
+          trackingUrl,
+          storefrontName: activeSF.name || 'Store',
+          lineItems:    o.lineItems || [],
+          orderTotal:   o.orderTotal,
+        }
+      })
+    });
+  } catch(e) { console.error('Shipment email failed:', e); }
+
+  closeModal('modal-sf-order');
+  toast('Order marked as shipped — confirmation email sent!', 'success');
+  renderSFOrders();
 };
 
 async function loadSFUsers() {
