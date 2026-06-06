@@ -2078,7 +2078,7 @@ async function fbList(path) {
   const res = await fetch(`${getFS_BASE()}/${path}`, { headers: { Authorization: 'Bearer ' + token } });
   if (!res.ok) return [];
   const d = await res.json();
-  return d.documents || [];
+  return (d.documents || []).map(doc => ({ id: doc.name.split('/').pop(), ...ff(doc.fields) }));
 }
 function toFS(obj) {
   if (obj === null)             return { nullValue: null };
@@ -2231,12 +2231,12 @@ async function loadAllWorkItems() {
       fbList(`clients/${c.uid}/invoices`),
       fbList(`clients/${c.uid}/reorderRequests`),
     ]);
-    ps.forEach(d  => allProofs.push({ ...ff(d.fields),    id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
-    qs.forEach(d  => allQuotes.push({ ...ff(d.fields),    id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
-    is_.forEach(d => allInvoices.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
-    rs.forEach(d  => allRequests.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    ps.forEach(d  => allProofs.push({ ...d, clientUid:c.uid, clientName:c.name||c.email }));
+    qs.forEach(d  => allQuotes.push({ ...d, clientUid:c.uid, clientName:c.name||c.email }));
+    is_.forEach(d => allInvoices.push({ ...d, clientUid:c.uid, clientName:c.name||c.email }));
+    rs.forEach(d  => allRequests.push({ ...d, clientUid:c.uid, clientName:c.name||c.email }));
     const ms = await fbList(`clients/${c.uid}/messages`);
-    ms.forEach(d  => allMessages.push({ ...ff(d.fields),  id:docId(d), clientUid:c.uid, clientName:c.name||c.email }));
+    ms.forEach(d => allMessages.push({ ...d, clientUid:c.uid, clientName:c.name||c.email }));
   }
   window._allProofs    = allProofs;
   window._allQuotes    = allQuotes;
@@ -2384,12 +2384,12 @@ async function loadClientDetail(uid) {
     fbList(`clients/${uid}/reorderRequests`),
     fbList(`clients/${uid}/messages`),
   ]);
-  const proofs    = proofDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
-  const quotes    = quoteDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
-  const invoices  = invoiceDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
-  const orders    = orderDocs.map(d   => ({ id:docId(d),  ...ff(d.fields) }));
-  const requests  = requestDocs.map(d => ({ id:docId(d),  ...ff(d.fields) }));
-  const clientMsgs= msgDocs.map(d     => ({ id:docId(d),  ...ff(d.fields) }));
+  const proofs    = proofDocs;
+  const quotes    = quoteDocs;
+  const invoices  = invoiceDocs;
+  const orders    = orderDocs;
+  const requests  = requestDocs;
+  const clientMsgs= msgDocs;
   selectedClientData = { proofs, quotes, invoices, orders, requests, messages: clientMsgs };
 
   // Info tab
@@ -4380,7 +4380,7 @@ let activeSFOrderId     = null;
 
 async function loadStorefronts() {
   const docs = await fbList('storefronts');
-  allStorefronts = docs.map(d => ({ id: docId(d), ...ff(d.fields) }));
+  allStorefronts = docs;
   renderStorefrontsGrid();
 }
 
@@ -4436,7 +4436,7 @@ window.showSFTab = (tab) => {
 
 async function loadSFProducts() {
   const docs = await fbList(`storefronts/${activeSF.id}/products`);
-  activeSFProducts = docs.map(d => ({ id: docId(d), ...ff(d.fields) })).sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0));
+  activeSFProducts = docs.sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0));
   renderSFProducts();
 }
 
@@ -4717,7 +4717,7 @@ window.deleteProduct = async (productId) => {
 
 async function loadSFLocations() {
   const docs = await fbList(`storefronts/${activeSF.id}/locations`);
-  activeSFLocations = docs.map(d => ({ id: docId(d), ...ff(d.fields) })).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  activeSFLocations = docs.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   renderSFLocations();
 }
 
@@ -4783,7 +4783,7 @@ window.deleteLocation = async (locationId) => {
 
 async function loadSFCodes() {
   const docs = await fbList(`storefronts/${activeSF.id}/accessCodes`);
-  activeSFCodes = docs.map(d => ({ id: docId(d), ...ff(d.fields) })); renderSFCodes();
+  activeSFCodes = docs; renderSFCodes();
 }
 
 function renderSFCodes() {
@@ -4855,7 +4855,7 @@ window.copyCode = (code) => {
 
 async function loadSFOrders() {
   const docs = await fbList(`storefronts/${activeSF.id}/orders`);
-  activeSFOrders = docs.map(d => ({ id: docId(d), ...ff(d.fields) })).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  activeSFOrders = docs.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
   renderSFOrders();
 }
 
@@ -5372,7 +5372,7 @@ window.onLimitTypeChange = (type) => {
 
 async function loadSFDiscounts() {
   const docs = await fbList(`storefronts/${activeSF.id}/discountCodes`);
-  activeSFDiscounts = docs.map(d => ({ id: docId(d), ...ff(d.fields) }));
+  activeSFDiscounts = docs;
   renderSFDiscounts();
 }
 
