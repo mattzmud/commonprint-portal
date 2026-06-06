@@ -5126,14 +5126,9 @@ window.addSFUserByUID = async () => {
     lastLoginAt:     null,
   };
 
-  const token = await getToken();
-  const res = await fetch(`${getFS_BASE()}/storefrontUsers/${uid}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-    body: JSON.stringify({ fields: toFsFields(record) })
-  });
-
-  if (!res.ok) {
+  try {
+    await fbSet(`storefrontUsers/${uid}`, record);
+  } catch(e) {
     errEl.textContent = 'Failed to add user. Check the UID and try again.';
     errEl.style.display = 'block';
     return;
@@ -5157,11 +5152,12 @@ async function loadSFUsers() {
     .filter(u => u.storefrontId === activeSF.id)
     .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
   renderSFUsers();
-  // Populate location dropdown
+  // Populate location dropdown — load fresh from Firestore
   const locSel = document.getElementById('add-sf-user-location');
-  if (locSel) {
+  if (locSel && activeSF) {
+    const locs = await fbList(`storefronts/${activeSF.id}/locations`);
     locSel.innerHTML = '<option value="">— No location —</option>' +
-      (activeSFLocations||[]).map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+      locs.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
   }
 }
 
