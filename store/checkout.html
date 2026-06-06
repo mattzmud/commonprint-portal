@@ -589,8 +589,14 @@
     const discountRow = document.getElementById('sum-discount-row');
     if (appliedDiscount) {
       discountRow.style.display = 'flex';
-      document.getElementById('sum-discount-label').textContent =
-        appliedDiscount.freeShipping ? `${appliedDiscount.code} (Free shipping)` : `${appliedDiscount.code}`;
+      const discountDesc = appliedDiscount.freeShipping
+        ? `${appliedDiscount.code} — Free shipping`
+        : appliedDiscount.type === 'percent_off'
+          ? `${appliedDiscount.code} — ${appliedDiscount.value}% off`
+          : appliedDiscount.type === 'amount_off'
+            ? `${appliedDiscount.code} — $${Number(appliedDiscount.value).toFixed(2)} off`
+            : appliedDiscount.code;
+      document.getElementById('sum-discount-label').textContent = discountDesc;
       document.getElementById('sum-discount-amount').textContent =
         appliedDiscount.freeShipping ? '' : `-${fmtD(discountAmount)}`;
     } else {
