@@ -1327,6 +1327,14 @@
         <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Date</div>
         <div style="font-size:14px;font-weight:500" id="sford-date"></div>
       </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Email</div>
+        <div style="font-size:14px;font-weight:500" id="sford-email"></div>
+      </div>
+      <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px">
+        <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Phone</div>
+        <div style="font-size:14px;font-weight:500" id="sford-phone"></div>
+      </div>
     </div>
     <div style="background:var(--linen);border-radius:var(--radius);padding:11px 14px;margin-bottom:16px">
       <div style="font-size:11px;font-weight:600;color:var(--mid-gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Ship to</div>
@@ -4924,6 +4932,8 @@ window.openSFOrderModal = (orderId) => {
   const addr=o.shippingAddress||{};
   const addrName = [addr.firstName, addr.lastName].filter(Boolean).join(' ');
   document.getElementById('sford-address').textContent = [addrName, addr.company, addr.street, addr.city, [addr.state, addr.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—';
+  document.getElementById('sford-email').textContent = o.email || '—';
+  document.getElementById('sford-phone').textContent = o.phone || '—';
   const items=o.lineItems||[];
   document.getElementById('sford-lines').innerHTML = items.map(li=>`
     <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
