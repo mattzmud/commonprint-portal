@@ -4968,7 +4968,13 @@ window.openSFOrderModal = (orderId) => {
         payHtml += `<br><span style="font-size:12px;color:var(--mid-gray)">Paid by ${esc(o.cardBrand)}${esc(last4)}</span>`;
       }
     } else if (orderPaid) {
-      payHtml += `<br><span style="font-size:12px;color:var(--mid-gray)">Paid</span>`;
+      // No card details yet — show a fetch link for existing orders
+      const invId = o.squareInvoiceId || o.squareInvoiceNum || '';
+      if (invId) {
+        payHtml += `<br><a href="#" onclick="fetchAndSavePaymentInfo(event)" style="font-size:12px;color:var(--green)">Fetch payment info from Square →</a>`;
+      } else {
+        payHtml += `<br><span style="font-size:12px;color:var(--mid-gray)">Paid</span>`;
+      }
     }
 
     document.getElementById('sford-payment').innerHTML = payHtml;
@@ -5100,6 +5106,68 @@ window.lookupSFInvoice = async () => {
 // ── DISCOUNT LOOKUP ──────────────────────────────────────────────────────────
 
 let _sfDiscountApplied = null; // { code, desc, type, value, amount }
+
+window.fetchAndSavePaymentInfo = async (e) => {
+  e.preventDefault();
+  const o = activeSFOrders?.find(x => x.id === activeSFOrderId);
+  if (!o) return;
+
+  const invId = o.squareInvoiceId || o.squareInvoiceNum || '';
+  if (!invId) { toast('No Square invoice ID on this order', 'error'); return; }
+
+  const link = e.target;
+  link.textContent = 'Fetching…';
+
+  try {
+    const res  = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_invoice_payment', invoiceId: invId })
+    });
+    const data = await res.json();
+
+    if (!data.ok || !data.cardBrand) {
+      toast('No payment details found on Square for this invoice', 'error');
+      link.textContent = 'Fetch payment info from Square →';
+      return;
+    }
+
+    // Save to Firestore via the storefront worker
+    const sfRes = await fetch('https://storefront-api.matt-zmud.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action:      'update_order_payment',
+        storefrontId: activeSF.id,
+        orderId:      o.id,
+        cardBrand:    data.cardBrand,
+        cardLast4:    data.last4    || '',
+        paymentMethod: data.paymentMethod || 'card',
+      })
+    });
+    const sfData = await sfRes.json();
+
+    if (!sfData.ok) {
+      toast('Fetched but failed to save: ' + (sfData.error||'unknown error'), 'error');
+      return;
+    }
+
+    // Update local cache so the modal refreshes immediately
+    const idx = activeSFOrders.findIndex(x => x.id === o.id);
+    if (idx >= 0) {
+      activeSFOrders[idx].cardBrand     = data.cardBrand;
+      activeSFOrders[idx].cardLast4     = data.last4 || '';
+      activeSFOrders[idx].paymentMethod = data.paymentMethod || 'card';
+    }
+
+    toast('Payment info saved!', 'success');
+    // Re-open modal to refresh display
+    openSFOrderModal(o.id);
+  } catch(err) {
+    toast('Error: ' + err.message, 'error');
+    link.textContent = 'Fetch payment info from Square →';
+  }
+};
 
 window.lookupSFDiscount = async () => {
   const code    = document.getElementById('sford-discount-input').value.trim().toUpperCase();
