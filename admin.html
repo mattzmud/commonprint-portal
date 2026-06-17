@@ -1413,6 +1413,7 @@
         <button class="btn btn-ghost btn-sm" onclick="printPackingSlip()">🖨 Packing slip</button>
         <button class="btn btn-ghost btn-sm" id="sford-process-btn" onclick="updateSFOrderStatus('processing')">Mark in process</button>
         <button class="btn btn-ghost btn-sm" id="sford-ship-btn"    onclick="markShipped()">Mark shipped</button>
+        <button class="btn btn-ghost btn-sm" id="sford-resend-ship-btn" onclick="resendShippingEmail()" style="display:none">📦 Resend shipping email</button>
         <button class="btn btn-primary btn-sm" id="sford-complete-btn" onclick="updateSFOrderStatus('completed')">Mark complete</button>
         <button class="btn btn-danger btn-sm" id="sford-cancel-btn" onclick="updateSFOrderStatus('cancelled')">Cancel order</button>
       </div>
@@ -5037,10 +5038,11 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-tracking').value      = o.trackingNumber || '';
   const isDone    = o.status==='completed'||o.status==='cancelled';
   const isShipped = o.status==='shipped';
-  document.getElementById('sford-process-btn').classList.toggle('hidden', o.status==='processing'||o.status==='shipped'||isDone);
-  document.getElementById('sford-ship-btn').classList.toggle('hidden',    o.status!=='processing');
-  document.getElementById('sford-complete-btn').classList.toggle('hidden', isDone);
-  document.getElementById('sford-cancel-btn').classList.toggle('hidden',   isDone);
+  document.getElementById('sford-process-btn').classList.toggle('hidden',     o.status==='processing'||o.status==='shipped'||isDone);
+  document.getElementById('sford-ship-btn').classList.toggle('hidden',         o.status!=='processing' && o.status!=='paid');
+  document.getElementById('sford-complete-btn').classList.toggle('hidden',     isDone);
+  document.getElementById('sford-cancel-btn').classList.toggle('hidden',       isDone);
+  document.getElementById('sford-resend-ship-btn').classList.toggle('hidden',  !isShipped && o.status!=='completed');
   openModal('modal-sf-order');
 };
 
@@ -5539,6 +5541,58 @@ window.updateSFOrderStatus = async (status) => {
   closeModal('modal-sf-order'); toast(`Order marked as ${status}.`,'success'); renderSFOrders();
 };
 
+window.resendShippingEmail = async () => {
+  const o = activeSFOrders?.find(x => x.id === activeSFOrderId);
+  if (!o) return;
+
+  if (!o.carrier || !o.trackingNumber) {
+    toast('No carrier or tracking number on this order.', 'error');
+    return;
+  }
+
+  const trackingUrls = {
+    USPS:  `https://tools.usps.com/go/TrackConfirmAction?tLabels=${o.trackingNumber}`,
+    UPS:   `https://www.ups.com/track?tracknum=${o.trackingNumber}`,
+    FedEx: `https://www.fedex.com/fedextrack/?trknbr=${o.trackingNumber}`,
+    Other: '',
+  };
+  const trackingUrl = o.trackingUrl || trackingUrls[o.carrier] || '';
+
+  const btn = document.getElementById('sford-resend-ship-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const res = await fetch('https://storefront-api.matt-zmud.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'send_shipment_email',
+        order: {
+          id:            o.id,
+          email:         o.email,
+          name:          o.name,
+          carrier:       o.carrier,
+          trackingNumber:o.trackingNumber,
+          trackingUrl,
+          storefrontName:activeSF?.name || 'Store',
+          lineItems:     o.lineItems || [],
+          orderTotal:    o.orderTotal,
+        }
+      })
+    });
+    const data = await res.json();
+    if (data.ok === false) throw new Error(data.error || 'Worker error');
+    toast(`Shipping email resent to ${o.email}`, 'success');
+  } catch(e) {
+    console.error('Resend failed:', e);
+    toast('Failed to resend: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📦 Resend shipping email';
+  }
+};
+
 window.markShipped = async () => {
   if (!activeSFOrderId||!activeSF) return;
   const carrier       = document.getElementById('sford-carrier').value;
@@ -5570,9 +5624,9 @@ window.markShipped = async () => {
   await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`, updateData);
   if(o){ Object.assign(o, updateData); }
 
-  // Send shipment confirmation email via worker
+  // Send shipment confirmation email via storefront worker
   try {
-    await fetch(WORKER_URL, {
+    await fetch('https://storefront-api.matt-zmud.workers.dev', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         action: 'send_shipment_email',
@@ -5589,7 +5643,7 @@ window.markShipped = async () => {
         }
       })
     });
-  } catch(e) { console.error('Shipment email failed:', e); }
+  } catch(e) { console.error('Shipment email failed:', e); toast('Order marked shipped but email failed — check console.', 'error'); }
 
   closeModal('modal-sf-order');
   toast('Order marked as shipped — confirmation email sent!', 'success');
