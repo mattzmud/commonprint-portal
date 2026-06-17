@@ -5336,7 +5336,8 @@ window.printPackingSlip = () => {
   const subtotal   = Number(o.subtotal   || 0);
   const shipping   = Number(o.shippingFee|| 0);
   const discAmt    = discount ? Number(discount.amount || 0) : 0;
-  const total      = Number(o.orderTotal || (subtotal - discAmt + shipping));
+  // Always recalculate total if a discount is applied; o.orderTotal reflects pre-discount amount
+  const total      = discount ? Math.max(0, subtotal - discAmt + shipping) : Number(o.orderTotal || (subtotal + shipping));
 
   // Build packing slip HTML — 4×6in at 96dpi
   const slip = `<!DOCTYPE html>
