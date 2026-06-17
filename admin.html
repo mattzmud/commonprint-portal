@@ -4917,7 +4917,16 @@ function renderSFOrders() {
         <td style="font-size:13px">${esc(o.locationName||'—')}</td>
         <td style="font-weight:500">${esc(o.name||o.email||'—')}</td>
         <td>$${Number(o.orderTotal||0).toFixed(2)}</td>
-        <td>${o.paymentMethod==='pay_now'?'💳 Card':'📄 Invoice'}</td>
+        <td>${(() => {
+  if (o.paymentMethod === 'pay_now') {
+    return '💳 ' + (o.cardBrand || 'Card') + (o.cardLast4 ? ' ···· '+o.cardLast4 : '');
+  }
+  const invNum = o.squareInvoiceNum || o.squareInvoiceId || '';
+  const paid   = ['paid','processing','shipped','completed'].includes(o.status);
+  let out = '📄 ' + (invNum ? 'Invoice #'+invNum : 'Invoice');
+  if (paid && o.cardBrand) out += ' · ' + o.cardBrand + (o.cardLast4 ? ' ···· '+o.cardLast4 : '');
+  return out;
+})()}</td>
         <td>${badge(o.status||'pending')}</td>
         <td>${fmtDate(o.createdAt)}</td>
         <td style="color:var(--mid-gray)">›</td>
@@ -4933,15 +4942,36 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-customer').textContent  = o.name||o.email||'—';
   document.getElementById('sford-location').textContent  = o.locationName||'—';
   if (o.paymentMethod === 'pay_now') {
-    const brand = o.cardBrand ? o.cardBrand.charAt(0).toUpperCase() + o.cardBrand.slice(1).toLowerCase() : 'Card';
+    // Direct card payment
+    const brand = o.cardBrand || 'Card';
     const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
     document.getElementById('sford-payment').textContent = `💳 ${brand}${last4}`;
   } else {
-    document.getElementById('sford-payment').innerHTML = o.squareInvoiceId
+    // Invoice order — show invoice link + payment method once paid
+    const invNum  = o.squareInvoiceNum || o.squareInvoiceId || '';
+    const invLink = invNum
       ? (o.squarePaymentUrl
-            ? `📄 Invoice — <a href="${esc(o.squarePaymentUrl)}" target="_blank" style="color:var(--green);text-decoration:none">Invoice #${esc(o.squareInvoiceId||'—')}</a>`
-            : `📄 Invoice ${o.squareInvoiceId ? '#'+esc(o.squareInvoiceId) : 'requested'}`)
-      : '📄 Invoice requested';
+          ? `<a href="${esc(o.squarePaymentUrl)}" target="_blank" style="color:var(--green);text-decoration:none">Square Invoice #${esc(invNum)}</a>`
+          : `Square Invoice #${esc(invNum)}`)
+      : 'Invoice requested';
+
+    let payHtml = `📄 ${invLink}`;
+
+    // Once paid, append how it was paid (written by webhook)
+    const orderPaid = ['paid','processing','shipped','completed'].includes(o.status);
+    if (orderPaid && o.cardBrand) {
+      if (o.paymentMethod === 'ach') {
+        const last4 = o.cardLast4 ? ` acct ···· ${o.cardLast4}` : '';
+        payHtml += `<br><span style="font-size:12px;color:var(--mid-gray)">Paid via ACH — ${esc(o.cardBrand)}${esc(last4)}</span>`;
+      } else {
+        const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
+        payHtml += `<br><span style="font-size:12px;color:var(--mid-gray)">Paid by ${esc(o.cardBrand)}${esc(last4)}</span>`;
+      }
+    } else if (orderPaid) {
+      payHtml += `<br><span style="font-size:12px;color:var(--mid-gray)">Paid</span>`;
+    }
+
+    document.getElementById('sford-payment').innerHTML = payHtml;
   }
   const sqPayWrap = document.getElementById('sford-square-payment-wrap');
   if (o.squarePaymentId && sqPayWrap) {
@@ -5202,29 +5232,34 @@ window.printPackingSlip = () => {
     : '';
 
   // Build payment line
-  let payLine = '';
-  let payLine2 = ''; // second line for invoice + card details
   const invoiceNum = o.squareInvoiceNum || o.squareInvoiceId || '';
+  const orderPaid  = ['paid','processing','shipped','completed'].includes(o.status);
+
+  // cardBrand is stored in Firestore by the webhook when invoice is paid.
+  // Square writes e.g. 'Visa', 'Mastercard', 'American Express', 'Bank account' (ACH).
+  let payLine  = '';
+  let payLine2 = '';
+
   if (isPaid) {
-    // Direct card payment
-    const brand = o.cardBrand ? o.cardBrand.charAt(0).toUpperCase()+o.cardBrand.slice(1).toLowerCase() : 'Card';
+    // Direct card payment at checkout — always has card details
+    const brand = o.cardBrand || 'Card';
     const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
     payLine = `Paid by ${brand}${last4}`;
   } else {
-    // Invoice Me order
-    if (invoiceNum) {
-      payLine = `Square Invoice #${invoiceNum}`;
-    } else {
-      payLine = 'Invoice';
-    }
-    // If invoice was paid, show card details on second line
-    const orderPaid = ['paid','processing','shipped','completed'].includes(o.status);
-    if (orderPaid && o.cardBrand) {
-      const brand = o.cardBrand.charAt(0).toUpperCase()+o.cardBrand.slice(1).toLowerCase();
-      const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
-      payLine2 = `Paid by ${brand}${last4}`;
-    } else if (orderPaid) {
-      payLine2 = 'Paid';
+    // Invoice Me order — show invoice number first
+    payLine = invoiceNum ? `Square Invoice #${invoiceNum}` : 'Invoice';
+
+    // Once paid, show how it was paid (written by webhook)
+    if (orderPaid) {
+      if (o.cardBrand && o.paymentMethod === 'ach') {
+        const last4 = o.cardLast4 ? ` acct ···· ${o.cardLast4}` : '';
+        payLine2 = `Paid via ACH — ${o.cardBrand}${last4}`;
+      } else if (o.cardBrand) {
+        const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
+        payLine2 = `Paid by ${o.cardBrand}${last4}`;
+      } else {
+        payLine2 = 'Paid';
+      }
     }
   }
   const squareRef = '';
