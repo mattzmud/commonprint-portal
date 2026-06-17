@@ -4981,30 +4981,7 @@ window.openSFOrderModal = (orderId) => {
     sfResultEl.style.display   = 'none';
     sfStatusBadge.style.display = 'none';
   }
-  // Invoice link + status
-  const invLinkWrap  = document.getElementById('sford-invoice-link-wrap');
-  const invLink      = document.getElementById('sford-invoice-link');
-  const invStatus    = document.getElementById('sford-invoice-status');
-  if (o.squareInvoiceId) {
-    invLinkWrap.style.display = 'block';
-    invLink.href = o.squarePaymentUrl || '#';
-    if (!o.squarePaymentUrl) invLinkWrap.style.display = 'none';
-    // Show payment status based on order status
-    const statusMap = {
-      pending:    { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
-      paid:       { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
-      processing: { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
-      shipped:    { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
-      completed:  { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
-      cancelled:  { label: 'Cancelled',        color: '#C0392B', bg: '#FDECEA' },
-    };
-    const st = statusMap[o.status] || statusMap.pending;
-    invStatus.style.display = 'inline-block';
-    invStatus.innerHTML = `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${st.bg};color:${st.color}">${st.label}</span>`;
-  } else {
-    invLinkWrap.style.display = 'none';
-    invStatus.style.display   = 'none';
-  }
+  // Invoice status shown via lookup result card
   document.getElementById('sford-carrier').value       = o.carrier     || '';
   document.getElementById('sford-tracking').value      = o.trackingNumber || '';
   const isDone    = o.status==='completed'||o.status==='cancelled';
@@ -5072,17 +5049,6 @@ window.lookupSFInvoice = async () => {
   } catch(e) {
     statusEl.textContent = 'Lookup failed. Check your connection.';
     statusEl.style.color = 'var(--red)';
-  }
-};
-
-window.updateSFInvoiceLink = (url) => {
-  const wrap = document.getElementById('sford-invoice-link-wrap');
-  const link = document.getElementById('sford-invoice-link');
-  if (url && url.startsWith('http')) {
-    wrap.style.display = 'block';
-    link.href = url;
-  } else {
-    wrap.style.display = 'none';
   }
 };
 
