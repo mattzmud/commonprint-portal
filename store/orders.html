@@ -392,29 +392,43 @@
                 <div>
                   <div class="detail-label">Payment</div>
                   <div class="detail-info-val">${(() => {
+                    const orderPaid = ['paid','processing','shipped','completed'].includes(o.status);
+                    const paidBadge = '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#DCE7E8;color:#194A4E;margin-left:6px">Paid</span>';
+                    const awaitBadge = '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#FFF3E0;color:#AD5309;margin-left:6px">Awaiting payment</span>';
+                    const cancelBadge = '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#FDECEA;color:#C0392B;margin-left:6px">Cancelled</span>';
+                    const statusBadge = o.status === 'cancelled' ? cancelBadge : orderPaid ? paidBadge : awaitBadge;
+
                     if (o.paymentMethod === 'pay_now') {
-                      const brand = o.cardBrand ? o.cardBrand.charAt(0).toUpperCase() + o.cardBrand.slice(1).toLowerCase() : 'Card';
+                      // Direct card payment
+                      const brand = o.cardBrand || 'Card';
                       const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
-                      const paidStatus = ['paid','processing','shipped','completed'].includes(o.status)
-                        ? '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#DCE7E8;color:#194A4E;margin-left:6px">Paid</span>' : '';
-                      return `💳 ${brand}${last4}${paidStatus}`;
+                      return `💳 ${brand}${last4}${paidBadge}`;
                     } else {
-                      const statusMap = {
-                        pending:    '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#FFF3E0;color:#AD5309;margin-left:6px">Awaiting payment</span>',
-                        paid:       '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#DCE7E8;color:#194A4E;margin-left:6px">Paid</span>',
-                        processing: '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#DCE7E8;color:#194A4E;margin-left:6px">Paid</span>',
-                        shipped:    '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#DCE7E8;color:#194A4E;margin-left:6px">Paid</span>',
-                        completed:  '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#DCE7E8;color:#194A4E;margin-left:6px">Paid</span>',
-                        cancelled:  '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:#FDECEA;color:#C0392B;margin-left:6px">Cancelled</span>',
-                      };
-                      const statusBadge = statusMap[o.status] || statusMap.pending;
-                      if (o.squareInvoiceId) {
-                        if (o.squarePaymentUrl) {
-                          return '📄 <a href="' + o.squarePaymentUrl + '" target="_blank" style="color:var(--primary);text-decoration:none">Pay invoice →</a>' + statusBadge;
-                        }
-                        return '📄 Invoice' + statusBadge;
+                      // Invoice order
+                      const invNum = o.squareInvoiceNum || o.squareInvoiceId || '';
+                      let invLine = '';
+                      if (invNum && o.squarePaymentUrl && !orderPaid) {
+                        // Unpaid — show pay link
+                        invLine = `📄 <a href="${o.squarePaymentUrl}" target="_blank" style="color:var(--primary);text-decoration:none">Pay Square Invoice #${invNum} →</a>`;
+                      } else if (invNum) {
+                        invLine = `📄 Square Invoice #${invNum}`;
+                      } else {
+                        invLine = '📄 Invoice';
                       }
-                      return '📄 Invoice' + statusBadge;
+
+                      // Once paid, show how it was paid (written by webhook)
+                      let payDetail = '';
+                      if (orderPaid && o.cardBrand) {
+                        if (o.paymentMethod === 'ach') {
+                          const last4 = o.cardLast4 ? ` acct ···· ${o.cardLast4}` : '';
+                          payDetail = `<br><span style="font-size:12px;color:var(--muted)">Paid via ACH — ${o.cardBrand}${last4}</span>`;
+                        } else {
+                          const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
+                          payDetail = `<br><span style="font-size:12px;color:var(--muted)">Paid by ${o.cardBrand}${last4}</span>`;
+                        }
+                      }
+
+                      return invLine + statusBadge + payDetail;
                     }
                   })()}</div>
                 </div>
