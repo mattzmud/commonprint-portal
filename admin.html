@@ -5203,14 +5203,31 @@ window.printPackingSlip = () => {
 
   // Build payment line
   let payLine = '';
+  let payLine2 = ''; // second line for invoice + card details
+  const invoiceNum = o.squareInvoiceNum || o.squareInvoiceId || '';
   if (isPaid) {
+    // Direct card payment
     const brand = o.cardBrand ? o.cardBrand.charAt(0).toUpperCase()+o.cardBrand.slice(1).toLowerCase() : 'Card';
     const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
     payLine = `Paid by ${brand}${last4}`;
   } else {
-    payLine = o.squareInvoiceNum ? `Paid via Invoice #${o.squareInvoiceNum}` : 'Invoice requested';
+    // Invoice Me order
+    if (invoiceNum) {
+      payLine = `Square Invoice #${invoiceNum}`;
+    } else {
+      payLine = 'Invoice';
+    }
+    // If invoice was paid, show card details on second line
+    const orderPaid = ['paid','processing','shipped','completed'].includes(o.status);
+    if (orderPaid && o.cardBrand) {
+      const brand = o.cardBrand.charAt(0).toUpperCase()+o.cardBrand.slice(1).toLowerCase();
+      const last4 = o.cardLast4 ? ` ···· ${o.cardLast4}` : '';
+      payLine2 = `Paid by ${brand}${last4}`;
+    } else if (orderPaid) {
+      payLine2 = 'Paid';
+    }
   }
-  const squareRef = (!isPaid && o.squareInvoiceId) ? `Square ref: ${o.squareInvoiceId}` : '';
+  const squareRef = '';
 
   // Compute totals
   const subtotal   = Number(o.subtotal   || 0);
@@ -5231,7 +5248,7 @@ window.printPackingSlip = () => {
     font-family: Arial, Helvetica, sans-serif;
     width: 4in; height: 6in;
     font-size: 8pt;
-    color: #2E2B28;
+    color: #000;
     background: #fff;
     overflow: hidden;
   }
@@ -5246,44 +5263,44 @@ window.printPackingSlip = () => {
     display: flex; justify-content: space-between; align-items: baseline;
     padding: 7px 0 3px;
   }
-  .slip-title { font-size: 8pt; font-weight: 700; color: #2E2B28; }
-  .slip-date  { font-size: 7pt; color: #888780; }
+  .slip-title { font-size: 8pt; font-weight: 700; color: #000; }
+  .slip-date  { font-size: 7pt; color: #000; }
   .order-num  { font-size: 7.5pt; font-weight: 700; color: #2D5A3D; margin-bottom: 6px; }
-  .divider { border: none; border-top: 1px solid #D6CFC4; margin: 5px 0; }
+  .divider { border: none; border-top: 1.5px solid #000; margin: 5px 0; }
   .section-label {
-    font-size: 6.5pt; font-weight: 700; color: #888780;
+    font-size: 6.5pt; font-weight: 700; color: #000;
     text-transform: uppercase; letter-spacing: .04em;
     margin-bottom: 3px;
   }
   .ship-name  { font-size: 8.5pt; font-weight: 700; margin-bottom: 2px; }
   .ship-addr  { font-size: 7.5pt; line-height: 1.5; }
-  .contact-row{ display:flex; justify-content:space-between; font-size:7pt; color:#888780; margin-top:2px; }
+  .contact-row{ display:flex; justify-content:space-between; font-size:7pt; color:#000; margin-top:2px; }
   table.items { width:100%; border-collapse:collapse; font-size:7.5pt; margin:4px 0; }
   table.items th {
     text-align:right; font-size:6.5pt; font-weight:700;
-    color:#888780; border-bottom:1px solid #D6CFC4;
+    color:#000; border-bottom:1.5px solid #000;
     padding:2px 0 3px; white-space:nowrap;
   }
   table.items th:first-child { text-align:left; }
   table.items td {
-    text-align:right; padding:3px 0; border-bottom:1px solid #F0EBE3;
+    text-align:right; padding:3px 0; border-bottom:1px solid #ccc;
     vertical-align:top;
   }
   table.items td:first-child { text-align:left; max-width:1.85in; }
   table.totals { width:100%; border-collapse:collapse; font-size:7.5pt; margin-top:4px; }
   table.totals td { padding:1.5px 0; }
-  table.totals td:first-child { color:#888780; text-align:left; }
+  table.totals td:first-child { color:#000; text-align:left; }
   table.totals td:last-child  { text-align:right; }
-  .discount-row td { color:#2D5A3D !important; }
-  .total-row td { font-weight:700; font-size:8.5pt; color:#2D5A3D; border-top:1px solid #2E2B28; padding-top:3px; }
+  .discount-row td { color:#2D5A3D !important; font-weight:700; }
+  .total-row td { font-weight:700; font-size:8.5pt; color:#2D5A3D; border-top:1.5px solid #000; padding-top:3px; }
   .pay-section { margin-top:5px; }
   .pay-value  { font-size:7.5pt; }
-  .pay-ref    { font-size:6.5pt; color:#888780; }
   .notes-text { font-size:7pt; line-height:1.5; }
   .footer {
     position:absolute; bottom:0; left:0; right:0;
-    background:#F0EBE3;
-    text-align:center; font-size:6pt; color:#888780;
+    background:#fff;
+    border-top: 1.5px solid #000;
+    text-align:center; font-size:12pt; font-weight:700; color:#000;
     padding:5px 14px;
   }
 </style>
@@ -5338,7 +5355,7 @@ window.printPackingSlip = () => {
     <div class="pay-section">
       <div class="section-label">Payment</div>
       <div class="pay-value">${esc(payLine)}</div>
-      ${squareRef ? `<div class="pay-ref">${esc(squareRef)}</div>` : ''}
+      ${payLine2 ? `<div class="pay-value">${esc(payLine2)}</div>` : ''}
     </div>
     ${o.orderNotes ? `<hr class="divider">
     <div class="section-label">Order Notes</div>
