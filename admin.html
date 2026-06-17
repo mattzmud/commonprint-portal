@@ -1348,22 +1348,30 @@
     <!-- Invoice + Shipping -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
       <div class="field" style="grid-column:1/-1">
-        <label>Square invoice share link</label>
+        <label>Square invoice number</label>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="sford-invoice-url" placeholder="https://app.squareup.com/pay-invoice/invtmp:..."
-            style="font-family:monospace;font-size:11px;flex:1"
-            oninput="updateSFInvoiceLink(this.value)">
+          <input type="text" id="sford-invoice-number" placeholder="e.g. 0000123"
+            style="font-family:monospace;font-size:13px;flex:1">
+          <button class="btn btn-ghost btn-sm" onclick="lookupSFInvoice()">Look up</button>
           <div id="sford-invoice-status" style="display:none"></div>
         </div>
-        <div id="sford-invoice-link-wrap" style="display:none;margin-top:6px">
-          <a id="sford-invoice-link" href="#" target="_blank"
-            style="font-size:12px;color:var(--green);text-decoration:none">
-            View customer invoice →
-          </a>
+        <div id="sford-invoice-lookup-status" style="font-size:12px;margin-top:6px;display:none"></div>
+        <div id="sford-invoice-result" style="display:none;margin-top:10px;background:var(--linen);border-radius:8px;padding:10px 14px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div id="sford-invoice-title" style="font-weight:600;color:var(--charcoal)"></div>
+              <div id="sford-invoice-amount" style="color:var(--mid-gray);margin-top:2px"></div>
+            </div>
+            <a id="sford-invoice-link" href="#" target="_blank"
+              style="font-size:12px;color:var(--green);text-decoration:none;white-space:nowrap">
+              View invoice →
+            </a>
+          </div>
         </div>
       </div>
-      <div class="field" style="display:none">
-        <input type="text" id="sford-invoice-id" placeholder="invoice id">
+      <div style="display:none">
+        <input type="text" id="sford-invoice-id">
+        <input type="text" id="sford-invoice-url">
       </div>
       <div class="field">
         <label>Carrier</label>
@@ -4948,9 +4956,31 @@ window.openSFOrderModal = (orderId) => {
   if (o.orderNotes) { document.getElementById('sford-notes').textContent=o.orderNotes; document.getElementById('sford-notes-row').classList.remove('hidden'); }
   else { document.getElementById('sford-notes-row').classList.add('hidden'); }
   document.getElementById('sford-admin-notes').value  = o.adminNotes  || '';
-  document.getElementById('sford-invoice-id').value   = o.squareInvoiceId || '';
-  document.getElementById('sford-invoice-url').value  = o.squarePaymentUrl || '';
-  updateSFInvoiceLink(o.squarePaymentUrl || '');
+  document.getElementById('sford-invoice-id').value     = o.squareInvoiceId  || '';
+  document.getElementById('sford-invoice-url').value    = o.squarePaymentUrl || '';
+  document.getElementById('sford-invoice-number').value = o.squareInvoiceNum || '';
+  document.getElementById('sford-invoice-lookup-status').style.display = 'none';
+  // Show result card if invoice already linked
+  const sfResultEl = document.getElementById('sford-invoice-result');
+  const sfStatusBadge = document.getElementById('sford-invoice-status');
+  if (o.squarePaymentUrl) {
+    document.getElementById('sford-invoice-title').textContent  = o.squareInvoiceTitle || `Invoice #${o.squareInvoiceNum || o.squareInvoiceId || ''}`;
+    document.getElementById('sford-invoice-amount').textContent = o.squareInvoiceAmount ? `$${Number(o.squareInvoiceAmount).toFixed(2)}` : '';
+    const sfLink = document.getElementById('sford-invoice-link');
+    sfLink.href = o.squarePaymentUrl; sfLink.style.display = 'inline';
+    sfResultEl.style.display = 'block';
+    const statusMap = {
+      pending:    { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
+      paid:       { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+      cancelled:  { label: 'Cancelled',        color: '#C0392B', bg: '#FDECEA' },
+    };
+    const st = statusMap[o.status] || statusMap.pending;
+    sfStatusBadge.style.display = 'inline-block';
+    sfStatusBadge.innerHTML = `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${st.bg};color:${st.color}">${st.label}</span>`;
+  } else {
+    sfResultEl.style.display   = 'none';
+    sfStatusBadge.style.display = 'none';
+  }
   // Invoice link + status
   const invLinkWrap  = document.getElementById('sford-invoice-link-wrap');
   const invLink      = document.getElementById('sford-invoice-link');
@@ -4986,6 +5016,65 @@ window.openSFOrderModal = (orderId) => {
   openModal('modal-sf-order');
 };
 
+window.lookupSFInvoice = async () => {
+  const number  = document.getElementById('sford-invoice-number').value.trim();
+  const statusEl = document.getElementById('sford-invoice-lookup-status');
+  const resultEl = document.getElementById('sford-invoice-result');
+  if (!number) { statusEl.textContent = 'Enter an invoice number first.'; statusEl.style.color='var(--mid-gray)'; statusEl.style.display='block'; return; }
+
+  statusEl.textContent = 'Looking up…';
+  statusEl.style.color = 'var(--mid-gray)';
+  statusEl.style.display = 'block';
+  resultEl.style.display = 'none';
+
+  try {
+    const res  = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: number })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      statusEl.textContent = data.error === 'Invoice not found' ? 'No invoice found with that number.' : 'Lookup failed: ' + data.error;
+      statusEl.style.color = 'var(--red)';
+      return;
+    }
+
+    // Fill hidden fields
+    document.getElementById('sford-invoice-id').value  = data.invoiceId  || '';
+    document.getElementById('sford-invoice-url').value = data.paymentUrl || '';
+
+    // Show result card
+    document.getElementById('sford-invoice-title').textContent  = data.title || `Invoice #${data.invoiceNum}`;
+    document.getElementById('sford-invoice-amount').textContent = data.amountDue
+      ? `$${(data.amountDue / 100).toFixed(2)} · ${data.status}`
+      : data.status || '';
+    const link = document.getElementById('sford-invoice-link');
+    if (data.paymentUrl) { link.href = data.paymentUrl; link.style.display = 'inline'; }
+    else { link.style.display = 'none'; }
+
+    // Update status badge
+    const statusMap = {
+      UNPAID:     { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
+      PAID:       { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+      PARTIALLY_PAID: { label: 'Partially paid', color: '#AD5309', bg: '#FFF3E0' },
+      CANCELLED:  { label: 'Cancelled',        color: '#C0392B', bg: '#FDECEA' },
+    };
+    const st = statusMap[data.status] || { label: data.status, color: 'var(--mid-gray)', bg: 'var(--linen)' };
+    const statusBadge = document.getElementById('sford-invoice-status');
+    statusBadge.style.display = 'inline-block';
+    statusBadge.innerHTML = `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${st.bg};color:${st.color}">${st.label}</span>`;
+
+    resultEl.style.display = 'block';
+    statusEl.textContent   = '✓ Invoice found.';
+    statusEl.style.color   = 'var(--green)';
+  } catch(e) {
+    statusEl.textContent = 'Lookup failed. Check your connection.';
+    statusEl.style.color = 'var(--red)';
+  }
+};
+
 window.updateSFInvoiceLink = (url) => {
   const wrap = document.getElementById('sford-invoice-link-wrap');
   const link = document.getElementById('sford-invoice-link');
@@ -5002,14 +5091,22 @@ window.saveSFOrderDetails = async () => {
   const adminNotes      = document.getElementById('sford-admin-notes').value;
   const squareInvoiceId  = document.getElementById('sford-invoice-id').value.trim();
   const squarePaymentUrl = document.getElementById('sford-invoice-url').value.trim();
+  const squareInvoiceNum = document.getElementById('sford-invoice-number').value.trim();
+  const squareInvoiceTitle  = document.getElementById('sford-invoice-title').textContent.trim();
+  const squareInvoiceAmountRaw = document.getElementById('sford-invoice-amount').textContent.trim();
+  const squareInvoiceAmount = squareInvoiceAmountRaw ? parseFloat(squareInvoiceAmountRaw.replace(/[^0-9.]/g,'')) || 0 : 0;
   const carrier          = document.getElementById('sford-carrier').value;
   const trackingNumber   = document.getElementById('sford-tracking').value.trim();
   const updateData = {
     updatedAt: new Date().toISOString(),
-    ...(adminNotes       ? { adminNotes }       : {}),
-    ...(squarePaymentUrl ? { squarePaymentUrl } : {}),
-    ...(carrier          ? { carrier }          : {}),
-    ...(trackingNumber   ? { trackingNumber }   : {}),
+    ...(adminNotes        ? { adminNotes }        : {}),
+    ...(squareInvoiceId   ? { squareInvoiceId }   : {}),
+    ...(squarePaymentUrl  ? { squarePaymentUrl }  : {}),
+    ...(squareInvoiceNum  ? { squareInvoiceNum }  : {}),
+    ...(squareInvoiceTitle  ? { squareInvoiceTitle }  : {}),
+    ...(squareInvoiceAmount ? { squareInvoiceAmount } : {}),
+    ...(carrier           ? { carrier }           : {}),
+    ...(trackingNumber    ? { trackingNumber }    : {}),
   };
   await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`, updateData);
   const o = activeSFOrders.find(x=>x.id===activeSFOrderId);
@@ -5022,13 +5119,15 @@ window.saveSFOrderDetails = async () => {
 window.updateSFOrderStatus = async (status) => {
   if (!activeSFOrderId||!activeSF) return;
   const adminNotes    = document.getElementById('sford-admin-notes').value;
-  const squareInvoiceId  = document.getElementById('sford-invoice-id').value.trim();
-  const squarePaymentUrl = document.getElementById('sford-invoice-url').value.trim();
-  const carrier          = document.getElementById('sford-carrier').value;
-  const trackingNumber   = document.getElementById('sford-tracking').value.trim();
-  const updateData       = { status, adminNotes, updatedAt:new Date().toISOString(),
-    ...(squarePaymentUrl ? { squarePaymentUrl } : {}),
-    ...(squareInvoiceId  ? { squareInvoiceId }  : {}),
+  const squareInvoiceId    = document.getElementById('sford-invoice-id').value.trim();
+  const squarePaymentUrl   = document.getElementById('sford-invoice-url').value.trim();
+  const squareInvoiceNum   = document.getElementById('sford-invoice-number').value.trim();
+  const carrier            = document.getElementById('sford-carrier').value;
+  const trackingNumber     = document.getElementById('sford-tracking').value.trim();
+  const updateData         = { status, adminNotes, updatedAt:new Date().toISOString(),
+    ...(squarePaymentUrl  ? { squarePaymentUrl }  : {}),
+    ...(squareInvoiceId   ? { squareInvoiceId }   : {}),
+    ...(squareInvoiceNum  ? { squareInvoiceNum }  : {}),
     ...(carrier         ? { carrier }         : {}),
     ...(trackingNumber  ? { trackingNumber }  : {}),
   };
