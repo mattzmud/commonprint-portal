@@ -874,7 +874,12 @@
 
       <!-- Products tab -->
       <div class="detail-panel active" id="sftab-products">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap">
+          <select id="sf-products-location-filter" onchange="renderSFProducts()"
+            style="font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);color:var(--body);background:#fff;cursor:pointer">
+            <option value="">All products</option>
+            <option value="__location_specific__">Location-specific only</option>
+          </select>
           <button class="btn btn-primary btn-sm" onclick="openNewProductModal()">+ Add product</button>
         </div>
         <div id="sf-products-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
@@ -1223,6 +1228,17 @@
         <input type="checkbox" id="prod-active" checked>
         Product is active (visible in storefront)
       </label>
+    </div>
+    <div style="margin-top:10px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--charcoal)">
+        <input type="checkbox" id="prod-location-specific" onchange="toggleProductLocationPicker()">
+        This product is location-specific
+      </label>
+    </div>
+    <div id="prod-location-picker" class="hidden field" style="margin-top:10px">
+      <label>Visible only for these locations</label>
+      <div id="prod-location-list" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:10px"></div>
+      <div style="font-size:12px;color:var(--mid-gray);margin-top:6px">If no locations are checked, this product won't appear for anyone.</div>
     </div>
     <div class="form-error hidden" id="prod-error"></div>
     <div class="modal-footer">
@@ -4483,19 +4499,50 @@ window.showSFTab = (tab) => {
 };
 
 async function loadSFProducts() {
-  const docs = await fbList(`storefronts/${activeSF.id}/products`);
+  const [docs, locs] = await Promise.all([
+    fbList(`storefronts/${activeSF.id}/products`),
+    activeSFLocations && activeSFLocations.length ? Promise.resolve(activeSFLocations) : fbList(`storefronts/${activeSF.id}/locations`),
+  ]);
   activeSFProducts = docs.sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0));
+  activeSFLocations = locs.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  populateProductsLocationFilter();
   renderSFProducts();
+}
+
+function populateProductsLocationFilter() {
+  const sel = document.getElementById('sf-products-location-filter');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = `
+    <option value="">All products</option>
+    <option value="__location_specific__">Location-specific only</option>
+    ${activeSFLocations.map(l => `<option value="${l.id}">📍 ${esc(l.name||'Location')}</option>`).join('')}
+  `;
+  sel.value = current && [...sel.options].some(o=>o.value===current) ? current : '';
 }
 
 function renderSFProducts() {
   const grid = document.getElementById('sf-products-grid');
   if (!grid) return;
-  if (activeSFProducts.length === 0) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><div class="empty-title">No products yet</div><div class="empty-sub">Add your first product to this storefront.</div></div>`;
+
+  const filterVal = document.getElementById('sf-products-location-filter')?.value || '';
+  let list = activeSFProducts;
+  if (filterVal === '__location_specific__') {
+    list = list.filter(p => p.locationSpecific && (p.locationIds||[]).length > 0);
+  } else if (filterVal) {
+    list = list.filter(p => p.locationSpecific && (p.locationIds||[]).includes(filterVal));
+  }
+
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><div class="empty-title">No products${filterVal ? ' match this filter' : ' yet'}</div><div class="empty-sub">${filterVal ? 'Try a different location filter.' : 'Add your first product to this storefront.'}</div></div>`;
     return;
   }
-  grid.innerHTML = activeSFProducts.map(p => `
+
+  grid.innerHTML = list.map(p => {
+    const locNames = p.locationSpecific
+      ? (p.locationIds||[]).map(id => activeSFLocations.find(l=>l.id===id)?.name).filter(Boolean)
+      : [];
+    return `
     <div class="card" style="padding:0;overflow:hidden">
       ${p.imageUrl
         ? `<img src="${esc(p.imageUrl)}" style="width:100%;height:160px;object-fit:contain;background:var(--linen);padding:8px">`
@@ -4504,6 +4551,7 @@ function renderSFProducts() {
         <div style="font-size:15px;font-weight:500;margin-bottom:4px">${esc(p.name||'Product')}</div>
         <div style="font-size:12px;color:var(--mid-gray);margin-bottom:8px">${esc(p.size||'')}</div>
         <div style="font-size:12px;color:var(--mid-gray);margin-bottom:10px">${(p.pricingTiers||[]).length} price tier${(p.pricingTiers||[]).length!==1?'s':''} · Min qty: ${p.minQty||1}</div>
+        ${p.locationSpecific ? `<div style="font-size:11px;color:var(--primary);margin-bottom:8px;display:flex;align-items:center;gap:4px;flex-wrap:wrap">📍 ${locNames.length ? locNames.map(esc).join(', ') : '<span style=\'color:var(--red)\'>No locations selected</span>'}</div>` : ''}
         <div style="display:flex;gap:6px;justify-content:space-between;align-items:center">
           ${p.active !== false ? badge('active') : badge('changes')}
           <div style="display:flex;gap:6px">
@@ -4512,8 +4560,29 @@ function renderSFProducts() {
           </div>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
+
+function renderProductLocationCheckboxes(selectedIds = []) {
+  const box = document.getElementById('prod-location-list');
+  if (!box) return;
+  if (!activeSFLocations || activeSFLocations.length === 0) {
+    box.innerHTML = `<div style="font-size:13px;color:var(--mid-gray)">No locations set up yet. Add one in the Locations tab first.</div>`;
+    return;
+  }
+  box.innerHTML = activeSFLocations.map(l => `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--charcoal)">
+      <input type="checkbox" class="prod-loc-checkbox" value="${l.id}" ${selectedIds.includes(l.id) ? 'checked' : ''}>
+      ${esc(l.name||'Location')}
+    </label>`).join('');
+}
+
+window.toggleProductLocationPicker = () => {
+  const checked = document.getElementById('prod-location-specific').checked;
+  document.getElementById('prod-location-picker').classList.toggle('hidden', !checked);
+  if (checked) renderProductLocationCheckboxes();
+};
 
 window.openNewProductModal = () => {
   editingProductId = null; pricingTiers = [{ minQty: 1, unitPrice: 0 }]; productImageFile = null;
@@ -4525,6 +4594,9 @@ window.openNewProductModal = () => {
   document.getElementById('prod-max-qty').value  = '0';
   document.getElementById('prod-sort').value     = String(activeSFProducts.length+1);
   document.getElementById('prod-active').checked = true;
+  document.getElementById('prod-location-specific').checked = false;
+  document.getElementById('prod-location-picker').classList.add('hidden');
+  renderProductLocationCheckboxes();
   document.getElementById('prod-img-preview').classList.add('hidden');
   document.getElementById('prod-img-file').value = '';
   document.getElementById('prod-error').classList.add('hidden');
@@ -4544,6 +4616,9 @@ window.openEditProductModal = (productId) => {
   document.getElementById('prod-max-qty').value = p.maxQty||0;
   document.getElementById('prod-sort').value    = p.sortOrder||1;
   document.getElementById('prod-active').checked= p.active!==false;
+  document.getElementById('prod-location-specific').checked = !!p.locationSpecific;
+  document.getElementById('prod-location-picker').classList.toggle('hidden', !p.locationSpecific);
+  renderProductLocationCheckboxes(p.locationIds || []);
   document.getElementById('prod-error').classList.add('hidden');
   pricingTiers = p.pricingTiers ? [...p.pricingTiers] : [{ minQty:1, unitPrice:0 }];
   populateTemplateDropdown();
@@ -4722,6 +4797,10 @@ window.saveProduct = async () => {
   const maxQty = parseInt(document.getElementById('prod-max-qty').value)||0;
   const sortOrd= parseInt(document.getElementById('prod-sort').value)||1;
   const active = document.getElementById('prod-active').checked;
+  const locationSpecific = document.getElementById('prod-location-specific').checked;
+  const locationIds = locationSpecific
+    ? [...document.querySelectorAll('.prod-loc-checkbox:checked')].map(cb => cb.value)
+    : [];
   const errEl  = document.getElementById('prod-error');
   const btn    = document.getElementById('prod-save-btn');
   errEl.classList.add('hidden');
@@ -4743,6 +4822,7 @@ window.saveProduct = async () => {
     const productId = editingProductId || genId();
     await fbSet(`storefronts/${activeSF.id}/products/${productId}`, {
       name, description:desc, size, minQty, maxQty, sortOrder:sortOrd, active,
+      locationSpecific, locationIds,
       pricingTiers: pricingTiers.sort((a,b)=>a.minQty-b.minQty),
       ...(imageUrl?{imageUrl}:{}),
       updatedAt: new Date().toISOString(),
