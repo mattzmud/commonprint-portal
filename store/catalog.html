@@ -522,6 +522,16 @@
     return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
   }
 
+  async function getToken() { return currentUser.getIdToken(); }
+
+  async function fsGetAuth(path) {
+    const token = await getToken();
+    const res   = await fetch(`${FS_BASE}/${path}`, { headers:{ Authorization:`Bearer ${token}` } });
+    if (!res.ok) return null;
+    const doc = await res.json();
+    return doc.fields ? { id: doc.name.split('/').pop(), ...ff(doc.fields) } : null;
+  }
+
   async function fsListPublic(path) {
     const res = await fetch(`${FS_BASE}/${path}`);
     if (!res.ok) return [];
@@ -849,17 +859,22 @@
       });
     });
 
-    // Load storefront + products in parallel
-    [storefront, products] = await Promise.all([
+    // Load storefront + products + this user's location in parallel
+    let sfUser = null;
+    [storefront, products, sfUser] = await Promise.all([
       fsGetPublic(`storefronts/${storefrontId}`),
       fsListPublic(`storefronts/${storefrontId}/products`),
+      fsGetAuth(`storefrontUsers/${currentUser.uid}`).catch(() => null),
     ]);
 
     if (!storefront || storefront.active === false) throw new Error('Storefront not found');
 
-    // Sort products by sortOrder
+    const myLocationId = sfUser?.locationId || null;
+
+    // Filter: active products, and location-specific products only for matching location
     products = products
       .filter(p => p.active !== false)
+      .filter(p => !p.locationSpecific || (myLocationId && (p.locationIds||[]).includes(myLocationId)))
       .sort((a,b) => (a.sortOrder||0) - (b.sortOrder||0));
 
     // Apply branding
