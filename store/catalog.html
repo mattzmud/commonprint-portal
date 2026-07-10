@@ -853,12 +853,13 @@
 
 
   // ── CUSTOMIZATION STATE ─────────────────────────────────────────────────
-  let customSide      = 'front';
-  let customFieldVals = {};   // fieldId → value
-  let customTier      = null;
-  let customQtyVal    = 1;
-  const CANVAS_W      = 1050;
-  const CANVAS_H      = 600;
+  let customSide        = 'front';
+  let customFieldVals   = {};   // fieldId → value
+  let customTier        = null;
+  let customQtyVal      = 1;
+  const CANVAS_W        = 1050;
+  const CANVAS_H        = 600;
+  const templateImgCache = {};  // imageUrl → HTMLImageElement (loaded)
 
   // ── LOAD GOOGLE FONTS for template ─────────────────────────────────────
   function ensureFont(fontName) {
@@ -886,6 +887,9 @@
 
     // Load all fonts used in fields
     (p.templateFields || []).forEach(f => ensureFont(f.font));
+
+    // Preload template images into cache so redraws are instant
+    preloadTemplateImages(p);
 
     // Init field values from cart if re-editing
     const existing = getCart().find(i => i.productId === p.id);
@@ -1035,6 +1039,47 @@
   }
 
   // ── CANVAS DRAW ─────────────────────────────────────────────────────────
+  // Preload front + back template images into cache
+  function preloadTemplateImages(p) {
+    [p.templateFront, p.templateBack].forEach(t => {
+      if (!t?.imageUrl || templateImgCache[t.imageUrl]) return;
+      // Try with crossOrigin first (needed for toDataURL on proof capture)
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        templateImgCache[t.imageUrl] = img;
+        // Trigger a redraw now that the image is ready
+        if (activeProduct) customRedrawCanvas();
+      };
+      img.onerror = () => {
+        // CORS failed — load without crossOrigin for display only
+        const img2 = new Image();
+        img2.onload = () => {
+          templateImgCache[t.imageUrl] = img2;
+          if (activeProduct) customRedrawCanvas();
+        };
+        img2.src = t.imageUrl;
+      };
+      img.src = t.imageUrl;
+    });
+  }
+
+  function drawFieldsOnCanvas(ctx, p) {
+    (p.templateFields || []).filter(f => f.side === 'front').forEach(f => {
+      const x   = f.xPct * CANVAS_W;
+      const y   = f.yPct * CANVAS_H;
+      const val = customFieldVals[f.id] !== undefined ? customFieldVals[f.id] : (f.placeholder || '');
+      if (!val) return;
+      ctx.save();
+      ctx.font         = `${f.fontStyle} ${f.fontWeight} ${f.fontSize}px "${f.font}"`;
+      ctx.fillStyle    = f.color;
+      ctx.textAlign    = f.align;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(val, x, y);
+      ctx.restore();
+    });
+  }
+
   function customRedrawCanvas() {
     const p = activeProduct;
     if (!p) return;
@@ -1049,39 +1094,28 @@
       ctx.fillStyle = '#999';
       ctx.font = '32px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('No template image', CANVAS_W/2, CANVAS_H/2);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('No template image', CANVAS_W / 2, CANVAS_H / 2);
       return;
     }
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, CANVAS_W, CANVAS_H);
-      if (customSide === 'front') {
-        (p.templateFields || []).filter(f => f.side === 'front').forEach(f => {
-          const x   = f.xPct * CANVAS_W;
-          const y   = f.yPct * CANVAS_H;
-          const val = customFieldVals[f.id] || f.placeholder || '';
-          if (!val) return;
-          ctx.save();
-          ctx.font          = `${f.fontStyle} ${f.fontWeight} ${f.fontSize}px "${f.font}"`;
-          ctx.fillStyle     = f.color;
-          ctx.textAlign     = f.align;
-          ctx.textBaseline  = 'middle';
-          ctx.fillText(val, x, y);
-          ctx.restore();
-        });
-      }
-    };
-    img.onerror = () => {
-      // fallback — draw without crossOrigin (loses toDataURL but shows preview)
-      const img2 = new Image();
-      img2.onload = () => {
-        ctx.drawImage(img2, 0, 0, CANVAS_W, CANVAS_H);
-      };
-      img2.src = template.imageUrl;
-    };
-    img.src = template.imageUrl;
+    const cached = templateImgCache[template.imageUrl];
+    if (cached) {
+      // Image already loaded — draw synchronously, no flicker
+      ctx.drawImage(cached, 0, 0, CANVAS_W, CANVAS_H);
+      if (customSide === 'front') drawFieldsOnCanvas(ctx, p);
+    } else {
+      // Not cached yet — show placeholder while preload runs
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillStyle = '#bbb';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Loading template…', CANVAS_W / 2, CANVAS_H / 2);
+      // preloadTemplateImages will call customRedrawCanvas() when done
+      preloadTemplateImages(p);
+    }
   }
 
   // ── ADD TO CART (customizable) ──────────────────────────────────────────
