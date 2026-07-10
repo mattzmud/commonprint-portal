@@ -5654,10 +5654,17 @@ window.openSFOrderModal = (orderId) => {
   document.getElementById('sford-phone').textContent = o.phone || '—';
   const items=o.lineItems||[];
   document.getElementById('sford-lines').innerHTML = items.map(li=>`
-    <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--linen-dark);font-size:14px">
-      <div><div style="font-weight:500">${esc(li.productName||'')}</div>
-      <div style="font-size:12px;color:var(--mid-gray)">Qty: ${li.qty} × $${Number(li.unitPrice||0).toFixed(2)}</div></div>
-      <div style="font-weight:500">$${Number(li.lineTotal||0).toFixed(2)}</div>
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--linen-dark)">
+      ${li.proofUrl
+        ? `<a href="${esc(li.proofUrl)}" target="_blank"><img src="${esc(li.proofUrl)}" style="width:72px;height:40px;object-fit:contain;border-radius:6px;background:#f5f5f5;border:1px solid var(--border);flex-shrink:0"></a>`
+        : li.imageUrl
+          ? `<img src="${esc(li.imageUrl)}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;flex-shrink:0">`
+          : ''}
+      <div style="flex:1;font-size:14px">
+        <div style="font-weight:500">${esc(li.productName||'')}</div>
+        <div style="font-size:12px;color:var(--mid-gray)">Qty: ${li.qty} × $${Number(li.unitPrice||0).toFixed(2)}</div>
+      </div>
+      <div style="font-weight:500;font-size:14px">$${Number(li.lineTotal||0).toFixed(2)}</div>
     </div>`).join('')+`
     <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:var(--mid-gray)"><span>Subtotal</span><span>$${Number(o.subtotal||0).toFixed(2)}</span></div>
     ${(o.discountCode||o.discountAmount>0)?`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#194A4E"><span>${esc(o.discountCode||'Discount')}</span><span>${o.discountAmount>0?'-$'+Number(o.discountAmount||0).toFixed(2):o.discountType==='free_shipping'?'Free shipping':''}</span></div>`:''}
