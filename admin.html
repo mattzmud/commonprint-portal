@@ -4777,6 +4777,11 @@ TB_GOOGLE_FONTS.forEach(font => {
 // ── OPEN / CLOSE ──────────────────────────────────────────────────────────────
 
 window.openTemplateBuilder = () => {
+  // Pre-generate a stable product ID if this is a new product
+  // so template image uploads go to a consistent path
+  if (!editingProductId && !window._pendingProductId) {
+    window._pendingProductId = genId();
+  }
   const modal = document.getElementById('modal-template-builder');
   modal.style.display = 'flex';
   tbSetSide('front');
@@ -4799,52 +4804,68 @@ window.saveTemplateBuilder = async () => {
     return;
   }
 
-  // Upload any new image files to Firebase Storage
-  const token = await getToken();
-  const bucket = firebaseConfig.storageBucket;
-  const prodId  = editingProductId || '_preview';
+  const saveBtn = document.querySelector('#modal-template-builder .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
 
-  async function uploadTemplateImage(file, side) {
-    if (!file) return null;
-    const ext  = file.name.split('.').pop().toLowerCase();
-    const path = `storefronts/${activeSF.id}/templates/${prodId}-${side}.${ext}`;
-    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
-    const res = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': file.type },
-      body: file,
-    });
-    if (!res.ok) throw new Error(`Failed to upload ${side} template`);
-    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
+  try {
+    // Upload any new image files to Firebase Storage
+    const token  = await getToken();
+    const bucket = firebaseConfig.storageBucket;
+    const prodId = editingProductId || window._pendingProductId || genId();
+    // Persist pendingProductId so saveProduct uses same ID
+    if (!editingProductId) window._pendingProductId = prodId;
+
+    async function uploadTemplateImage(file, side) {
+      if (!file) return null;
+      const ext  = file.name.split('.').pop().toLowerCase();
+      const path = `storefronts/${activeSF.id}/templates/${prodId}-${side}.${ext}`;
+      const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': file.type },
+        body: file,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = err?.error?.message || res.status;
+        throw new Error(`Storage upload failed (${side}): ${msg}`);
+      }
+      return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
+    }
+
+    const [frontUrl, backUrl] = await Promise.all([
+      tbState.front.file ? uploadTemplateImage(tbState.front.file, 'front') : Promise.resolve(tbState.front.imageUrl),
+      tbState.back.file  ? uploadTemplateImage(tbState.back.file,  'back')  : Promise.resolve(tbState.back.imageUrl),
+    ]);
+
+    if (frontUrl) tbState.front.imageUrl = frontUrl;
+    if (backUrl)  tbState.back.imageUrl  = backUrl;
+    tbState.front.file = null;
+    tbState.back.file  = null;
+
+    // Set pending template — picked up by saveProduct
+    window._pendingTemplate = {
+      templateFront:  { imageUrl: tbState.front.imageUrl || '', width: TB_CANVAS_W, height: TB_CANVAS_H },
+      templateBack:   tbState.back.imageUrl ? { imageUrl: tbState.back.imageUrl, width: TB_CANVAS_W, height: TB_CANVAS_H } : null,
+      templateFields: tbState.fields.map(f => ({ ...f })),
+      canvasSize:     { width: TB_CANVAS_W, height: TB_CANVAS_H },
+    };
+
+    const fieldCount = tbState.fields.length;
+    const hasBack    = !!tbState.back.imageUrl;
+    document.getElementById('prod-template-status').textContent =
+      `${fieldCount} field${fieldCount !== 1 ? 's' : ''} · Front${hasBack ? ' + Back' : ' only'}`;
+
+    document.getElementById('modal-template-builder').style.display = 'none';
+    tbDeselectField();
+    toast('Template saved — remember to save the product too.', 'success');
+
+  } catch(e) {
+    console.error('saveTemplateBuilder error:', e);
+    alert('Template save failed: ' + e.message + '\n\nIf this is a storage permissions error, check your Firebase Storage rules allow writes to storefronts/*/templates/*');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save template'; }
   }
-
-  const [frontUrl, backUrl] = await Promise.all([
-    tbState.front.file ? uploadTemplateImage(tbState.front.file, 'front') : Promise.resolve(tbState.front.imageUrl),
-    tbState.back.file  ? uploadTemplateImage(tbState.back.file,  'back')  : Promise.resolve(tbState.back.imageUrl),
-  ]);
-
-  if (frontUrl) tbState.front.imageUrl = frontUrl;
-  if (backUrl)  tbState.back.imageUrl  = backUrl;
-  tbState.front.file = null;
-  tbState.back.file  = null;
-
-  // Persist into the product modal's pending template state
-  window._pendingTemplate = {
-    templateFront: { imageUrl: tbState.front.imageUrl || '', width: TB_CANVAS_W, height: TB_CANVAS_H },
-    templateBack:  tbState.back.imageUrl ? { imageUrl: tbState.back.imageUrl, width: TB_CANVAS_W, height: TB_CANVAS_H } : null,
-    templateFields: tbState.fields.map(f => ({ ...f })),
-    canvasSize: { width: TB_CANVAS_W, height: TB_CANVAS_H },
-  };
-
-  // Update status in product modal
-  const fieldCount = tbState.fields.length;
-  const hasBack    = !!tbState.back.imageUrl;
-  document.getElementById('prod-template-status').textContent =
-    `${fieldCount} field${fieldCount !== 1 ? 's' : ''} · Front${hasBack ? ' + Back' : ' only'}`;
-
-  document.getElementById('modal-template-builder').style.display = 'none';
-  tbDeselectField();
-  toast('Template saved — remember to save the product too.', 'success');
 };
 
 // ── SIDE TOGGLE ───────────────────────────────────────────────────────────────
@@ -5163,6 +5184,7 @@ window.openNewProductModal = () => {
   document.getElementById('prod-template-section').classList.add('hidden');
   document.getElementById('prod-template-status').textContent = 'No template configured yet';
   window._pendingTemplate = null;
+  window._pendingProductId = null;
   tbState.fields = []; tbState.front = { imageUrl:null, imageDataUrl:null, file:null }; tbState.back = { imageUrl:null, imageDataUrl:null, file:null };
   document.getElementById('prod-location-specific').checked = false;
   document.getElementById('prod-location-picker').classList.add('hidden');
@@ -5395,7 +5417,8 @@ window.saveProduct = async () => {
       if (!res.ok) throw new Error('Image upload failed');
       imageUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(path)}?alt=media`;
     }
-    const productId = editingProductId || genId();
+    const productId = editingProductId || window._pendingProductId || genId();
+    window._pendingProductId = null; // consumed
     const templateData = (productType === 'customizable' && window._pendingTemplate) ? window._pendingTemplate : {};
     await fbSet(`storefronts/${activeSF.id}/products/${productId}`, {
       name, description:desc, size, minQty, maxQty, sortOrder:sortOrd, active,
