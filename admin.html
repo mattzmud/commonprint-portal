@@ -1168,6 +1168,13 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div class="field" style="grid-column:1/-1">
+        <label>Product type</label>
+        <select id="prod-type" onchange="toggleProductType()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:#fff;color:var(--body)">
+          <option value="standard">Standard</option>
+          <option value="customizable">Customizable Item</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column:1/-1">
         <label>Product name</label>
         <input type="text" id="prod-name" placeholder="e.g. 2×2 Passionist Crest Sticker">
       </div>
@@ -1239,6 +1246,15 @@
       <label>Visible only for these locations</label>
       <div id="prod-location-list" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:10px"></div>
       <div style="font-size:12px;color:var(--mid-gray);margin-top:6px">If no locations are checked, this product won't appear for anyone.</div>
+    </div>
+    <div id="prod-template-section" class="hidden" style="margin-top:14px;padding:14px;background:var(--linen);border-radius:var(--radius);border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--charcoal)">Customization Template</div>
+          <div id="prod-template-status" style="font-size:12px;color:var(--mid-gray);margin-top:2px">No template configured yet</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openTemplateBuilder()">🎨 Set up template →</button>
+      </div>
     </div>
     <div class="form-error hidden" id="prod-error"></div>
     <div class="modal-footer">
@@ -4350,7 +4366,144 @@ window.printQuote = () => {
       ${sigSrc ? `<img class="sig-img" src="${sigSrc}" alt="Signature">` : ''}
       <div class="signed-by">${signedBy}</div>
     </div>
-  </body></html>`);
+  
+<!-- ── TEMPLATE BUILDER MODAL ──────────────────────────────────────────────── -->
+<div id="modal-template-builder" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(30,28,26,0.7);align-items:stretch;justify-content:stretch">
+  <div style="background:#fff;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="font-size:16px;font-weight:600;color:var(--charcoal)">Template Builder</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="closeTemplateBuilder()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveTemplateBuilder()">Save template</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="display:flex;flex:1;overflow:hidden">
+
+      <!-- Left: Canvas panel -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px;gap:14px;background:var(--linen)">
+
+        <!-- Side toggle + upload row -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <button id="tb-front-btn" class="btn btn-primary btn-sm" style="border-radius:0" onclick="tbSetSide('front')">Front</button>
+            <button id="tb-back-btn" class="btn btn-ghost btn-sm" style="border-radius:0" onclick="tbSetSide('back')">Back</button>
+          </div>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">
+            📁 Upload template PNG
+            <input type="file" id="tb-upload-input" accept="image/png" style="display:none" onchange="tbHandleUpload(this)">
+          </label>
+          <span style="font-size:12px;color:var(--mid-gray)" id="tb-upload-hint">Click on the canvas to place a field after uploading</span>
+        </div>
+
+        <!-- Canvas wrapper -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto">
+          <div id="tb-canvas-wrapper" style="position:relative;display:inline-block;border:2px dashed var(--border);border-radius:8px;background:#f0f0f0;cursor:crosshair;min-width:200px;min-height:120px">
+            <canvas id="tb-canvas" width="1050" height="600" style="display:block;max-width:100%;max-height:60vh"></canvas>
+            <div id="tb-no-template" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--mid-gray);pointer-events:none">Upload a template PNG to get started</div>
+            <!-- Field handles rendered here by JS -->
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:var(--mid-gray);text-align:center">Canvas: 1050 × 600px · Click to place field · Drag to reposition</div>
+      </div>
+
+      <!-- Right: Fields panel -->
+      <div style="width:320px;display:flex;flex-direction:column;border-left:1px solid var(--border);overflow:hidden">
+
+        <!-- Font loader -->
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Additional Google Font</div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="tb-extra-font" placeholder="e.g. Cormorant Garamond" style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            <button class="btn btn-ghost btn-sm" onclick="tbLoadExtraFont()">Load</button>
+          </div>
+          <div id="tb-extra-font-status" style="font-size:12px;color:var(--green);margin-top:4px;display:none"></div>
+        </div>
+
+        <!-- Field list -->
+        <div style="flex:1;overflow-y:auto;padding:14px 16px">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Fields <span id="tb-field-count" style="font-weight:400">(0)</span></div>
+          <div id="tb-field-list">
+            <div style="font-size:13px;color:var(--mid-gray);text-align:center;padding:20px 0">No fields yet — click on the canvas to add one</div>
+          </div>
+        </div>
+
+        <!-- Field editor (shown when a field is selected) -->
+        <div id="tb-field-editor" class="hidden" style="border-top:1px solid var(--border);padding:14px 16px;flex-shrink:0;background:var(--linen)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:var(--charcoal)" id="tb-editor-title">Edit field</div>
+            <button onclick="tbDeselectField()" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:18px;line-height:1">×</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Field name</div>
+              <input type="text" id="tb-field-name" placeholder="e.g. Full Name" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Placeholder text</div>
+              <input type="text" id="tb-field-placeholder" placeholder="e.g. John Smith" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Font</div>
+                <select id="tb-field-font" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="Arial">Arial</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Nunito">Nunito</option>
+                  <option value="Lato">Lato</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Playfair Display">Playfair Display</option>
+                  <option value="Raleway">Raleway</option>
+                  <option value="Open Sans">Open Sans</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Size (px)</div>
+                <input type="number" id="tb-field-size" value="24" min="8" max="120" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;outline:none">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Weight</div>
+                <select id="tb-field-weight" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="normal">Normal</option>
+                  <option value="bold">Bold</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Style</div>
+                <select id="tb-field-style" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="normal">Normal</option>
+                  <option value="italic">Italic</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Align</div>
+                <select id="tb-field-align" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Color</div>
+              <input type="color" id="tb-field-color" value="#000000" oninput="tbUpdateField()" style="width:100%;height:32px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            </div>
+            <button class="btn btn-danger btn-sm" style="width:100%" onclick="tbDeleteField()">Delete field</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>`);
   win.document.close();
   setTimeout(() => win.print(), 500);
 };
@@ -4395,7 +4548,16 @@ window.resendInvite = async (uid) => {
 // ── MODALS ────────────────────────────────────
 window.openModal  = (id) => document.getElementById(id).classList.add('open');
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => {
+  if (e.target !== o) return;
+  if (o.id === 'modal-product') {
+    if (confirm('Are you sure you want to close? Any unsaved changes will be lost.')) {
+      o.classList.remove('open');
+    }
+  } else {
+    o.classList.remove('open');
+  }
+}));
 
 // ── UTILS ─────────────────────────────────────
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -4527,11 +4689,13 @@ function renderSFProducts() {
 
   const filterVal = document.getElementById('sf-products-location-filter')?.value || '';
   let list = activeSFProducts;
+  console.log('[renderSFProducts] filterVal:', filterVal, 'products:', list.map(p => ({ name: p.name, locationSpecific: p.locationSpecific, locationIds: p.locationIds })));
   if (filterVal === '__location_specific__') {
     list = list.filter(p => p.locationSpecific && (p.locationIds||[]).length > 0);
   } else if (filterVal) {
     list = list.filter(p => p.locationSpecific && (p.locationIds||[]).includes(filterVal));
   }
+  console.log('[renderSFProducts] filtered count:', list.length);
 
   if (list.length === 0) {
     grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><div class="empty-title">No products${filterVal ? ' match this filter' : ' yet'}</div><div class="empty-sub">${filterVal ? 'Try a different location filter.' : 'Add your first product to this storefront.'}</div></div>`;
@@ -4578,6 +4742,407 @@ function renderProductLocationCheckboxes(selectedIds = []) {
     </label>`).join('');
 }
 
+// ── PRODUCT TYPE TOGGLE ──────────────────────────────────────────────────────
+
+window.toggleProductType = () => {
+  const type = document.getElementById('prod-type').value;
+  document.getElementById('prod-template-section').classList.toggle('hidden', type !== 'customizable');
+};
+
+// ── TEMPLATE BUILDER STATE ────────────────────────────────────────────────────
+
+let tbState = {
+  side: 'front',
+  front: { imageUrl: null, imageDataUrl: null, file: null },
+  back:  { imageUrl: null, imageDataUrl: null, file: null },
+  fields: [],          // { id, name, placeholder, side, xPct, yPct, font, fontSize, fontWeight, fontStyle, color, align }
+  selectedFieldId: null,
+  canvasScale: 1,      // displayed canvas size / 1050
+  loadedFonts: new Set(['Arial','Helvetica','Georgia']),
+};
+
+const TB_CANVAS_W = 1050;
+const TB_CANVAS_H = 600;
+const TB_GOOGLE_FONTS = ['Nunito','Lato','Montserrat','Playfair Display','Raleway','Open Sans'];
+
+// Load Google Fonts on init
+TB_GOOGLE_FONTS.forEach(font => {
+  const link = document.createElement('link');
+  link.rel  = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@400;700&display=swap`;
+  document.head.appendChild(link);
+  tbState.loadedFonts.add(font);
+});
+
+// ── OPEN / CLOSE ──────────────────────────────────────────────────────────────
+
+window.openTemplateBuilder = () => {
+  const modal = document.getElementById('modal-template-builder');
+  modal.style.display = 'flex';
+  tbSetSide('front');
+  tbRenderFieldList();
+  tbRedrawCanvas();
+  tbSetupCanvasListeners();
+};
+
+window.closeTemplateBuilder = () => {
+  if (confirm('Close template builder? Unsaved template changes will be lost.')) {
+    document.getElementById('modal-template-builder').style.display = 'none';
+    tbDeselectField();
+  }
+};
+
+window.saveTemplateBuilder = async () => {
+  // Validate
+  if (!tbState.front.imageDataUrl && !tbState.front.imageUrl) {
+    alert('Please upload a front template image before saving.');
+    return;
+  }
+
+  // Upload any new image files to Firebase Storage
+  const token = await getToken();
+  const bucket = firebaseConfig.storageBucket;
+  const prodId  = editingProductId || '_preview';
+
+  async function uploadTemplateImage(file, side) {
+    if (!file) return null;
+    const ext  = file.name.split('.').pop().toLowerCase();
+    const path = `storefronts/${activeSF.id}/templates/${prodId}-${side}.${ext}`;
+    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': file.type },
+      body: file,
+    });
+    if (!res.ok) throw new Error(`Failed to upload ${side} template`);
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
+  }
+
+  const [frontUrl, backUrl] = await Promise.all([
+    tbState.front.file ? uploadTemplateImage(tbState.front.file, 'front') : Promise.resolve(tbState.front.imageUrl),
+    tbState.back.file  ? uploadTemplateImage(tbState.back.file,  'back')  : Promise.resolve(tbState.back.imageUrl),
+  ]);
+
+  if (frontUrl) tbState.front.imageUrl = frontUrl;
+  if (backUrl)  tbState.back.imageUrl  = backUrl;
+  tbState.front.file = null;
+  tbState.back.file  = null;
+
+  // Persist into the product modal's pending template state
+  window._pendingTemplate = {
+    templateFront: { imageUrl: tbState.front.imageUrl || '', width: TB_CANVAS_W, height: TB_CANVAS_H },
+    templateBack:  tbState.back.imageUrl ? { imageUrl: tbState.back.imageUrl, width: TB_CANVAS_W, height: TB_CANVAS_H } : null,
+    templateFields: tbState.fields.map(f => ({ ...f })),
+    canvasSize: { width: TB_CANVAS_W, height: TB_CANVAS_H },
+  };
+
+  // Update status in product modal
+  const fieldCount = tbState.fields.length;
+  const hasBack    = !!tbState.back.imageUrl;
+  document.getElementById('prod-template-status').textContent =
+    `${fieldCount} field${fieldCount !== 1 ? 's' : ''} · Front${hasBack ? ' + Back' : ' only'}`;
+
+  document.getElementById('modal-template-builder').style.display = 'none';
+  tbDeselectField();
+  toast('Template saved — remember to save the product too.', 'success');
+};
+
+// ── SIDE TOGGLE ───────────────────────────────────────────────────────────────
+
+window.tbSetSide = (side) => {
+  tbState.side = side;
+  document.getElementById('tb-front-btn').className = side === 'front' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  document.getElementById('tb-back-btn').className  = side === 'back'  ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  document.getElementById('tb-upload-hint').textContent = side === 'back'
+    ? 'Back template is static — no customer fields'
+    : 'Click on the canvas to place a field after uploading';
+  tbDeselectField();
+  tbRedrawCanvas();
+  tbRenderHandles();
+};
+
+// ── UPLOAD ────────────────────────────────────────────────────────────────────
+
+window.tbHandleUpload = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    tbState[tbState.side].imageDataUrl = e.target.result;
+    tbState[tbState.side].file        = file;
+    document.getElementById('tb-no-template').style.display = 'none';
+    tbRedrawCanvas();
+    tbRenderHandles();
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+};
+
+// ── CANVAS DRAW ───────────────────────────────────────────────────────────────
+
+function tbRedrawCanvas() {
+  const canvas = document.getElementById('tb-canvas');
+  const ctx    = canvas.getContext('2d');
+  ctx.clearRect(0, 0, TB_CANVAS_W, TB_CANVAS_H);
+
+  const dataUrl = tbState[tbState.side].imageDataUrl || tbState[tbState.side].imageUrl;
+  if (!dataUrl) {
+    document.getElementById('tb-no-template').style.display = 'flex';
+    return;
+  }
+  document.getElementById('tb-no-template').style.display = 'none';
+
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, TB_CANVAS_W, TB_CANVAS_H);
+    // Draw field placeholders
+    tbState.fields.filter(f => f.side === tbState.side).forEach(f => {
+      const x = f.xPct * TB_CANVAS_W;
+      const y = f.yPct * TB_CANVAS_H;
+      ctx.save();
+      ctx.font = `${f.fontStyle} ${f.fontWeight} ${f.fontSize}px "${f.font}"`;
+      ctx.fillStyle = f.color;
+      ctx.textAlign  = f.align;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(f.placeholder || f.name, x, y);
+      // Highlight if selected
+      if (f.id === tbState.selectedFieldId) {
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth   = 2;
+        const metrics = ctx.measureText(f.placeholder || f.name);
+        const tw = metrics.width;
+        const th = f.fontSize;
+        const ox = f.align === 'center' ? -tw/2 : f.align === 'right' ? -tw : 0;
+        ctx.strokeRect(x + ox - 4, y - th/2 - 4, tw + 8, th + 8);
+      }
+      ctx.restore();
+    });
+  };
+  img.src = dataUrl;
+}
+
+// ── CANVAS CLICK & DRAG ───────────────────────────────────────────────────────
+
+let tbDragging = null;
+
+function tbSetupCanvasListeners() {
+  const wrapper = document.getElementById('tb-canvas-wrapper');
+  const canvas  = document.getElementById('tb-canvas');
+  if (wrapper._tbListenersSet) return;
+  wrapper._tbListenersSet = true;
+
+  function getCanvasPct(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = TB_CANVAS_W / rect.width;
+    const scaleY = TB_CANVAS_H / rect.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      xPct: Math.max(0, Math.min(1, (clientX - rect.left) * scaleX / TB_CANVAS_W)),
+      yPct: Math.max(0, Math.min(1, (clientY - rect.top)  * scaleY / TB_CANVAS_H)),
+    };
+  }
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (tbState.side === 'back') return; // no fields on back
+    const { xPct, yPct } = getCanvasPct(e);
+
+    // Check if clicking near an existing field handle
+    const hit = tbState.fields.filter(f => f.side === 'front').find(f => {
+      return Math.abs(f.xPct - xPct) < 0.05 && Math.abs(f.yPct - yPct) < 0.05;
+    });
+
+    if (hit) {
+      tbState.selectedFieldId = hit.id;
+      tbDragging = hit.id;
+      tbShowFieldEditor(hit.id);
+      tbRedrawCanvas();
+      tbRenderHandles();
+    } else {
+      // Place new field
+      const id = 'f' + Date.now().toString(36);
+      const field = {
+        id, name: 'New Field', placeholder: '', side: 'front',
+        xPct, yPct,
+        font: 'Nunito', fontSize: 24, fontWeight: 'normal',
+        fontStyle: 'normal', color: '#000000', align: 'left',
+      };
+      tbState.fields.push(field);
+      tbState.selectedFieldId = id;
+      tbShowFieldEditor(id);
+      tbRenderFieldList();
+      tbRedrawCanvas();
+      tbRenderHandles();
+    }
+    e.preventDefault();
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!tbDragging) return;
+    const { xPct, yPct } = getCanvasPct(e);
+    const field = tbState.fields.find(f => f.id === tbDragging);
+    if (field) { field.xPct = xPct; field.yPct = yPct; tbRedrawCanvas(); tbRenderHandles(); }
+  });
+
+  canvas.addEventListener('mouseup', () => { tbDragging = null; });
+  canvas.addEventListener('mouseleave', () => { tbDragging = null; });
+}
+
+// ── FIELD HANDLES (DOM overlays on canvas) ───────────────────────────────────
+
+function tbRenderHandles() {
+  const wrapper = document.getElementById('tb-canvas-wrapper');
+  const canvas  = document.getElementById('tb-canvas');
+  // Remove existing handles
+  wrapper.querySelectorAll('.tb-handle').forEach(h => h.remove());
+  if (tbState.side === 'back') return;
+
+  const rect = canvas.getBoundingClientRect();
+  const wRect = wrapper.getBoundingClientRect();
+
+  tbState.fields.filter(f => f.side === 'front').forEach(f => {
+    const handle = document.createElement('div');
+    handle.className = 'tb-handle';
+    handle.title = f.name;
+    const px = (f.xPct * rect.width)  + (rect.left - wRect.left);
+    const py = (f.yPct * rect.height) + (rect.top  - wRect.top);
+    handle.style.cssText = `position:absolute;left:${px}px;top:${py}px;transform:translate(-50%,-50%);
+      width:12px;height:12px;border-radius:50%;border:2px solid ${f.id === tbState.selectedFieldId ? '#4CAF50' : '#7C3AED'};
+      background:${f.id === tbState.selectedFieldId ? '#4CAF50' : 'rgba(124,58,237,0.3)'};
+      cursor:move;pointer-events:none;z-index:10`;
+    wrapper.appendChild(handle);
+  });
+}
+
+// ── FIELD LIST ────────────────────────────────────────────────────────────────
+
+function tbRenderFieldList() {
+  const list  = document.getElementById('tb-field-list');
+  const count = document.getElementById('tb-field-count');
+  const front = tbState.fields.filter(f => f.side === 'front');
+  count.textContent = `(${front.length})`;
+
+  if (front.length === 0) {
+    list.innerHTML = `<div style="font-size:13px;color:var(--mid-gray);text-align:center;padding:20px 0">No fields yet — click on the canvas to add one</div>`;
+    return;
+  }
+
+  list.innerHTML = front.map(f => `
+    <div onclick="tbSelectField('${f.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px;background:${f.id === tbState.selectedFieldId ? 'var(--green-pale)' : 'var(--linen)'};border:1px solid ${f.id === tbState.selectedFieldId ? 'var(--green)' : 'transparent'}">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--charcoal)">${esc(f.name)}</div>
+        <div style="font-size:11px;color:var(--mid-gray)">${esc(f.font)} ${f.fontSize}px · ${f.fontWeight} · ${f.align}</div>
+      </div>
+      <div style="width:14px;height:14px;border-radius:50%;background:${f.color};border:1px solid var(--border);flex-shrink:0"></div>
+    </div>`).join('');
+}
+
+// ── FIELD EDITOR ──────────────────────────────────────────────────────────────
+
+window.tbSelectField = (id) => {
+  tbState.selectedFieldId = id;
+  tbShowFieldEditor(id);
+  tbRedrawCanvas();
+  tbRenderHandles();
+  tbRenderFieldList();
+};
+
+function tbShowFieldEditor(id) {
+  const f = tbState.fields.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('tb-field-editor').classList.remove('hidden');
+  document.getElementById('tb-editor-title').textContent = `Edit: ${f.name}`;
+  document.getElementById('tb-field-name').value        = f.name;
+  document.getElementById('tb-field-placeholder').value = f.placeholder || '';
+  document.getElementById('tb-field-font').value        = f.font;
+  document.getElementById('tb-field-size').value        = f.fontSize;
+  document.getElementById('tb-field-weight').value      = f.fontWeight;
+  document.getElementById('tb-field-style').value       = f.fontStyle;
+  document.getElementById('tb-field-align').value       = f.align;
+  document.getElementById('tb-field-color').value       = f.color;
+}
+
+window.tbUpdateField = () => {
+  const f = tbState.fields.find(x => x.id === tbState.selectedFieldId);
+  if (!f) return;
+  f.name        = document.getElementById('tb-field-name').value;
+  f.placeholder = document.getElementById('tb-field-placeholder').value;
+  f.font        = document.getElementById('tb-field-font').value;
+  f.fontSize    = parseInt(document.getElementById('tb-field-size').value) || 24;
+  f.fontWeight  = document.getElementById('tb-field-weight').value;
+  f.fontStyle   = document.getElementById('tb-field-style').value;
+  f.align       = document.getElementById('tb-field-align').value;
+  f.color       = document.getElementById('tb-field-color').value;
+  document.getElementById('tb-editor-title').textContent = `Edit: ${f.name}`;
+  tbRedrawCanvas();
+  tbRenderFieldList();
+};
+
+window.tbDeselectField = () => {
+  tbState.selectedFieldId = null;
+  document.getElementById('tb-field-editor').classList.add('hidden');
+  tbRedrawCanvas();
+  tbRenderHandles();
+  tbRenderFieldList();
+};
+
+window.tbDeleteField = () => {
+  const id = tbState.selectedFieldId;
+  if (!id) return;
+  tbState.fields = tbState.fields.filter(f => f.id !== id);
+  tbDeselectField();
+  tbRenderFieldList();
+};
+
+// ── EXTRA FONT LOADER ─────────────────────────────────────────────────────────
+
+window.tbLoadExtraFont = () => {
+  const name   = document.getElementById('tb-extra-font').value.trim();
+  const status = document.getElementById('tb-extra-font-status');
+  if (!name) return;
+  if (tbState.loadedFonts.has(name)) {
+    status.textContent = `"${name}" is already loaded.`;
+    status.style.display = 'block';
+    return;
+  }
+  const link = document.createElement('link');
+  link.rel  = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name)}:wght@400;700&display=swap`;
+  link.onload = () => {
+    tbState.loadedFonts.add(name);
+    // Add to font select
+    const sel = document.getElementById('tb-field-font');
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+    status.textContent = `"${name}" loaded!`;
+    status.style.color = 'var(--green)';
+    status.style.display = 'block';
+  };
+  link.onerror = () => {
+    status.textContent = `Could not load "${name}" — check the spelling.`;
+    status.style.color = 'var(--red)';
+    status.style.display = 'block';
+  };
+  document.head.appendChild(link);
+};
+
+// ── POPULATE TEMPLATE STATE when opening edit modal ───────────────────────────
+
+function populateTemplateState(p) {
+  window._pendingTemplate = null;
+  tbState.fields = p.templateFields ? p.templateFields.map(f => ({ ...f })) : [];
+  tbState.front  = { imageUrl: p.templateFront?.imageUrl || null, imageDataUrl: null, file: null };
+  tbState.back   = { imageUrl: p.templateBack?.imageUrl  || null, imageDataUrl: null, file: null };
+  tbState.side   = 'front';
+
+  const fieldCount = tbState.fields.filter(f => f.side === 'front').length;
+  const hasBack    = !!tbState.back.imageUrl;
+  document.getElementById('prod-template-status').textContent = p.templateFront?.imageUrl
+    ? `${fieldCount} field${fieldCount !== 1 ? 's' : ''} · Front${hasBack ? ' + Back' : ' only'}`
+    : 'No template configured yet';
+}
+
 window.toggleProductLocationPicker = () => {
   const checked = document.getElementById('prod-location-specific').checked;
   document.getElementById('prod-location-picker').classList.toggle('hidden', !checked);
@@ -4594,6 +5159,11 @@ window.openNewProductModal = () => {
   document.getElementById('prod-max-qty').value  = '0';
   document.getElementById('prod-sort').value     = String(activeSFProducts.length+1);
   document.getElementById('prod-active').checked = true;
+  document.getElementById('prod-type').value = 'standard';
+  document.getElementById('prod-template-section').classList.add('hidden');
+  document.getElementById('prod-template-status').textContent = 'No template configured yet';
+  window._pendingTemplate = null;
+  tbState.fields = []; tbState.front = { imageUrl:null, imageDataUrl:null, file:null }; tbState.back = { imageUrl:null, imageDataUrl:null, file:null };
   document.getElementById('prod-location-specific').checked = false;
   document.getElementById('prod-location-picker').classList.add('hidden');
   renderProductLocationCheckboxes();
@@ -4616,6 +5186,11 @@ window.openEditProductModal = (productId) => {
   document.getElementById('prod-max-qty').value = p.maxQty||0;
   document.getElementById('prod-sort').value    = p.sortOrder||1;
   document.getElementById('prod-active').checked= p.active!==false;
+  const pType = p.productType || 'standard';
+  document.getElementById('prod-type').value = pType;
+  document.getElementById('prod-template-section').classList.toggle('hidden', pType !== 'customizable');
+  window._pendingTemplate = null;
+  populateTemplateState(p);
   document.getElementById('prod-location-specific').checked = !!p.locationSpecific;
   document.getElementById('prod-location-picker').classList.toggle('hidden', !p.locationSpecific);
   renderProductLocationCheckboxes(p.locationIds || []);
@@ -4797,6 +5372,7 @@ window.saveProduct = async () => {
   const maxQty = parseInt(document.getElementById('prod-max-qty').value)||0;
   const sortOrd= parseInt(document.getElementById('prod-sort').value)||1;
   const active = document.getElementById('prod-active').checked;
+  const productType      = document.getElementById('prod-type').value;
   const locationSpecific = document.getElementById('prod-location-specific').checked;
   const locationIds = locationSpecific
     ? [...document.querySelectorAll('.prod-loc-checkbox:checked')].map(cb => cb.value)
@@ -4820,8 +5396,11 @@ window.saveProduct = async () => {
       imageUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${encodeURIComponent(path)}?alt=media`;
     }
     const productId = editingProductId || genId();
+    const templateData = (productType === 'customizable' && window._pendingTemplate) ? window._pendingTemplate : {};
     await fbSet(`storefronts/${activeSF.id}/products/${productId}`, {
       name, description:desc, size, minQty, maxQty, sortOrder:sortOrd, active,
+      productType,
+      ...templateData,
       locationSpecific, locationIds,
       pricingTiers: pricingTiers.sort((a,b)=>a.minQty-b.minQty),
       ...(imageUrl?{imageUrl}:{}),
@@ -5550,6 +6129,143 @@ window.printPackingSlip = () => {
   <div class="footer">
     Thank you for your order! &nbsp;Questions? orders@commonprintco.com
   </div>
+
+<!-- ── TEMPLATE BUILDER MODAL ──────────────────────────────────────────────── -->
+<div id="modal-template-builder" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(30,28,26,0.7);align-items:stretch;justify-content:stretch">
+  <div style="background:#fff;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="font-size:16px;font-weight:600;color:var(--charcoal)">Template Builder</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="closeTemplateBuilder()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveTemplateBuilder()">Save template</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="display:flex;flex:1;overflow:hidden">
+
+      <!-- Left: Canvas panel -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px;gap:14px;background:var(--linen)">
+
+        <!-- Side toggle + upload row -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <button id="tb-front-btn" class="btn btn-primary btn-sm" style="border-radius:0" onclick="tbSetSide('front')">Front</button>
+            <button id="tb-back-btn" class="btn btn-ghost btn-sm" style="border-radius:0" onclick="tbSetSide('back')">Back</button>
+          </div>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">
+            📁 Upload template PNG
+            <input type="file" id="tb-upload-input" accept="image/png" style="display:none" onchange="tbHandleUpload(this)">
+          </label>
+          <span style="font-size:12px;color:var(--mid-gray)" id="tb-upload-hint">Click on the canvas to place a field after uploading</span>
+        </div>
+
+        <!-- Canvas wrapper -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto">
+          <div id="tb-canvas-wrapper" style="position:relative;display:inline-block;border:2px dashed var(--border);border-radius:8px;background:#f0f0f0;cursor:crosshair;min-width:200px;min-height:120px">
+            <canvas id="tb-canvas" width="1050" height="600" style="display:block;max-width:100%;max-height:60vh"></canvas>
+            <div id="tb-no-template" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--mid-gray);pointer-events:none">Upload a template PNG to get started</div>
+            <!-- Field handles rendered here by JS -->
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:var(--mid-gray);text-align:center">Canvas: 1050 × 600px · Click to place field · Drag to reposition</div>
+      </div>
+
+      <!-- Right: Fields panel -->
+      <div style="width:320px;display:flex;flex-direction:column;border-left:1px solid var(--border);overflow:hidden">
+
+        <!-- Font loader -->
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Additional Google Font</div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="tb-extra-font" placeholder="e.g. Cormorant Garamond" style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            <button class="btn btn-ghost btn-sm" onclick="tbLoadExtraFont()">Load</button>
+          </div>
+          <div id="tb-extra-font-status" style="font-size:12px;color:var(--green);margin-top:4px;display:none"></div>
+        </div>
+
+        <!-- Field list -->
+        <div style="flex:1;overflow-y:auto;padding:14px 16px">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Fields <span id="tb-field-count" style="font-weight:400">(0)</span></div>
+          <div id="tb-field-list">
+            <div style="font-size:13px;color:var(--mid-gray);text-align:center;padding:20px 0">No fields yet — click on the canvas to add one</div>
+          </div>
+        </div>
+
+        <!-- Field editor (shown when a field is selected) -->
+        <div id="tb-field-editor" class="hidden" style="border-top:1px solid var(--border);padding:14px 16px;flex-shrink:0;background:var(--linen)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:var(--charcoal)" id="tb-editor-title">Edit field</div>
+            <button onclick="tbDeselectField()" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:18px;line-height:1">×</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Field name</div>
+              <input type="text" id="tb-field-name" placeholder="e.g. Full Name" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Placeholder text</div>
+              <input type="text" id="tb-field-placeholder" placeholder="e.g. John Smith" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Font</div>
+                <select id="tb-field-font" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="Arial">Arial</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Nunito">Nunito</option>
+                  <option value="Lato">Lato</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Playfair Display">Playfair Display</option>
+                  <option value="Raleway">Raleway</option>
+                  <option value="Open Sans">Open Sans</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Size (px)</div>
+                <input type="number" id="tb-field-size" value="24" min="8" max="120" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;outline:none">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Weight</div>
+                <select id="tb-field-weight" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="normal">Normal</option>
+                  <option value="bold">Bold</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Style</div>
+                <select id="tb-field-style" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="normal">Normal</option>
+                  <option value="italic">Italic</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Align</div>
+                <select id="tb-field-align" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Color</div>
+              <input type="color" id="tb-field-color" value="#000000" oninput="tbUpdateField()" style="width:100%;height:32px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            </div>
+            <button class="btn btn-danger btn-sm" style="width:100%" onclick="tbDeleteField()">Delete field</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>`;
 
@@ -6263,5 +6979,142 @@ document.addEventListener('keydown', e => {
     </div>
   </div>
 
+
+<!-- ── TEMPLATE BUILDER MODAL ──────────────────────────────────────────────── -->
+<div id="modal-template-builder" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(30,28,26,0.7);align-items:stretch;justify-content:stretch">
+  <div style="background:#fff;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="font-size:16px;font-weight:600;color:var(--charcoal)">Template Builder</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="closeTemplateBuilder()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveTemplateBuilder()">Save template</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="display:flex;flex:1;overflow:hidden">
+
+      <!-- Left: Canvas panel -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:20px;gap:14px;background:var(--linen)">
+
+        <!-- Side toggle + upload row -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <button id="tb-front-btn" class="btn btn-primary btn-sm" style="border-radius:0" onclick="tbSetSide('front')">Front</button>
+            <button id="tb-back-btn" class="btn btn-ghost btn-sm" style="border-radius:0" onclick="tbSetSide('back')">Back</button>
+          </div>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">
+            📁 Upload template PNG
+            <input type="file" id="tb-upload-input" accept="image/png" style="display:none" onchange="tbHandleUpload(this)">
+          </label>
+          <span style="font-size:12px;color:var(--mid-gray)" id="tb-upload-hint">Click on the canvas to place a field after uploading</span>
+        </div>
+
+        <!-- Canvas wrapper -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto">
+          <div id="tb-canvas-wrapper" style="position:relative;display:inline-block;border:2px dashed var(--border);border-radius:8px;background:#f0f0f0;cursor:crosshair;min-width:200px;min-height:120px">
+            <canvas id="tb-canvas" width="1050" height="600" style="display:block;max-width:100%;max-height:60vh"></canvas>
+            <div id="tb-no-template" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--mid-gray);pointer-events:none">Upload a template PNG to get started</div>
+            <!-- Field handles rendered here by JS -->
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:var(--mid-gray);text-align:center">Canvas: 1050 × 600px · Click to place field · Drag to reposition</div>
+      </div>
+
+      <!-- Right: Fields panel -->
+      <div style="width:320px;display:flex;flex-direction:column;border-left:1px solid var(--border);overflow:hidden">
+
+        <!-- Font loader -->
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Additional Google Font</div>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="tb-extra-font" placeholder="e.g. Cormorant Garamond" style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            <button class="btn btn-ghost btn-sm" onclick="tbLoadExtraFont()">Load</button>
+          </div>
+          <div id="tb-extra-font-status" style="font-size:12px;color:var(--green);margin-top:4px;display:none"></div>
+        </div>
+
+        <!-- Field list -->
+        <div style="flex:1;overflow-y:auto;padding:14px 16px">
+          <div style="font-size:11px;font-weight:600;color:var(--mid-gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Fields <span id="tb-field-count" style="font-weight:400">(0)</span></div>
+          <div id="tb-field-list">
+            <div style="font-size:13px;color:var(--mid-gray);text-align:center;padding:20px 0">No fields yet — click on the canvas to add one</div>
+          </div>
+        </div>
+
+        <!-- Field editor (shown when a field is selected) -->
+        <div id="tb-field-editor" class="hidden" style="border-top:1px solid var(--border);padding:14px 16px;flex-shrink:0;background:var(--linen)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600;color:var(--charcoal)" id="tb-editor-title">Edit field</div>
+            <button onclick="tbDeselectField()" style="background:none;border:none;cursor:pointer;color:var(--mid-gray);font-size:18px;line-height:1">×</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Field name</div>
+              <input type="text" id="tb-field-name" placeholder="e.g. Full Name" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Placeholder text</div>
+              <input type="text" id="tb-field-placeholder" placeholder="e.g. John Smith" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;outline:none">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Font</div>
+                <select id="tb-field-font" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="Arial">Arial</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Nunito">Nunito</option>
+                  <option value="Lato">Lato</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Playfair Display">Playfair Display</option>
+                  <option value="Raleway">Raleway</option>
+                  <option value="Open Sans">Open Sans</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Size (px)</div>
+                <input type="number" id="tb-field-size" value="24" min="8" max="120" oninput="tbUpdateField()" style="width:100%;font-size:13px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;outline:none">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Weight</div>
+                <select id="tb-field-weight" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="normal">Normal</option>
+                  <option value="bold">Bold</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Style</div>
+                <select id="tb-field-style" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="normal">Normal</option>
+                  <option value="italic">Italic</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Align</div>
+                <select id="tb-field-align" onchange="tbUpdateField()" style="width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--mid-gray);margin-bottom:4px">Color</div>
+              <input type="color" id="tb-field-color" value="#000000" oninput="tbUpdateField()" style="width:100%;height:32px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+            </div>
+            <button class="btn btn-danger btn-sm" style="width:100%" onclick="tbDeleteField()">Delete field</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
