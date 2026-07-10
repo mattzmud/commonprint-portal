@@ -998,12 +998,18 @@
     customTier   = tiers[idx];
     customQtyVal = customTier.minQty;
     document.getElementById('custom-custom-qty-wrap').style.display = 'none';
+    // Mark selected within the custom tier options container only
+    document.querySelectorAll('#custom-tier-options .tier-option').forEach((el, i) => {
+      el.classList.toggle('selected', i === idx);
+    });
     enableCustomCart(activeProduct);
   };
 
   window.customSelectCustom = () => {
     customTier   = null;
     customQtyVal = activeProduct.minQty || 1;
+    const opts = document.querySelectorAll('#custom-tier-options .tier-option');
+    opts.forEach((el, i) => el.classList.toggle('selected', i === opts.length - 1));
     document.getElementById('custom-custom-qty-wrap').style.display = 'block';
     document.getElementById('custom-qty-num').value = customQtyVal;
     updateCustomPriceDisplay();
