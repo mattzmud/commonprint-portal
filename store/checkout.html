@@ -739,12 +739,15 @@
       const { subtotal, shippingFee, total, discountAmount, discountedSubtotal } = renderSummary();
 
       const lineItems = cart.map(i => ({
-        productId:   i.productId,
-        productName: i.productName,
-        imageUrl:    i.imageUrl || null,
-        qty:         i.qty,
-        unitPrice:   i.unitPrice,
-        lineTotal:   i.lineTotal,
+        productId:    i.productId,
+        productName:  i.productName,
+        productType:  i.productType || 'standard',
+        imageUrl:     i.imageUrl    || null,
+        proofUrl:     i.proofUrl    || null,
+        customFields: i.customFields || null,
+        qty:          i.qty,
+        unitPrice:    i.unitPrice,
+        lineTotal:    i.lineTotal,
       }));
 
       const orderBase = {

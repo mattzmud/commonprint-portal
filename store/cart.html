@@ -426,9 +426,15 @@
 
     // Items
     document.getElementById('cart-items-list').innerHTML = cart.map(item => {
-      const imgHtml = item.imageUrl
-        ? `<img class="cart-thumb" src="${esc(item.imageUrl)}" alt="${esc(item.productName)}">`
-        : `<div class="cart-thumb-placeholder">🖼️</div>`;
+      // For customizable items show proof; otherwise show product image
+      const imgHtml = item.productType === 'customizable' && item.proofUrl
+        ? `<img class="cart-thumb" src="${esc(item.proofUrl)}" alt="Proof for ${esc(item.productName)}" style="object-fit:contain;background:#f5f5f5">`
+        : item.imageUrl
+          ? `<img class="cart-thumb" src="${esc(item.imageUrl)}" alt="${esc(item.productName)}">`
+          : `<div class="cart-thumb-placeholder">🖼️</div>`;
+      const customNote = item.productType === 'customizable'
+        ? `<a href="catalog.html?s=${storefrontId}&p=${item.productId}" style="font-size:12px;color:var(--primary);text-decoration:none">✏️ Edit customization</a>`
+        : '';
       return `
         <div class="cart-item">
           ${imgHtml}
@@ -436,6 +442,7 @@
             <div class="cart-item-name">${esc(item.productName)}</div>
             ${item.size ? `<div class="cart-item-meta">${esc(item.size)}</div>` : ''}
             <div class="cart-item-price">${item.qty} × ${fmtDollars(item.unitPrice)} / unit</div>
+            ${customNote}
           </div>
           <div class="cart-item-total">${fmtDollars(item.lineTotal)}</div>
           <button class="cart-remove" onclick="removeItem('${item.productId}')" title="Remove">×</button>

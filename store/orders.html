@@ -319,9 +319,11 @@
     list.innerHTML = orders.map(o => {
       const items    = o.lineItems || [];
       const thumbs   = items.slice(0, 3).map(li =>
-        li.imageUrl
-          ? `<img class="order-thumb" src="${esc(li.imageUrl)}" alt="${esc(li.productName)}">`
-          : `<div class="order-thumb-ph">🖼️</div>`
+        (li.productType === 'customizable' && li.proofUrl)
+          ? `<img class="order-thumb" src="${esc(li.proofUrl)}" alt="${esc(li.productName)}" style="object-fit:contain;background:#f5f5f5">`
+          : li.imageUrl
+            ? `<img class="order-thumb" src="${esc(li.imageUrl)}" alt="${esc(li.productName)}">`
+            : `<div class="order-thumb-ph">🖼️</div>`
       ).join('');
 
       const summaryText = items.map(li => `${li.qty}× ${esc(li.productName)}`).join(', ');
@@ -331,8 +333,11 @@
 
       // Line items detail
       const lineItemsHtml = items.map(li => `
-        <div class="detail-line-item">
-          <div>
+        <div class="detail-line-item" style="align-items:center;gap:10px">
+          ${li.proofUrl
+            ? `<img src="${esc(li.proofUrl)}" style="width:70px;height:40px;object-fit:contain;border-radius:6px;background:#f5f5f5;border:1px solid var(--border-light);flex-shrink:0">`
+            : ''}
+          <div style="flex:1">
             <div class="detail-line-name">${esc(li.productName||'')}</div>
             <div class="detail-line-meta">Qty: ${li.qty} × ${fmtD(li.unitPrice)}</div>
           </div>

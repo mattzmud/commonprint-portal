@@ -482,6 +482,66 @@
     </div>
   </div>
 
+  <!-- Customization view -->
+  <div class="sf-page" id="custom-view" style="display:none;padding-bottom:120px">
+    <button class="detail-back" onclick="showCatalog()">← Back to catalog</button>
+
+    <div style="max-width:900px;margin:0 auto">
+      <div id="custom-product-name" style="font-size:22px;font-weight:700;color:var(--heading);margin-bottom:4px"></div>
+      <div id="custom-product-size" style="font-size:14px;color:var(--muted);margin-bottom:20px"></div>
+
+      <!-- Side toggle (only shown for double-sided) -->
+      <div id="custom-side-toggle" style="display:none;margin-bottom:16px">
+        <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;display:inline-flex">
+          <button id="custom-front-btn" onclick="customSetSide('front')"
+            style="padding:8px 20px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:var(--primary);color:#fff">Front</button>
+          <button id="custom-back-btn" onclick="customSetSide('back')"
+            style="padding:8px 20px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:#fff;color:var(--body)">Back (preview)</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+
+        <!-- Canvas proof -->
+        <div style="flex:1;min-width:280px">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Live preview</div>
+          <div style="position:relative;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.12);background:#f0f0f0">
+            <canvas id="custom-canvas" style="display:block;width:100%;max-width:525px"></canvas>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">Preview updates as you type</div>
+        </div>
+
+        <!-- Fields + quantity -->
+        <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Customize your card</div>
+            <div id="custom-fields-list" style="display:flex;flex-direction:column;gap:12px"></div>
+          </div>
+
+          <div id="custom-qty-section">
+            <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Select quantity</div>
+            <div id="custom-tier-options" style="display:flex;flex-direction:column;gap:8px"></div>
+            <div id="custom-custom-qty-wrap" style="display:none;margin-top:10px">
+              <div style="font-size:13px;font-weight:500;margin-bottom:6px">Enter quantity</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="qty-control">
+                  <button class="qty-btn" onclick="customAdjustQty(-1)">−</button>
+                  <input class="qty-num" type="number" id="custom-qty-num" min="1" oninput="customOnQtyInput(this.value)">
+                  <button class="qty-btn" onclick="customAdjustQty(1)">+</button>
+                </div>
+                <div id="custom-price-display" style="font-size:14px;color:var(--muted)"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="add-to-cart-btn" id="custom-add-to-cart-btn" onclick="customAddToCart()" disabled
+            style="opacity:.5">Select a quantity above</button>
+          <div id="custom-min-qty-note" style="font-size:12px;color:var(--muted)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="sf-toast" id="sf-toast"></div>
 
@@ -651,6 +711,12 @@
     selectedTier  = null;
     customQty     = p.minQty || 1;
 
+    // Route customizable products to the customization flow
+    if (p.productType === 'customizable') {
+      showCustomView(p);
+      return;
+    }
+
     document.getElementById('catalog-view').style.display = 'none';
     document.getElementById('detail-view').style.display  = 'block';
 
@@ -785,7 +851,347 @@
       `Add ${customQty} to cart — $${lineTotal.toFixed(2)}`;
   }
 
-  window.addToCart = () => {
+
+  // ── CUSTOMIZATION STATE ─────────────────────────────────────────────────
+  let customSide      = 'front';
+  let customFieldVals = {};   // fieldId → value
+  let customTier      = null;
+  let customQtyVal    = 1;
+  const CANVAS_W      = 1050;
+  const CANVAS_H      = 600;
+
+  // ── LOAD GOOGLE FONTS for template ─────────────────────────────────────
+  function ensureFont(fontName) {
+    const safe = ['Arial','Helvetica','Georgia'];
+    if (safe.includes(fontName)) return;
+    const id = 'gf-' + fontName.replace(/\s/g,'-');
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id   = id;
+    link.rel  = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;700&display=swap`;
+    document.head.appendChild(link);
+  }
+
+  // ── SHOW CUSTOM VIEW ────────────────────────────────────────────────────
+  function showCustomView(p) {
+    document.getElementById('catalog-view').style.display  = 'none';
+    document.getElementById('detail-view').style.display   = 'none';
+    document.getElementById('custom-view').style.display   = 'block';
+    window.scrollTo(0, 0);
+    history.replaceState(null, '', `?s=${storefrontId}&p=${p.id}`);
+
+    document.getElementById('custom-product-name').textContent = p.name || '';
+    document.getElementById('custom-product-size').textContent = p.size || '';
+
+    // Load all fonts used in fields
+    (p.templateFields || []).forEach(f => ensureFont(f.font));
+
+    // Init field values from cart if re-editing
+    const existing = getCart().find(i => i.productId === p.id);
+    customFieldVals = existing?.customFields ? { ...existing.customFields } : {};
+    customSide      = 'front';
+    customTier      = existing ? { minQty: existing.qty, unitPrice: existing.unitPrice } : null;
+    customQtyVal    = existing?.qty || p.minQty || 1;
+
+    // Side toggle visibility
+    const hasBack = !!p.templateBack?.imageUrl;
+    document.getElementById('custom-side-toggle').style.display = hasBack ? 'block' : 'none';
+    customSetSide('front');
+
+    // Render field inputs
+    renderCustomFields(p);
+
+    // Render quantity tiers
+    renderCustomTiers(p);
+
+    // Set up canvas
+    const canvas = document.getElementById('custom-canvas');
+    canvas.width  = CANVAS_W;
+    canvas.height = CANVAS_H;
+
+    // If re-editing, restore tier selection UI
+    if (existing) {
+      enableCustomCart(p);
+    }
+
+    customRedrawCanvas();
+  }
+
+  window.customSetSide = (side) => {
+    customSide = side;
+    document.getElementById('custom-front-btn').style.background = side === 'front' ? 'var(--primary)' : '#fff';
+    document.getElementById('custom-front-btn').style.color      = side === 'front' ? '#fff' : 'var(--body)';
+    document.getElementById('custom-back-btn').style.background  = side === 'back'  ? 'var(--primary)' : '#fff';
+    document.getElementById('custom-back-btn').style.color       = side === 'back'  ? '#fff' : 'var(--body)';
+    customRedrawCanvas();
+  };
+
+  function renderCustomFields(p) {
+    const list   = document.getElementById('custom-fields-list');
+    const fields = (p.templateFields || []).filter(f => f.side === 'front');
+    if (fields.length === 0) {
+      list.innerHTML = `<div style="font-size:13px;color:var(--muted)">No customizable fields on this product.</div>`;
+      return;
+    }
+    list.innerHTML = fields.map(f => `
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--body);margin-bottom:4px">${esc(f.name)}</label>
+        <input type="text" value="${esc(customFieldVals[f.id] || '')}"
+          placeholder="${esc(f.placeholder || f.name)}"
+          oninput="customFieldInput('${f.id}', this.value)"
+          style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
+      </div>`).join('');
+  }
+
+  window.customFieldInput = (fieldId, val) => {
+    customFieldVals[fieldId] = val;
+    customRedrawCanvas();
+  };
+
+  function renderCustomTiers(p) {
+    const tiers  = [...(p.pricingTiers || [])].sort((a,b) => a.minQty - b.minQty);
+    const minQty = p.minQty || 1;
+    const box    = document.getElementById('custom-tier-options');
+
+    let html = tiers.map((t, i) => {
+      const nextMin = tiers[i+1]?.minQty;
+      const label   = nextMin ? `${t.minQty} – ${nextMin-1} units` : `${t.minQty}+ units`;
+      return `
+        <label class="tier-option" onclick="customSelectTier(${i})">
+          <input type="radio" name="custom-tier" value="${i}">
+          <div>
+            <div class="tier-qty">${label}</div>
+            <div class="tier-unit">$${t.unitPrice.toFixed(2)} / unit</div>
+          </div>
+          <div class="tier-total">from $${(t.minQty * t.unitPrice).toFixed(2)}</div>
+        </label>`;
+    }).join('');
+
+    html += `
+      <label class="tier-option" onclick="customSelectCustom()">
+        <input type="radio" name="custom-tier" value="custom">
+        <div>
+          <div class="tier-qty">Custom quantity</div>
+          <div class="tier-unit">Enter your own amount</div>
+        </div>
+        <div class="tier-total">—</div>
+      </label>`;
+
+    box.innerHTML = html;
+    document.getElementById('custom-custom-qty-wrap').style.display = 'none';
+
+    const btn = document.getElementById('custom-add-to-cart-btn');
+    btn.disabled = true;
+    btn.style.opacity = '.5';
+    btn.textContent = 'Select a quantity above';
+    document.getElementById('custom-min-qty-note').textContent =
+      `Minimum order: ${minQty}${p.maxQty > 0 ? ' · Maximum: ' + p.maxQty : ''}`;
+  }
+
+  window.customSelectTier = (idx) => {
+    const tiers = [...(activeProduct.pricingTiers || [])].sort((a,b) => a.minQty - b.minQty);
+    customTier   = tiers[idx];
+    customQtyVal = customTier.minQty;
+    document.getElementById('custom-custom-qty-wrap').style.display = 'none';
+    enableCustomCart(activeProduct);
+  };
+
+  window.customSelectCustom = () => {
+    customTier   = null;
+    customQtyVal = activeProduct.minQty || 1;
+    document.getElementById('custom-custom-qty-wrap').style.display = 'block';
+    document.getElementById('custom-qty-num').value = customQtyVal;
+    updateCustomPriceDisplay();
+    enableCustomCart(activeProduct);
+  };
+
+  window.customAdjustQty = (delta) => {
+    const minQty = activeProduct.minQty || 1;
+    const maxQty = activeProduct.maxQty || 0;
+    customQtyVal = Math.max(minQty, customQtyVal + delta);
+    if (maxQty > 0) customQtyVal = Math.min(maxQty, customQtyVal);
+    document.getElementById('custom-qty-num').value = customQtyVal;
+    updateCustomPriceDisplay();
+  };
+
+  window.customOnQtyInput = (val) => {
+    customQtyVal = Math.max(activeProduct.minQty || 1, parseInt(val) || 1);
+    updateCustomPriceDisplay();
+  };
+
+  function updateCustomPriceDisplay() {
+    const unitPrice = getUnitPrice(activeProduct, customQtyVal);
+    const lineTotal = customQtyVal * unitPrice;
+    document.getElementById('custom-price-display').textContent =
+      `$${unitPrice.toFixed(2)} / unit · Total: $${lineTotal.toFixed(2)}`;
+  }
+
+  function enableCustomCart(p) {
+    const btn = document.getElementById('custom-add-to-cart-btn');
+    btn.disabled  = false;
+    btn.style.opacity = '1';
+    btn.textContent = 'Add to cart';
+  }
+
+  // ── CANVAS DRAW ─────────────────────────────────────────────────────────
+  function customRedrawCanvas() {
+    const p = activeProduct;
+    if (!p) return;
+    const canvas = document.getElementById('custom-canvas');
+    const ctx    = canvas.getContext('2d');
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+    const template = customSide === 'front' ? p.templateFront : p.templateBack;
+    if (!template?.imageUrl) {
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      ctx.fillStyle = '#999';
+      ctx.font = '32px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('No template image', CANVAS_W/2, CANVAS_H/2);
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, CANVAS_W, CANVAS_H);
+      if (customSide === 'front') {
+        (p.templateFields || []).filter(f => f.side === 'front').forEach(f => {
+          const x   = f.xPct * CANVAS_W;
+          const y   = f.yPct * CANVAS_H;
+          const val = customFieldVals[f.id] || f.placeholder || '';
+          if (!val) return;
+          ctx.save();
+          ctx.font          = `${f.fontStyle} ${f.fontWeight} ${f.fontSize}px "${f.font}"`;
+          ctx.fillStyle     = f.color;
+          ctx.textAlign     = f.align;
+          ctx.textBaseline  = 'middle';
+          ctx.fillText(val, x, y);
+          ctx.restore();
+        });
+      }
+    };
+    img.onerror = () => {
+      // fallback — draw without crossOrigin (loses toDataURL but shows preview)
+      const img2 = new Image();
+      img2.onload = () => {
+        ctx.drawImage(img2, 0, 0, CANVAS_W, CANVAS_H);
+      };
+      img2.src = template.imageUrl;
+    };
+    img.src = template.imageUrl;
+  }
+
+  // ── ADD TO CART (customizable) ──────────────────────────────────────────
+  window.customAddToCart = async () => {
+    if (!activeProduct) return;
+
+    const qty       = customTier ? customTier.minQty : customQtyVal;
+    const unitPrice = customTier ? customTier.unitPrice : getUnitPrice(activeProduct, qty);
+    const lineTotal = qty * unitPrice;
+    const minQty    = activeProduct.minQty || 1;
+
+    if (qty < minQty) { toast(`Minimum order is ${minQty} units.`, 'error'); return; }
+
+    const btn = document.getElementById('custom-add-to-cart-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving proof…';
+
+    try {
+      // Capture canvas as PNG data URL — draw front with current field values
+      // Ensure image is loaded first
+      await new Promise(resolve => {
+        const p      = activeProduct;
+        const canvas = document.getElementById('custom-canvas');
+        const ctx    = canvas.getContext('2d');
+
+        // Redraw front side for capture
+        const template = p.templateFront;
+        if (!template?.imageUrl) { resolve(); return; }
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+          ctx.drawImage(img, 0, 0, CANVAS_W, CANVAS_H);
+          (p.templateFields || []).filter(f => f.side === 'front').forEach(f => {
+            const x   = f.xPct * CANVAS_W;
+            const y   = f.yPct * CANVAS_H;
+            const val = customFieldVals[f.id] || f.placeholder || '';
+            if (!val) return;
+            ctx.save();
+            ctx.font         = `${f.fontStyle} ${f.fontWeight} ${f.fontSize}px "${f.font}"`;
+            ctx.fillStyle    = f.color;
+            ctx.textAlign    = f.align;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(val, x, y);
+            ctx.restore();
+          });
+          resolve();
+        };
+        img.onerror = () => resolve(); // proceed even if CORS fails
+        img.src = template.imageUrl;
+      });
+
+      // Convert canvas to blob and upload
+      let proofUrl = null;
+      try {
+        const canvas  = document.getElementById('custom-canvas');
+        const dataUrl = canvas.toDataURL('image/png');
+        const blob    = await (await fetch(dataUrl)).blob();
+        const token   = await getToken();
+        const bucket  = (await callWorker('get_config')).storageBucket;
+        const path    = `storefronts/${storefrontId}/proofs/${currentUser.uid}-${activeProduct.id}-${Date.now()}.png`;
+        const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(path)}`;
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'image/png' },
+          body: blob,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          proofUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
+        }
+      } catch(e) {
+        console.warn('Proof upload failed, continuing without proof:', e);
+      }
+
+      const cart = getCart();
+      const existing = cart.find(i => i.productId === activeProduct.id);
+      const item = {
+        productId:    activeProduct.id,
+        productName:  activeProduct.name,
+        productType:  'customizable',
+        imageUrl:     activeProduct.imageUrl || null,
+        proofUrl,
+        customFields: { ...customFieldVals },
+        size:         activeProduct.size || '',
+        qty,
+        unitPrice,
+        lineTotal,
+      };
+      if (existing) {
+        Object.assign(existing, item);
+      } else {
+        cart.push(item);
+      }
+      saveCart(cart);
+      updateCartBadge();
+      toast(`${activeProduct.name} added to cart!`);
+      showCatalog();
+
+    } catch(e) {
+      console.error('customAddToCart failed:', e);
+      toast('Something went wrong. Please try again.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Add to cart';
+    }
+  };
+
+    window.addToCart = () => {
     if (!activeProduct) return;
 
     const qty       = selectedTier ? selectedTier.minQty : customQty;
