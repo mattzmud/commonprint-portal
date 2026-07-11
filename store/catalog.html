@@ -994,14 +994,29 @@
   }
 
   window.customSelectTier = (idx) => {
-    const tiers = [...(activeProduct.pricingTiers || [])].sort((a,b) => a.minQty - b.minQty);
-    customTier   = tiers[idx];
-    customQtyVal = customTier.minQty;
-    document.getElementById('custom-custom-qty-wrap').style.display = 'none';
-    // Mark selected within the custom tier options container only
+    const tiers      = [...(activeProduct.pricingTiers || [])].sort((a,b) => a.minQty - b.minQty);
+    customTier       = tiers[idx];
+    const nextTier   = tiers[idx + 1];
+    const maxInTier  = nextTier ? nextTier.minQty - 1 : (activeProduct.maxQty || 0);
+    customQtyVal     = customTier.minQty;
+
+    // Mark selected
     document.querySelectorAll('#custom-tier-options .tier-option').forEach((el, i) => {
       el.classList.toggle('selected', i === idx);
     });
+
+    // Show quantity input scoped to this tier's range
+    const wrap  = document.getElementById('custom-custom-qty-wrap');
+    const input = document.getElementById('custom-qty-num');
+    const label = wrap.querySelector('div');
+    if (label) label.textContent = maxInTier > 0
+      ? `Quantity (${customTier.minQty}–${maxInTier})`
+      : `Quantity (minimum ${customTier.minQty})`;
+    wrap.style.display = 'block';
+    input.value = customQtyVal;
+    input.min   = customTier.minQty;
+    input.max   = maxInTier > 0 ? maxInTier : '';
+    updateCustomPriceDisplay();
     enableCustomCart(activeProduct);
   };
 
@@ -1017,16 +1032,21 @@
   };
 
   window.customAdjustQty = (delta) => {
-    const minQty = activeProduct.minQty || 1;
-    const maxQty = activeProduct.maxQty || 0;
+    const input  = document.getElementById('custom-qty-num');
+    const minQty = parseInt(input.min) || activeProduct.minQty || 1;
+    const maxQty = parseInt(input.max) || activeProduct.maxQty || 0;
     customQtyVal = Math.max(minQty, customQtyVal + delta);
     if (maxQty > 0) customQtyVal = Math.min(maxQty, customQtyVal);
-    document.getElementById('custom-qty-num').value = customQtyVal;
+    input.value = customQtyVal;
     updateCustomPriceDisplay();
   };
 
   window.customOnQtyInput = (val) => {
-    customQtyVal = Math.max(activeProduct.minQty || 1, parseInt(val) || 1);
+    const input  = document.getElementById('custom-qty-num');
+    const minQty = parseInt(input.min) || activeProduct.minQty || 1;
+    const maxQty = parseInt(input.max) || 0;
+    customQtyVal = Math.max(minQty, parseInt(val) || minQty);
+    if (maxQty > 0) customQtyVal = Math.min(maxQty, customQtyVal);
     updateCustomPriceDisplay();
   };
 
@@ -1128,7 +1148,7 @@
   window.customAddToCart = async () => {
     if (!activeProduct) return;
 
-    const qty       = customTier ? customTier.minQty : customQtyVal;
+    const qty       = customQtyVal;  // always use actual entered qty, not tier floor
     const unitPrice = customTier ? customTier.unitPrice : getUnitPrice(activeProduct, qty);
     const lineTotal = qty * unitPrice;
     const minQty    = activeProduct.minQty || 1;
