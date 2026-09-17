@@ -1254,8 +1254,9 @@
     window.addToCart = () => {
     if (!activeProduct) return;
 
-    const qty       = selectedTier ? selectedTier.minQty : customQty;
-    const unitPrice = selectedTier ? selectedTier.unitPrice : getUnitPrice(activeProduct, customQty);
+    // Always use customQty — it's updated by the qty input regardless of tier
+    const qty       = customQty;
+    const unitPrice = getUnitPrice(activeProduct, qty);
     const lineTotal = qty * unitPrice;
     const minQty    = activeProduct.minQty || 1;
 
