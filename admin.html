@@ -5857,13 +5857,32 @@ window.fetchAndSavePaymentInfo = async (e) => {
   const o = activeSFOrders?.find(x => x.id === activeSFOrderId);
   if (!o) return;
 
-  const invId = o.squareInvoiceId || o.squareInvoiceNum || '';
-  if (!invId) { toast('No Square invoice ID on this order', 'error'); return; }
+  // Prefer the internal Square invoice ID; if we only have the number,
+  // look it up first to get the real ID before fetching payment details
+  let invId = o.squareInvoiceId || '';
+  const invNum = o.squareInvoiceNum || '';
+  if (!invId && !invNum) { toast('No Square invoice ID on this order', 'error'); return; }
 
   const link = e.target;
   link.textContent = 'Fetching…';
 
   try {
+    // If we only have the invoice number, resolve it to a Square invoice ID first
+    if (!invId && invNum) {
+      const lookupRes  = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: invNum })
+      });
+      const lookupData = await lookupRes.json();
+      if (lookupData.error || !lookupData.invoiceId) {
+        toast('Could not find invoice #' + invNum + ' on Square', 'error');
+        link.textContent = 'Fetch payment info from Square →';
+        return;
+      }
+      invId = lookupData.invoiceId;
+    }
+
     const res  = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
