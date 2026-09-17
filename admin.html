@@ -915,6 +915,12 @@
 
       <!-- Orders tab -->
       <div class="detail-panel" id="sftab-orders">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-ghost btn-sm" onclick="reprocessInvoicePayments()" id="reprocess-btn">
+            🔄 Reprocess invoice payment details
+          </button>
+        </div>
+        <div id="reprocess-status" style="display:none;margin-bottom:12px;font-size:13px;padding:10px 14px;border-radius:8px;background:var(--linen);color:var(--charcoal)"></div>
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
             <thead><tr><th>Order #</th><th>Location</th><th>Name</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr></thead>
@@ -5851,6 +5857,116 @@ window.lookupSFInvoice = async () => {
 // ── DISCOUNT LOOKUP ──────────────────────────────────────────────────────────
 
 let _sfDiscountApplied = null; // { code, desc, type, value, amount }
+
+window.reprocessInvoicePayments = async () => {
+  if (!activeSF) { toast('No storefront selected', 'error'); return; }
+
+  const btn    = document.getElementById('reprocess-btn');
+  const statEl = document.getElementById('reprocess-status');
+
+  // Candidates: invoice orders that have a cardBrand already stored
+  // (meaning they were fetched at some point, possibly incorrectly)
+  // OR that have a Square invoice number but no card details yet
+  const candidates = activeSFOrders.filter(o =>
+    o.paymentMethod !== 'pay_now' &&
+    (o.squareInvoiceNum || o.squareInvoiceId)
+  );
+
+  if (candidates.length === 0) {
+    toast('No invoice orders with Square data to reprocess', 'error');
+    return;
+  }
+
+  if (!confirm(`Reprocess payment details for ${candidates.length} invoice order${candidates.length !== 1 ? 's' : ''}? This will fetch fresh card details from Square for each one.`)) return;
+
+  btn.disabled = true;
+  statEl.style.display = 'block';
+
+  let updated = 0, skipped = 0, failed = 0;
+
+  for (let i = 0; i < candidates.length; i++) {
+    const o = candidates[i];
+    statEl.textContent = `Processing ${i + 1} of ${candidates.length}: order ${o.id.slice(0,8).toUpperCase()}…`;
+
+    try {
+      // Step 1: resolve invoice number → Square internal ID if needed
+      let invId  = o.squareInvoiceId || '';
+      const invNum = o.squareInvoiceNum || '';
+
+      if (!invId && invNum) {
+        const lookupRes  = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'lookup_square_invoice', invoiceNumber: invNum })
+        });
+        const lookupData = await lookupRes.json();
+        if (lookupData.invoiceId) {
+          invId = lookupData.invoiceId;
+        } else {
+          console.warn('Could not resolve invoice number', invNum, 'for order', o.id);
+          skipped++;
+          continue;
+        }
+      }
+
+      if (!invId) { skipped++; continue; }
+
+      // Step 2: fetch payment details
+      const pmtRes  = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_invoice_payment', invoiceId: invId })
+      });
+      const pmtData = await pmtRes.json();
+
+      if (!pmtData.ok || !pmtData.cardBrand) {
+        // Invoice may not be paid yet — skip silently
+        skipped++;
+        continue;
+      }
+
+      // Step 3: save to Firestore via storefront worker
+      const saveRes  = await fetch('https://storefront-api.matt-zmud.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:        'update_order_payment',
+          storefrontId:  activeSF.id,
+          orderId:       o.id,
+          cardBrand:     pmtData.cardBrand,
+          cardLast4:     pmtData.last4    || '',
+          paymentMethod: pmtData.paymentMethod || 'card',
+        })
+      });
+      const saveData = await saveRes.json();
+
+      if (saveData.ok) {
+        // Update local cache
+        Object.assign(o, {
+          cardBrand:     pmtData.cardBrand,
+          cardLast4:     pmtData.last4    || '',
+          paymentMethod: pmtData.paymentMethod || 'card',
+        });
+        updated++;
+      } else {
+        failed++;
+      }
+
+      // Small delay to avoid hammering Square API
+      await new Promise(r => setTimeout(r, 250));
+
+    } catch(e) {
+      console.error('Reprocess failed for order', o.id, e);
+      failed++;
+    }
+  }
+
+  btn.disabled = false;
+  statEl.innerHTML = `✓ Done — <strong>${updated}</strong> updated, <strong>${skipped}</strong> skipped (unpaid or unresolvable), <strong>${failed}</strong> failed.`;
+  statEl.style.background = updated > 0 ? 'var(--green-pale)' : 'var(--linen)';
+
+  if (updated > 0) renderSFOrders();
+};
 
 window.fetchAndSavePaymentInfo = async (e) => {
   e.preventDefault();
