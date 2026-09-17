@@ -1333,7 +1333,10 @@
         <div style="font-size:13px;color:var(--mid-gray);margin-top:2px" id="sford-meta"></div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <div id="sford-status-badge"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div id="sford-payment-pill"></div>
+          <div id="sford-production-pill"></div>
+        </div>
         <button class="modal-close" onclick="closeModal('modal-sf-order')">×</button>
       </div>
     </div>
@@ -4563,6 +4566,34 @@ document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('cli
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtDate(iso) { if(!iso) return '—'; try { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch{return iso;} }
 function fmtDateTime(iso) { if(!iso) return '—'; try { return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}); } catch{return iso;} }
+function paymentPill(paymentStatus) {
+  const map = {
+    paid:     { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+    unpaid:   { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
+    na:       { label: 'Card',             color: '#194A4E', bg: '#DCE7E8' },
+  };
+  const s = map[paymentStatus] || map.unpaid;
+  return `<div style="display:inline-flex;flex-direction:column;align-items:center;padding:4px 10px;border-radius:20px;background:${s.bg};line-height:1.3">
+    <span style="font-size:9px;font-weight:600;color:${s.color};text-transform:uppercase;letter-spacing:.05em;opacity:.8">Payment</span>
+    <span style="font-size:12px;font-weight:700;color:${s.color}">${s.label}</span>
+  </div>`;
+}
+
+function productionPill(productionStatus) {
+  const map = {
+    pending:    { label: 'Pending',     color: '#5A3E00', bg: '#FFF8E0' },
+    processing: { label: 'In process',  color: '#1A3A5C', bg: '#E0EDFF' },
+    shipped:    { label: 'Shipped',     color: '#1A4A2E', bg: '#E0F5EA' },
+    completed:  { label: 'Completed',   color: '#194A4E', bg: '#DCE7E8' },
+    cancelled:  { label: 'Cancelled',   color: '#C0392B', bg: '#FDECEA' },
+  };
+  const s = map[productionStatus] || map.pending;
+  return `<div style="display:inline-flex;flex-direction:column;align-items:center;padding:4px 10px;border-radius:20px;background:${s.bg};line-height:1.3">
+    <span style="font-size:9px;font-weight:600;color:${s.color};text-transform:uppercase;letter-spacing:.05em;opacity:.8">Production</span>
+    <span style="font-size:12px;font-weight:700;color:${s.color}">${s.label}</span>
+  </div>`;
+}
+
 function badge(status) {
   const map = { pending:['badge-pending','Pending'], approved:['badge-approved','Approved'], changes:['badge-changes','Changes'], paid:['badge-paid','Paid'], unpaid:['badge-unpaid','Unpaid'], overdue:['badge-overdue','Overdue'], active:['badge-approved','Active'], processing:['badge-pending','In process'], shipped:['badge-approved','Shipped'], completed:['badge-approved','Completed'], cancelled:['badge-changes','Cancelled'] };
   const [cls, label] = map[status] || ['badge-pending', status||'—'];
@@ -5610,7 +5641,12 @@ function renderSFOrders() {
   if (paid && o.cardBrand) out += ' · ' + o.cardBrand + (o.cardLast4 ? ' ···· '+o.cardLast4 : '');
   return out;
 })()}</td>
-        <td>${badge(o.status||'pending')}</td>
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            ${paymentPill(o.paymentMethod==='pay_now' ? 'paid' : (o.paymentStatus || (['paid','processing','shipped','completed'].includes(o.status)?'paid':'unpaid')))}
+            ${productionPill(o.productionStatus || ({'pending':'pending','processing':'processing','shipped':'shipped','completed':'completed','cancelled':'cancelled','paid':'pending'}[o.status]||'pending'))}
+          </div>
+        </td>
         <td>${fmtDate(o.createdAt)}</td>
         <td style="color:var(--mid-gray)">›</td>
       </tr>`).join('');
@@ -5621,7 +5657,15 @@ window.openSFOrderModal = (orderId) => {
   activeSFOrderId=orderId;
   document.getElementById('sford-title').textContent     = `Order ${orderId.slice(0,12).toUpperCase()}`;
   document.getElementById('sford-meta').textContent      = fmtDateTime(o.createdAt);
-  document.getElementById('sford-status-badge').innerHTML= badge(o.status||'pending');
+  // Payment pill: pay_now orders are always paid; invoice orders read paymentStatus
+  const paymentSt = o.paymentMethod === 'pay_now'
+    ? 'paid'
+    : (o.paymentStatus || (['paid','processing','shipped','completed'].includes(o.status) ? 'paid' : 'unpaid'));
+  // Production pill: read productionStatus, fall back to deriving from legacy status
+  const legacyProdMap = { pending:'pending', processing:'processing', shipped:'shipped', completed:'completed', cancelled:'cancelled', paid:'pending' };
+  const productionSt  = o.productionStatus || legacyProdMap[o.status] || 'pending';
+  document.getElementById('sford-payment-pill').innerHTML    = paymentPill(paymentSt);
+  document.getElementById('sford-production-pill').innerHTML = productionPill(productionSt);
   document.getElementById('sford-customer').textContent  = o.name||o.email||'—';
   document.getElementById('sford-location').textContent  = o.locationName||'—';
   if (o.paymentMethod === 'pay_now') {
@@ -5725,13 +5769,14 @@ window.openSFOrderModal = (orderId) => {
   // Invoice status shown via lookup result card
   document.getElementById('sford-carrier').value       = o.carrier     || '';
   document.getElementById('sford-tracking').value      = o.trackingNumber || '';
-  const isDone    = o.status==='completed'||o.status==='cancelled';
-  const isShipped = o.status==='shipped';
-  document.getElementById('sford-process-btn').classList.toggle('hidden',     o.status==='processing'||o.status==='shipped'||isDone);
-  document.getElementById('sford-ship-btn').classList.toggle('hidden',         o.status!=='processing' && o.status!=='paid');
+  const prodSt    = o.productionStatus || o.status || 'pending';
+  const isDone    = prodSt === 'completed' || prodSt === 'cancelled';
+  const isShipped = prodSt === 'shipped';
+  document.getElementById('sford-process-btn').classList.toggle('hidden',     prodSt==='processing'||isShipped||isDone);
+  document.getElementById('sford-ship-btn').classList.toggle('hidden',         prodSt!=='processing');
   document.getElementById('sford-complete-btn').classList.toggle('hidden',     isDone);
   document.getElementById('sford-cancel-btn').classList.toggle('hidden',       isDone);
-  document.getElementById('sford-resend-ship-btn').classList.toggle('hidden',  !isShipped && o.status!=='completed');
+  document.getElementById('sford-resend-ship-btn').classList.toggle('hidden',  !isShipped && !isDone);
   openModal('modal-sf-order');
 };
 
@@ -5773,12 +5818,21 @@ window.lookupSFInvoice = async () => {
     if (data.paymentUrl) { link.href = data.paymentUrl; link.style.display = 'inline'; }
     else { link.style.display = 'none'; }
 
-    // Update status badge
+    // Map Square invoice status → our paymentStatus and update the payment pill
+    const sqPaid = data.status === 'PAID';
+    const paymentSt = sqPaid ? 'paid' : 'unpaid';
+    document.getElementById('sford-payment-pill').innerHTML = paymentPill(paymentSt);
+
+    // Store on the in-memory order so Save picks it up
+    const liveOrder = activeSFOrders.find(x => x.id === activeSFOrderId);
+    if (liveOrder) liveOrder.paymentStatus = paymentSt;
+
+    // Also show inline badge in the invoice result card
     const statusMap = {
-      UNPAID:     { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
-      PAID:       { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
-      PARTIALLY_PAID: { label: 'Partially paid', color: '#AD5309', bg: '#FFF3E0' },
-      CANCELLED:  { label: 'Cancelled',        color: '#C0392B', bg: '#FDECEA' },
+      UNPAID:         { label: 'Awaiting payment', color: '#AD5309', bg: '#FFF3E0' },
+      PAID:           { label: 'Paid',             color: '#194A4E', bg: '#DCE7E8' },
+      PARTIALLY_PAID: { label: 'Partially paid',   color: '#AD5309', bg: '#FFF3E0' },
+      CANCELLED:      { label: 'Cancelled',         color: '#C0392B', bg: '#FDECEA' },
     };
     const st = statusMap[data.status] || { label: data.status, color: 'var(--mid-gray)', bg: 'var(--linen)' };
     const statusBadge = document.getElementById('sford-invoice-status');
@@ -6326,9 +6380,14 @@ window.saveSFOrderDetails = async () => {
     discountedSubtotal: Math.max(0, Number((activeSFOrders.find(x=>x.id===activeSFOrderId)||{}).subtotal||0) - _sfDiscountApplied.amount),
   } : {};
 
+  // Carry paymentStatus from in-memory order (set by invoice lookup or webhook)
+  const liveOrd = activeSFOrders.find(x => x.id === activeSFOrderId);
+  const paymentStatusUpdate = liveOrd?.paymentStatus ? { paymentStatus: liveOrd.paymentStatus } : {};
+
   const updateData = {
     updatedAt: new Date().toISOString(),
     ...discountUpdate,
+    ...paymentStatusUpdate,
     ...(adminNotes        ? { adminNotes }        : {}),
     ...(squareInvoiceId   ? { squareInvoiceId }   : {}),
     ...(squarePaymentUrl  ? { squarePaymentUrl }  : {}),
@@ -6346,25 +6405,32 @@ window.saveSFOrderDetails = async () => {
   openSFOrderModal(activeSFOrderId);
 };
 
-window.updateSFOrderStatus = async (status) => {
+window.updateSFOrderStatus = async (productionStatus) => {
   if (!activeSFOrderId||!activeSF) return;
-  const adminNotes    = document.getElementById('sford-admin-notes').value;
+  const adminNotes         = document.getElementById('sford-admin-notes').value;
   const squareInvoiceId    = document.getElementById('sford-invoice-id').value.trim();
   const squarePaymentUrl   = document.getElementById('sford-invoice-url').value.trim();
   const squareInvoiceNum   = document.getElementById('sford-invoice-number').value.trim();
   const carrier            = document.getElementById('sford-carrier').value;
   const trackingNumber     = document.getElementById('sford-tracking').value.trim();
-  const updateData         = { status, adminNotes, updatedAt:new Date().toISOString(),
-    ...(squarePaymentUrl  ? { squarePaymentUrl }  : {}),
-    ...(squareInvoiceId   ? { squareInvoiceId }   : {}),
-    ...(squareInvoiceNum  ? { squareInvoiceNum }  : {}),
-    ...(carrier         ? { carrier }         : {}),
-    ...(trackingNumber  ? { trackingNumber }  : {}),
+  // Also keep legacy status in sync for webhook + customer pages
+  const legacyStatus = productionStatus; // 1-to-1 for now; webhook sets 'paid' separately
+  const updateData = {
+    productionStatus,
+    status: legacyStatus,
+    adminNotes, updatedAt: new Date().toISOString(),
+    ...(squarePaymentUrl ? { squarePaymentUrl } : {}),
+    ...(squareInvoiceId  ? { squareInvoiceId  } : {}),
+    ...(squareInvoiceNum ? { squareInvoiceNum } : {}),
+    ...(carrier          ? { carrier          } : {}),
+    ...(trackingNumber   ? { trackingNumber   } : {}),
   };
   await fbUpdate(`storefronts/${activeSF.id}/orders/${activeSFOrderId}`, updateData);
-  const o=activeSFOrders.find(x=>x.id===activeSFOrderId);
-  if(o){ Object.assign(o, updateData); }
-  closeModal('modal-sf-order'); toast(`Order marked as ${status}.`,'success'); renderSFOrders();
+  const o = activeSFOrders.find(x => x.id === activeSFOrderId);
+  if (o) { Object.assign(o, updateData); }
+  closeModal('modal-sf-order');
+  toast(`Order marked as ${productionStatus}.`, 'success');
+  renderSFOrders();
 };
 
 window.resendShippingEmail = async () => {
